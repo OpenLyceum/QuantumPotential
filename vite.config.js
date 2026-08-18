@@ -37,11 +37,8 @@ export default defineConfig({
         comments: false, // Remove comments
       },
     },
-    rollupOptions: {
-      // Enable tree shaking - Vite will respect the sideEffects field in package.json
-      treeshake: {
-        preset: "recommended",
-      },
-    },
+    // Tree shaking is enabled by default and respects the sideEffects field in
+    // package.json. The former rollupOptions.treeshake.preset option is not a
+    // valid input option for Vite 8's Rolldown-based bundler and was ignored.
   },
 });
