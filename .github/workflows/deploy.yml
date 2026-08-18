@@ -36,6 +36,7 @@ jobs:
       - name: Security audit
         run: npm audit --audit-level=critical
       - name: Apply and commit formatting
+        if: github.ref == 'refs/heads/main'
         run: |
           npm run format
           if [ -n "$(git status --porcelain)" ]; then
@@ -96,26 +97,54 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v7
-      - name: Download Pages Artifact
+      - name: Download build artifact
         uses: actions/download-artifact@v8
         with:
-          name: github-pages
+          name: build-dist
           path: dist
       - name: Generate changelog
         id: changelog
         uses: actions/github-script@v9
         with:
+          result-encoding: string
           script: |
-            const { data: commits } = await github.rest.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: 'main',
-              head: context.sha
+            const { owner, repo } = context.repo;
+            const current = context.ref.replace('refs/tags/', '');
+
+            // Find the tag released just before this one.
+            const tags = await github.paginate(github.rest.repos.listTags, {
+              owner,
+              repo,
+              per_page: 100
             });
-            const changelog = commits.commits
-              .map(commit => `- ${commit.commit.message}`)
+            const versionTags = tags.filter(tag => tag.name.startsWith('v'));
+            const index = versionTags.findIndex(tag => tag.name === current);
+            const previous = index === -1 ? undefined : versionTags[index + 1];
+
+            // Without an earlier tag there is nothing to diff against, so fall
+            // back to the commits reachable from this tag.
+            let commits;
+            if (previous) {
+              const { data } = await github.rest.repos.compareCommits({
+                owner,
+                repo,
+                base: previous.name,
+                head: context.sha
+              });
+              commits = data.commits;
+            } else {
+              const { data } = await github.rest.repos.listCommits({
+                owner,
+                repo,
+                sha: context.sha,
+                per_page: 50
+              });
+              commits = data;
+            }
+
+            return commits
+              .map(commit => `- ${commit.commit.message.split('\n')[0]}`)
               .join('\n');
-            return changelog;
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v3
