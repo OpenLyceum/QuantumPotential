@@ -48,7 +48,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "katex": "^0.18.1",
+    "katex": "^0.18.5",
     "scenerystack": "^3.0.0"
   },
   "devDependencies": {
