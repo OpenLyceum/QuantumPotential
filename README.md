@@ -1,4 +1,4 @@
-# Quantum Bound States Simulation
+# Quantum Potential Simulation
 
 An interactive quantum mechanics simulation exploring the behavior of quantum particles in potential wells. This educational tool visualizes wave functions, probability densities, and energy levels for bound states in various quantum potentials.
 
