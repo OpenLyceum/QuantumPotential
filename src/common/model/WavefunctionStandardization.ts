@@ -20,7 +20,7 @@ export function detectParity(psi: number[]): "even" | "odd" {
   // Count sign changes (zero-crossings)
   for (let i = 1; i < psi.length; i++) {
     // Check for sign change between consecutive points
-    if (psi[i - 1] * psi[i] < 0) {
+    if (psi[i - 1]! * psi[i]! < 0) {
       nodeCount++;
     }
   }
@@ -44,11 +44,7 @@ export function detectParity(psi: number[]): "even" | "odd" {
  * @param parity - Optional parity hint ("even" or "odd"). If not provided, will be auto-detected.
  * @returns The standardized wavefunction (may be negated)
  */
-export function standardizeWavefunctionSign(
-  psi: number[],
-  xGrid: number[],
-  parity?: "even" | "odd",
-): number[] {
+export function standardizeWavefunctionSign(psi: number[], xGrid: number[], parity?: "even" | "odd"): number[] {
   // Auto-detect parity if not provided
   const detectedParity = parity || detectParity(psi);
 
@@ -57,17 +53,14 @@ export function standardizeWavefunctionSign(
 
   if (detectedParity === "even") {
     // Even states: Ensure ψ(center) > 0
-    if (psi[centerIndex] < 0) {
+    if (psi[centerIndex]! < 0) {
       return psi.map((val) => -val);
     }
     // If ψ(center) ≈ 0 (shouldn't happen for even states, but handle edge case)
-    if (Math.abs(psi[centerIndex]) < 1e-10) {
+    if (Math.abs(psi[centerIndex]!) < 1e-10) {
       // Find the maximum absolute value and use its sign
-      const maxAbsIndex = psi.reduce(
-        (iMax, val, i, arr) => (Math.abs(val) > Math.abs(arr[iMax]) ? i : iMax),
-        0,
-      );
-      if (psi[maxAbsIndex] < 0) {
+      const maxAbsIndex = psi.reduce((iMax, val, i, arr) => (Math.abs(val) > Math.abs(arr[iMax]!) ? i : iMax), 0);
+      if (psi[maxAbsIndex]! < 0) {
         return psi.map((val) => -val);
       }
     }
@@ -77,21 +70,20 @@ export function standardizeWavefunctionSign(
 
     // Find first significant point to the right of center
     let rightIndex = centerIndex + 1;
-    while (rightIndex < psi.length && Math.abs(psi[rightIndex]) < 1e-10) {
+    while (rightIndex < psi.length && Math.abs(psi[rightIndex]!) < 1e-10) {
       rightIndex++;
     }
 
     if (rightIndex < psi.length) {
       // Ensure ψ(x>0) > 0
-      if (psi[rightIndex] < 0) {
+      if (psi[rightIndex]! < 0) {
         return psi.map((val) => -val);
       }
     } else {
       // Fallback: check slope at center using finite difference
       if (centerIndex > 0 && centerIndex < psi.length - 1) {
         const slope =
-          (psi[centerIndex + 1] - psi[centerIndex - 1]) /
-          (xGrid[centerIndex + 1] - xGrid[centerIndex - 1]);
+          (psi[centerIndex + 1]! - psi[centerIndex - 1]!) / (xGrid[centerIndex + 1]! - xGrid[centerIndex - 1]!);
 
         // We want slope < 0 at center (negative slope)
         if (slope > 0) {
@@ -112,9 +104,6 @@ export function standardizeWavefunctionSign(
  * @param xGrid - The spatial grid points
  * @returns The standardized wavefunction
  */
-export function standardizeWavefunction(
-  psi: number[],
-  xGrid: number[],
-): number[] {
+export function standardizeWavefunction(psi: number[], xGrid: number[]): number[] {
   return standardizeWavefunctionSign(psi, xGrid);
 }

@@ -3,9 +3,9 @@
  * V(x) = -V₀ for -L/2 < x < L/2, V(x) = 0 otherwise
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { FiniteSquareWellSolution } from "../analytical-solutions/finite-square-well.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class FiniteSquareWellPotential extends AnalyticalPotential {
   private wellWidth: number;

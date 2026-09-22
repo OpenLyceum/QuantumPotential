@@ -15,10 +15,10 @@
  * higher accuracy than general ODE solvers like RK45.
  */
 
-import QuantumConstants from "./QuantumConstants.js";
-import { GridConfig, PotentialFunction } from "./PotentialFunction.js";
-import { normalizeWavefunction } from "./LinearAlgebraUtils.js";
 import qppw from "../../QPPWNamespace.js";
+import { normalizeWavefunction } from "./LinearAlgebraUtils.js";
+import type { GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 
 /**
  * Result from computing wavefunctions using Numerov
@@ -79,13 +79,7 @@ export function computeWavefunctionsNumerov(
  *
  * Uses shooting from both boundaries and matching at a turning point.
  */
-function computeSingleWavefunction(
-  energy: number,
-  V: number[],
-  xGrid: number[],
-  dx: number,
-  mass: number,
-): number[] {
+function computeSingleWavefunction(energy: number, V: number[], xGrid: number[], dx: number, mass: number): number[] {
   const N = xGrid.length;
 
   // Find matching point (classical turning point or middle)
@@ -106,11 +100,7 @@ function computeSingleWavefunction(
 /**
  * Find a good matching point (preferably near a classical turning point).
  */
-function findMatchingPoint(
-  energy: number,
-  V: number[],
-  xGrid: number[],
-): number {
+function findMatchingPoint(energy: number, V: number[], xGrid: number[]): number {
   const N = xGrid.length;
 
   // Look for classical turning point where V(x) = E
@@ -120,7 +110,7 @@ function findMatchingPoint(
   // Search for right turning point (from middle going right)
   let rightTurning = -1;
   for (let i = middle; i < N - 1; i++) {
-    if (V[i] <= energy && V[i + 1] > energy) {
+    if (V[i]! <= energy && V[i + 1]! > energy) {
       rightTurning = i;
       break;
     }
@@ -129,7 +119,7 @@ function findMatchingPoint(
   // Search for left turning point (from middle going left)
   let leftTurning = -1;
   for (let i = middle; i > 0; i--) {
-    if (V[i] <= energy && V[i - 1] > energy) {
+    if (V[i]! <= energy && V[i - 1]! > energy) {
       leftTurning = i;
       break;
     }
@@ -155,13 +145,7 @@ function findMatchingPoint(
  * Numerov formula: ψ_(j+1) = [(2 - 10f_j)ψ_j - (1+f_(j-1))ψ_(j-1)] / (1+f_(j+1))
  * where f_j = (h²/12) k²(x_j) and k²(x) = 2m(E - V(x))/ℏ²
  */
-function shootFromLeft(
-  energy: number,
-  V: number[],
-  dx: number,
-  mass: number,
-  matchIndex: number,
-): number[] {
+function shootFromLeft(energy: number, V: number[], dx: number, mass: number, matchIndex: number): number[] {
   const { HBAR } = QuantumConstants;
   const psi: number[] = new Array(matchIndex + 1).fill(0);
 
@@ -177,16 +161,16 @@ function shootFromLeft(
 
   // Numerov forward integration
   for (let j = 1; j < matchIndex; j++) {
-    const numerator = (2 - 10 * f[j]) * psi[j] - (1 + f[j - 1]) * psi[j - 1];
-    const denominator = 1 + f[j + 1];
+    const numerator = (2 - 10 * f[j]!) * psi[j]! - (1 + f[j - 1]!) * psi[j - 1]!;
+    const denominator = 1 + f[j + 1]!;
     psi[j + 1] = numerator / denominator;
 
     // Check for divergence
-    if (Math.abs(psi[j + 1]) > 1e50) {
+    if (Math.abs(psi[j + 1]!) > 1e50) {
       // Normalize to prevent overflow
-      const maxVal = Math.abs(psi[j + 1]);
+      const maxVal = Math.abs(psi[j + 1]!);
       for (let k = 0; k <= j + 1; k++) {
-        psi[k] /= maxVal;
+        psi[k]! /= maxVal;
       }
     }
   }
@@ -197,13 +181,7 @@ function shootFromLeft(
 /**
  * Shoot from right boundary using Numerov method.
  */
-function shootFromRight(
-  energy: number,
-  V: number[],
-  dx: number,
-  mass: number,
-  matchIndex: number,
-): number[] {
+function shootFromRight(energy: number, V: number[], dx: number, mass: number, matchIndex: number): number[] {
   const { HBAR } = QuantumConstants;
   const N = V.length;
   const psi: number[] = new Array(N - matchIndex).fill(0);
@@ -222,17 +200,16 @@ function shootFromRight(
   // Rearranged formula: ψ_(j-1) = [(2 - 10f_j)ψ_j - (1+f_(j+1))ψ_(j+1)] / (1+f_(j-1))
   for (let j = N - 2; j > matchIndex; j--) {
     const psiIdx = j - matchIndex;
-    const numerator =
-      (2 - 10 * f[j]) * psi[psiIdx] - (1 + f[j + 1]) * psi[psiIdx + 1];
-    const denominator = 1 + f[j - 1];
+    const numerator = (2 - 10 * f[j]!) * psi[psiIdx]! - (1 + f[j + 1]!) * psi[psiIdx + 1]!;
+    const denominator = 1 + f[j - 1]!;
     psi[psiIdx - 1] = numerator / denominator;
 
     // Check for divergence
-    if (Math.abs(psi[psiIdx - 1]) > 1e50) {
+    if (Math.abs(psi[psiIdx - 1]!) > 1e50) {
       // Normalize to prevent overflow
-      const maxVal = Math.abs(psi[psiIdx - 1]);
+      const maxVal = Math.abs(psi[psiIdx - 1]!);
       for (let k = psiIdx - 1; k < psi.length; k++) {
-        psi[k] /= maxVal;
+        psi[k]! /= maxVal;
       }
     }
   }
@@ -243,29 +220,24 @@ function shootFromRight(
 /**
  * Match left and right solutions at the matching point.
  */
-function matchSolutions(
-  psiLeft: number[],
-  psiRight: number[],
-  matchIndex: number,
-  N: number,
-): number[] {
+function matchSolutions(psiLeft: number[], psiRight: number[], matchIndex: number, N: number): number[] {
   const psi: number[] = new Array(N).fill(0);
 
   // Get values at matching point
-  const leftValue = psiLeft[psiLeft.length - 1];
-  const rightValue = psiRight[0];
+  const leftValue = psiLeft[psiLeft.length - 1]!;
+  const rightValue = psiRight[0]!;
 
   // Scale factor to match amplitudes
   const scale = Math.abs(rightValue) > 1e-30 ? leftValue / rightValue : 1;
 
   // Copy left part
   for (let i = 0; i <= matchIndex; i++) {
-    psi[i] = psiLeft[i];
+    psi[i] = psiLeft[i]!;
   }
 
   // Copy scaled right part
   for (let i = matchIndex + 1; i < N; i++) {
-    psi[i] = psiRight[i - matchIndex] * scale;
+    psi[i] = psiRight[i - matchIndex]! * scale;
   }
 
   return psi;
@@ -286,14 +258,9 @@ export function computeWavefunctionNumerov(
   mass: number,
   gridConfig: GridConfig,
 ): { wavefunction: number[]; xGrid: number[] } {
-  const result = computeWavefunctionsNumerov(
-    [energy],
-    potential,
-    mass,
-    gridConfig,
-  );
+  const result = computeWavefunctionsNumerov([energy], potential, mass, gridConfig);
   return {
-    wavefunction: result.wavefunctions[0],
+    wavefunction: result.wavefunctions[0]!,
     xGrid: result.xGrid,
   };
 }

@@ -7,7 +7,9 @@
  * Calculate factorial n!
  */
 export function factorial(n: number): number {
-  if (n <= 1) return 1;
+  if (n <= 1) {
+    return 1;
+  }
   let result = 1;
   for (let i = 2; i <= n; i++) {
     result *= i;
@@ -22,75 +24,74 @@ export function factorial(n: number): number {
  * H_(n+1)(x) = 2x*H_n(x) - 2n*H_(n-1)(x)
  */
 export function hermitePolynomial(n: number, x: number): number {
-  if (n === 0) return 1;
-  if (n === 1) return 2 * x;
-
-  let H_prev = 1;
-  let H_curr = 2 * x;
-
-  for (let i = 1; i < n; i++) {
-    const H_next = 2 * x * H_curr - 2 * i * H_prev;
-    H_prev = H_curr;
-    H_curr = H_next;
+  if (n === 0) {
+    return 1;
+  }
+  if (n === 1) {
+    return 2 * x;
   }
 
-  return H_curr;
+  let HPrev = 1;
+  let HCurr = 2 * x;
+
+  for (let i = 1; i < n; i++) {
+    const HNext = 2 * x * HCurr - 2 * i * HPrev;
+    HPrev = HCurr;
+    HCurr = HNext;
+  }
+
+  return HCurr;
 }
 
 /**
  * Calculate the associated Laguerre polynomial L_n^α(x) using recurrence relation.
  */
-export function associatedLaguerre(
-  n: number,
-  alpha: number,
-  x: number,
-): number {
-  if (n === 0) return 1;
-  if (n === 1) return 1 + alpha - x;
-
-  let L_prev = 1;
-  let L_curr = 1 + alpha - x;
-
-  for (let k = 1; k < n; k++) {
-    const L_next =
-      ((2 * k + 1 + alpha - x) * L_curr - (k + alpha) * L_prev) / (k + 1);
-    L_prev = L_curr;
-    L_curr = L_next;
+export function associatedLaguerre(n: number, alpha: number, x: number): number {
+  if (n === 0) {
+    return 1;
+  }
+  if (n === 1) {
+    return 1 + alpha - x;
   }
 
-  return L_curr;
+  let LPrev = 1;
+  let LCurr = 1 + alpha - x;
+
+  for (let k = 1; k < n; k++) {
+    const LNext = ((2 * k + 1 + alpha - x) * LCurr - (k + alpha) * LPrev) / (k + 1);
+    LPrev = LCurr;
+    LCurr = LNext;
+  }
+
+  return LCurr;
 }
 
 /**
  * Calculate the Jacobi polynomial P_n^(α,β)(x) using recurrence relation.
  */
-export function jacobiPolynomial(
-  n: number,
-  alpha: number,
-  beta: number,
-  x: number,
-): number {
-  if (n === 0) return 1;
-  if (n === 1) return 0.5 * (alpha - beta + (alpha + beta + 2) * x);
+export function jacobiPolynomial(n: number, alpha: number, beta: number, x: number): number {
+  if (n === 0) {
+    return 1;
+  }
+  if (n === 1) {
+    return 0.5 * (alpha - beta + (alpha + beta + 2) * x);
+  }
 
-  let P_prev = 1;
-  let P_curr = 0.5 * (alpha - beta + (alpha + beta + 2) * x);
+  let PPrev = 1;
+  let PCurr = 0.5 * (alpha - beta + (alpha + beta + 2) * x);
 
   for (let k = 1; k < n; k++) {
     const a1 = 2 * (k + 1) * (k + alpha + beta + 1) * (2 * k + alpha + beta);
     const a2 = (2 * k + alpha + beta + 1) * (alpha * alpha - beta * beta);
-    const a3 =
-      (2 * k + alpha + beta) *
-      (2 * k + alpha + beta + 1) *
-      (2 * k + alpha + beta + 2);
+    const a3 = (2 * k + alpha + beta) * (2 * k + alpha + beta + 1) * (2 * k + alpha + beta + 2);
     const a4 = 2 * (k + alpha) * (k + beta) * (2 * k + alpha + beta + 2);
 
-    const P_next = ((a2 + a3 * x) * P_curr - a4 * P_prev) / a1;
-    P_prev = P_curr;
-    P_curr = P_next;
+    const PNext = ((a2 + a3 * x) * PCurr - a4 * PPrev) / a1;
+    PPrev = PCurr;
+    PCurr = PNext;
   }
 
-  return P_curr;
+  return PCurr;
 }
 
 /**
@@ -111,9 +112,8 @@ export function gamma(n: number): number {
   // Lanczos approximation coefficients (g=7, n=9)
   const g = 7;
   const coefficients = [
-    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
-    771.32342877765313, -176.61502916214059, 12.507343278686905,
-    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
   ];
 
   // Use reflection formula for n < 0.5
@@ -122,13 +122,13 @@ export function gamma(n: number): number {
   }
 
   const x = n - 1;
-  let a = coefficients[0];
+  let a = coefficients[0]!;
   for (let i = 1; i < coefficients.length; i++) {
-    a += coefficients[i] / (x + i);
+    a += coefficients[i]! / (x + i);
   }
 
   const t = x + g + 0.5;
-  return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a;
+  return Math.sqrt(2 * Math.PI) * t ** (x + 0.5) * Math.exp(-t) * a;
 }
 
 /**
@@ -193,7 +193,9 @@ export function airyAi(x: number): number {
     for (let k = 1; k <= 20; k++) {
       term1 *= (x * x * x) / ((3 * k - 1) * (3 * k));
       sum1 += term1;
-      if (Math.abs(term1) < 1e-15) break;
+      if (Math.abs(term1) < 1e-15) {
+        break;
+      }
     }
 
     let term2 = x;
@@ -201,7 +203,9 @@ export function airyAi(x: number): number {
     for (let k = 1; k <= 20; k++) {
       term2 *= (x * x * x) / (3 * k * (3 * k + 1));
       sum2 += term2;
-      if (Math.abs(term2) < 1e-15) break;
+      if (Math.abs(term2) < 1e-15) {
+        break;
+      }
     }
 
     return c1 * sum1 - c2 * sum2;
@@ -209,16 +213,16 @@ export function airyAi(x: number): number {
     // Asymptotic expansion for large positive x
     // Ai(x) ≈ (1/(2√π)) * x^(-1/4) * exp(-ζ) * (1 - ...)
     // where ζ = (2/3) * x^(3/2)
-    const zeta = (2.0 / 3.0) * Math.pow(x, 1.5);
-    const factor = (0.5 / Math.sqrt(Math.PI)) * Math.pow(x, -0.25);
+    const zeta = (2.0 / 3.0) * x ** 1.5;
+    const factor = (0.5 / Math.sqrt(Math.PI)) * x ** -0.25;
     return factor * Math.exp(-zeta);
   } else {
     // Asymptotic expansion for large negative x
     // Ai(x) ≈ (1/√π) * |x|^(-1/4) * sin(ζ + π/4)
     // where ζ = (2/3) * |x|^(3/2)
     const absX = Math.abs(x);
-    const zeta = (2.0 / 3.0) * Math.pow(absX, 1.5);
-    const factor = (1.0 / Math.sqrt(Math.PI)) * Math.pow(absX, -0.25);
+    const zeta = (2.0 / 3.0) * absX ** 1.5;
+    const factor = (1.0 / Math.sqrt(Math.PI)) * absX ** -0.25;
     return factor * Math.sin(zeta + Math.PI / 4);
   }
 }
@@ -242,7 +246,9 @@ export function airyBi(x: number): number {
     for (let k = 1; k <= 20; k++) {
       term1 *= (x * x * x) / ((3 * k - 1) * (3 * k));
       sum1 += term1;
-      if (Math.abs(term1) < 1e-15) break;
+      if (Math.abs(term1) < 1e-15) {
+        break;
+      }
     }
 
     let term2 = x;
@@ -250,7 +256,9 @@ export function airyBi(x: number): number {
     for (let k = 1; k <= 20; k++) {
       term2 *= (x * x * x) / (3 * k * (3 * k + 1));
       sum2 += term2;
-      if (Math.abs(term2) < 1e-15) break;
+      if (Math.abs(term2) < 1e-15) {
+        break;
+      }
     }
 
     return c3 * sum1 + c4 * sum2;
@@ -258,16 +266,16 @@ export function airyBi(x: number): number {
     // Asymptotic expansion for large positive x
     // Bi(x) ≈ (1/√π) * x^(-1/4) * exp(ζ)
     // where ζ = (2/3) * x^(3/2)
-    const zeta = (2.0 / 3.0) * Math.pow(x, 1.5);
-    const factor = (1.0 / Math.sqrt(Math.PI)) * Math.pow(x, -0.25);
+    const zeta = (2.0 / 3.0) * x ** 1.5;
+    const factor = (1.0 / Math.sqrt(Math.PI)) * x ** -0.25;
     return factor * Math.exp(zeta);
   } else {
     // Asymptotic expansion for large negative x
     // Bi(x) ≈ (1/√π) * |x|^(-1/4) * cos(ζ + π/4)
     // where ζ = (2/3) * |x|^(3/2)
     const absX = Math.abs(x);
-    const zeta = (2.0 / 3.0) * Math.pow(absX, 1.5);
-    const factor = (1.0 / Math.sqrt(Math.PI)) * Math.pow(absX, -0.25);
+    const zeta = (2.0 / 3.0) * absX ** 1.5;
+    const factor = (1.0 / Math.sqrt(Math.PI)) * absX ** -0.25;
     return factor * Math.cos(zeta + Math.PI / 4);
   }
 }

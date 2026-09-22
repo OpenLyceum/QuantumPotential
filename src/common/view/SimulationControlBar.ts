@@ -3,13 +3,12 @@
  * This is displayed at the bottom of quantum physics screens.
  */
 
-import { Node, Text, HBox, VBox, Rectangle } from "scenerystack/scenery";
-import { TimeControlNode, PhetFont } from "scenerystack/scenery-phet";
-
 import { DerivedProperty } from "scenerystack/axon";
-import { BaseModel } from "../model/BaseModel.js";
-import QPPWColors from "../../QPPWColors.js";
+import { HBox, Node, Rectangle, Text, VBox } from "scenerystack/scenery";
+import { PhetFont, TimeControlNode } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
+import QPPWColors from "../../QPPWColors.js";
+import { BaseModel } from "../model/BaseModel.js";
 
 export class SimulationControlBar extends Node {
   private readonly model: BaseModel;
@@ -36,20 +35,13 @@ export class SimulationControlBar extends Node {
       fill: QPPWColors.textFillProperty,
     });
 
-    this.timeText = new Text(
-      stringManager.timeFormatStringProperty.value.replace("{{time}}", "0.00"),
-      {
-        font: new PhetFont({ size: 16, weight: "bold" }),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    this.timeText = new Text(stringManager.timeFormatStringProperty.value.replace("{{time}}", "0.00"), {
+      font: new PhetFont({ size: 16, weight: "bold" }),
+      fill: QPPWColors.textFillProperty,
+    });
 
     this.model.timeProperty.link((time: number) => {
-      this.timeText.string =
-        stringManager.timeFormatStringProperty.value.replace(
-          "{{time}}",
-          time.toFixed(2),
-        );
+      this.timeText.string = stringManager.timeFormatStringProperty.value.replace("{{time}}", time.toFixed(2));
     });
 
     const timeDisplayVBox = new VBox({
@@ -94,9 +86,8 @@ export class SimulationControlBar extends Node {
         },
         playPauseButtonOptions: {
           // PDOM
-          innerContent: new DerivedProperty(
-            [this.model.isPlayingProperty],
-            (isPlaying) => (isPlaying ? "Pause" : "Play"),
+          innerContent: new DerivedProperty([this.model.isPlayingProperty], (isPlaying) =>
+            isPlaying ? "Pause" : "Play",
           ),
           // TODO: Add helpText when PhET accessibility is fully configured
           // helpText:

@@ -7,8 +7,8 @@
  * content when users first navigate to a screen.
  */
 
+import { DerivedProperty, type NumberProperty } from "scenerystack/axon";
 import { Node } from "scenerystack/scenery";
-import { DerivedProperty, NumberProperty } from "scenerystack/axon";
 import type { BaseModel } from "../../model/BaseModel.js";
 import { QPPWDescriber } from "./QPPWDescriber.js";
 
@@ -63,20 +63,16 @@ export class ScreenSummaryNode extends Node {
     return new Node({
       tagName: "p",
       innerContent: new DerivedProperty(
-        [
-          this.model.potentialTypeProperty,
-          this.model.selectedEnergyLevelIndexProperty,
-        ],
+        [this.model.potentialTypeProperty, this.model.selectedEnergyLevelIndexProperty],
         (potentialType, levelIndex) => {
           const energyLevels = this.model.getEnergyLevels();
-          const potentialName =
-            QPPWDescriber.getPotentialTypeName(potentialType);
+          const potentialName = QPPWDescriber.getPotentialTypeName(potentialType);
 
           if (energyLevels.length === 0) {
             return `Currently exploring a ${potentialName} potential well. No bound states found.`;
           }
 
-          const energy = energyLevels[levelIndex];
+          const energy = energyLevels[levelIndex]!;
           const levelNumber = levelIndex + 1; // Convert to 1-indexed for display
           const totalLevels = energyLevels.length;
 
@@ -102,11 +98,7 @@ export class ScreenSummaryNode extends Node {
     // Create appropriate DerivedProperty based on available parameters
     const innerContent = hasDepth
       ? new DerivedProperty(
-          [
-            model.particleMassProperty,
-            model.wellWidthProperty,
-            model.wellDepthProperty as NumberProperty,
-          ],
+          [model.particleMassProperty, model.wellWidthProperty, model.wellDepthProperty as NumberProperty],
           (mass: number, width: number, depth: number) => {
             return (
               `Particle mass: ${mass.toFixed(2)} electron masses. ` +
@@ -115,15 +107,9 @@ export class ScreenSummaryNode extends Node {
             );
           },
         )
-      : new DerivedProperty(
-          [model.particleMassProperty, model.wellWidthProperty],
-          (mass: number, width: number) => {
-            return (
-              `Particle mass: ${mass.toFixed(2)} electron masses. ` +
-              `Well width: ${width.toFixed(2)} nanometers.`
-            );
-          },
-        );
+      : new DerivedProperty([model.particleMassProperty, model.wellWidthProperty], (mass: number, width: number) => {
+          return `Particle mass: ${mass.toFixed(2)} electron masses. Well width: ${width.toFixed(2)} nanometers.`;
+        });
 
     return new Node({
       tagName: "p",

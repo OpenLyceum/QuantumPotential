@@ -13,13 +13,9 @@
  * @abstract
  */
 
+import type { AnalyticalSolution } from "../analytical-solutions/AnalyticalSolution.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { BasePotential } from "./BasePotential.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-} from "../PotentialFunction.js";
-import { AnalyticalSolution } from "../analytical-solutions/AnalyticalSolution.js";
 
 export abstract class AnalyticalPotential extends BasePotential {
   protected solution: AnalyticalSolution;
@@ -62,15 +58,8 @@ export abstract class AnalyticalPotential extends BasePotential {
    * @param xGrid - Array of x positions in meters
    * @returns Array of normalized classical probability density values (in 1/meters)
    */
-  public calculateClassicalProbability(
-    energy: number,
-    xGrid: number[],
-  ): number[] {
-    return this.solution.calculateClassicalProbability(
-      energy,
-      this.mass,
-      xGrid,
-    );
+  public calculateClassicalProbability(energy: number, xGrid: number[]): number[] {
+    return this.solution.calculateClassicalProbability(energy, this.mass, xGrid);
   }
 
   /**
@@ -81,10 +70,7 @@ export abstract class AnalyticalPotential extends BasePotential {
    * @param energy - Energy of the eigenstate in Joules (may be needed for some potentials)
    * @returns Array of x positions (in meters) where the wavefunction is zero
    */
-  public calculateWavefunctionZeros(
-    stateIndex: number,
-    energy: number,
-  ): number[] {
+  public calculateWavefunctionZeros(stateIndex: number, energy: number): number[] {
     return this.solution.calculateWavefunctionZeros(stateIndex, energy);
   }
 
@@ -95,9 +81,7 @@ export abstract class AnalyticalPotential extends BasePotential {
    * @param energy - Energy of the particle in Joules
    * @returns Array of turning point pairs
    */
-  public calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  public calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     return this.solution.calculateTurningPoints(energy);
   }
 
@@ -109,14 +93,8 @@ export abstract class AnalyticalPotential extends BasePotential {
    * @param xGrid - Array of x positions in meters where derivatives should be evaluated
    * @returns Array of second derivative values
    */
-  public calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return this.solution.calculateWavefunctionSecondDerivative(
-      stateIndex,
-      xGrid,
-    );
+  public calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return this.solution.calculateWavefunctionSecondDerivative(stateIndex, xGrid);
   }
 
   /**
@@ -135,12 +113,7 @@ export abstract class AnalyticalPotential extends BasePotential {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number } {
-    return this.solution.calculateWavefunctionMinMax(
-      stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
+    return this.solution.calculateWavefunctionMinMax(stateIndex, xMin, xMax, numPoints);
   }
 
   /**
@@ -163,14 +136,7 @@ export abstract class AnalyticalPotential extends BasePotential {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number } {
-    return this.solution.calculateSuperpositionMinMax(
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
+    return this.solution.calculateSuperpositionMinMax(coefficients, energies, time, xMin, xMax, numPoints);
   }
 
   /**

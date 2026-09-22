@@ -169,17 +169,9 @@
   "valueWithElectronMass": "{{value}} mₑ",
   "valueWithElectronVoltsPerNanometer": "{{value}} eV/nm",
   "percentageValue": "{{value}}%",
-  "keyboardShortcutsTitle": "Keyboard Shortcuts",
-  "keyboardShortcutsSimulationControls": "Simulation Controls",
-  "keyboardShortcutsPlayPauseDescription": "Play or pause the simulation",
-  "keyboardShortcutsResetDescription": "Reset the simulation",
   "keyboardShortcutsEnergyLevelNavigation": "Energy Level Navigation",
   "keyboardShortcutsArrowUpRightDescription": "Move to higher energy level",
   "keyboardShortcutsArrowDownLeftDescription": "Move to lower energy level",
   "keyboardShortcutsHomeDescription": "Jump to ground state",
-  "keyboardShortcutsEndDescription": "Jump to highest energy level",
-  "keyboardShortcutsGraphInteractions": "Graph Interactions",
-  "keyboardShortcutsDoubleClickResetZoom": "Double-click to reset zoom",
-  "keyboardShortcutsMouseWheelZoom": "Mouse wheel to zoom in/out",
-  "keyboardShortcutsDragToPan": "Drag to pan the view"
+  "keyboardShortcutsEndDescription": "Jump to highest energy level"
 }

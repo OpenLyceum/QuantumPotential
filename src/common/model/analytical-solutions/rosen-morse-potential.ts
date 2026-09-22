@@ -37,29 +37,29 @@
  *   where s = λ_eff - n - 1/2, α = s - μ, β = s + μ, and P_n^(α,β) are Jacobi polynomials
  */
 
+import Logger from "../../utils/Logger.js";
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { jacobiPolynomial } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { jacobiPolynomial } from "./math-utilities.js";
 
 /**
  * Class-based implementation of Rosen-Morse potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class RosenMorsePotentialSolution extends AnalyticalSolution {
-  constructor(
-    private potentialDepth: number,
-    private barrierHeight: number,
-    private wellWidth: number,
-    private mass: number,
-  ) {
+  private potentialDepth: number;
+  private barrierHeight: number;
+  private wellWidth: number;
+  private mass: number;
+
+  constructor(potentialDepth: number, barrierHeight: number, wellWidth: number, mass: number) {
     super();
+    this.potentialDepth = potentialDepth;
+    this.barrierHeight = barrierHeight;
+    this.wellWidth = wellWidth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
@@ -74,18 +74,10 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
   }
 
   createPotential(): PotentialFunction {
-    return createRosenMorsePotential(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-    );
+    return createRosenMorsePotential(this.potentialDepth, this.barrierHeight, this.wellWidth);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return calculateRosenMorsePotentialClassicalProbability(
       this.potentialDepth,
       this.barrierHeight,
@@ -106,9 +98,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateRosenMorsePotentialTurningPoints(
       this.potentialDepth,
       this.barrierHeight,
@@ -118,10 +108,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateRosenMorsePotentialWavefunctionFirstDerivative(
       this.potentialDepth,
       this.barrierHeight,
@@ -132,10 +119,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateRosenMorsePotentialWavefunctionSecondDerivative(
       this.potentialDepth,
       this.barrierHeight,
@@ -191,13 +175,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     numMomentumPoints?: number,
     pMax?: number,
   ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.potentialDepth,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.potentialDepth, numMomentumPoints, pMax);
   }
 }
 
@@ -238,12 +216,10 @@ export function solveRosenMorsePotential(
   // mu = (a * sqrt(2m) / (2*hbar)) * V1 / sqrt(V0)
   const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
 
-  console.log(
+  Logger.debug(
     `Rosen-Morse parameters: lambda=${lambda.toFixed(3)}, mu=${mu.toFixed(3)}, |mu|=${Math.abs(mu).toFixed(3)}`,
   );
-  console.log(
-    `V0=${(V0 * 6.242e18).toFixed(3)} eV, V1=${(V1 * 6.242e18).toFixed(3)} eV`,
-  );
+  Logger.debug(`V0=${(V0 * 6.242e18).toFixed(3)} eV, V1=${(V1 * 6.242e18).toFixed(3)} eV`);
 
   // For bound states, we need λ > |μ|
   if (lambda <= Math.abs(mu)) {
@@ -275,9 +251,9 @@ export function solveRosenMorsePotential(
   const energyFactor = (HBAR * HBAR) / (2 * mass * a * a);
 
   for (let n = 0; n < actualNumStates; n++) {
-    const s_n = lambdaEff - n - 0.5;
+    const sN = lambdaEff - n - 0.5;
     // Standard formula: E_n = -(ℏ²/2ma²) * s_n²
-    const energy = -energyFactor * s_n * s_n;
+    const energy = -energyFactor * sN * sN;
 
     energies.push(energy);
   }
@@ -298,8 +274,8 @@ export function solveRosenMorsePotential(
   for (let n = 0; n < actualNumStates; n++) {
     const psiRaw: number[] = [];
     const s = lambdaEff - n - 0.5;
-    const alpha_jac = s - mu;
-    const beta_jac = s + mu;
+    const alphaJac = s - mu;
+    const betaJac = s + mu;
 
     // First, calculate unnormalized wavefunction
     for (const x of xGrid) {
@@ -307,8 +283,8 @@ export function solveRosenMorsePotential(
       const sechVal = 1.0 / Math.cosh(x / a);
 
       // Calculate wavefunction without normalization
-      const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, tanhVal);
-      const value = Math.pow(sechVal, s) * Math.exp(mu * tanhVal) * jacobiPoly;
+      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
+      const value = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
 
       psiRaw.push(value);
     }
@@ -316,7 +292,7 @@ export function solveRosenMorsePotential(
     // Normalize wavefunction numerically to ensure ∫|ψ|² dx = 1
     let normSq = 0;
     for (let i = 0; i < psiRaw.length; i++) {
-      normSq += psiRaw[i] * psiRaw[i] * dx;
+      normSq += psiRaw[i]! * psiRaw[i]! * dx;
     }
     const norm = 1 / Math.sqrt(normSq);
     const wavefunction = psiRaw.map((psi) => norm * psi);
@@ -377,11 +353,7 @@ export function calculateRosenMorsePotentialClassicalProbability(
   mass: number,
   xGrid: number[],
 ): number[] {
-  const potentialFn = createRosenMorsePotential(
-    potentialDepth,
-    barrierHeight,
-    wellWidth,
-  );
+  const potentialFn = createRosenMorsePotential(potentialDepth, barrierHeight, wellWidth);
 
   const classicalProbability: number[] = [];
   let integralSum = 0;
@@ -389,7 +361,7 @@ export function calculateRosenMorsePotentialClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -401,7 +373,7 @@ export function calculateRosenMorsePotentialClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -411,8 +383,8 @@ export function calculateRosenMorsePotentialClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -420,7 +392,7 @@ export function calculateRosenMorsePotentialClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -443,11 +415,7 @@ export function calculateRosenMorsePotentialTurningPoints(
   wellWidth: number,
   energy: number,
 ): { left: number; right: number } {
-  const potentialFn = createRosenMorsePotential(
-    potentialDepth,
-    barrierHeight,
-    wellWidth,
-  );
+  const potentialFn = createRosenMorsePotential(potentialDepth, barrierHeight, wellWidth);
   const a = wellWidth;
 
   // Search for turning points using bisection
@@ -520,8 +488,8 @@ function computeRosenMorseNormalization(
   s: number,
   mu: number,
   n: number,
-  alpha_jac: number,
-  beta_jac: number,
+  alphaJac: number,
+  betaJac: number,
   xMin: number = -20e-9,
   xMax: number = 20e-9,
   numPoints: number = 1000,
@@ -533,8 +501,8 @@ function computeRosenMorseNormalization(
     const x = xMin + i * dx;
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, tanhVal);
-    const psi = Math.pow(sechVal, s) * Math.exp(mu * tanhVal) * jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
+    const psi = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
     normSq += psi * psi * dx;
   }
 
@@ -572,8 +540,8 @@ export function calculateRosenMorsePotentialWavefunctionZeros(
   const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
 
   const s = lambdaEff - n - 0.5;
-  const alpha_jac = s - mu;
-  const beta_jac = s + mu;
+  const alphaJac = s - mu;
+  const betaJac = s + mu;
 
   // Ground state has no zeros
   if (n === 0) {
@@ -587,15 +555,15 @@ export function calculateRosenMorsePotentialWavefunctionZeros(
   let prevX = -searchRange;
   const prevTanh = Math.tanh(prevX / a);
   const prevSech = 1.0 / Math.cosh(prevX / a);
-  const prevJacobi = jacobiPolynomial(n, alpha_jac, beta_jac, prevTanh);
-  let prevVal = Math.pow(prevSech, s) * Math.exp(mu * prevTanh) * prevJacobi;
+  const prevJacobi = jacobiPolynomial(n, alphaJac, betaJac, prevTanh);
+  let prevVal = prevSech ** s * Math.exp(mu * prevTanh) * prevJacobi;
 
   for (let i = 1; i <= numSamples; i++) {
     const x = -searchRange + i * dx;
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, tanhVal);
-    const val = Math.pow(sechVal, s) * Math.exp(mu * tanhVal) * jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
+    const val = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
 
     // Sign change detected
     if (prevVal * val < 0) {
@@ -606,9 +574,8 @@ export function calculateRosenMorsePotentialWavefunctionZeros(
         const mid = (left + right) / 2;
         const midTanh = Math.tanh(mid / a);
         const midSech = 1.0 / Math.cosh(mid / a);
-        const midJacobi = jacobiPolynomial(n, alpha_jac, beta_jac, midTanh);
-        const valMid =
-          Math.pow(midSech, s) * Math.exp(mu * midTanh) * midJacobi;
+        const midJacobi = jacobiPolynomial(n, alphaJac, betaJac, midTanh);
+        const valMid = midSech ** s * Math.exp(mu * midTanh) * midJacobi;
 
         if (Math.abs(valMid) < 1e-12) {
           zeros.push(mid);
@@ -665,23 +632,13 @@ export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
   const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
 
   const s = lambdaEff - n - 0.5;
-  const alpha_jac = s - mu;
-  const beta_jac = s + mu;
+  const alphaJac = s - mu;
+  const betaJac = s + mu;
 
   // Compute normalization constant
   const xMin = Math.min(...xGrid);
   const xMax = Math.max(...xGrid);
-  const normalization = computeRosenMorseNormalization(
-    a,
-    s,
-    mu,
-    n,
-    alpha_jac,
-    beta_jac,
-    xMin,
-    xMax,
-    1000,
-  );
+  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, 1000);
 
   const firstDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -693,21 +650,13 @@ export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
 
     const tanhMinus = Math.tanh(xMinus / a);
     const sechMinus = 1.0 / Math.cosh(xMinus / a);
-    const jacobiMinus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhMinus);
-    const psiMinus =
-      normalization *
-      Math.pow(sechMinus, s) *
-      Math.exp(mu * tanhMinus) *
-      jacobiMinus;
+    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
+    const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
 
     const tanhPlus = Math.tanh(xPlus / a);
     const sechPlus = 1.0 / Math.cosh(xPlus / a);
-    const jacobiPlus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhPlus);
-    const psiPlus =
-      normalization *
-      Math.pow(sechPlus, s) *
-      Math.exp(mu * tanhPlus) *
-      jacobiPlus;
+    const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
+    const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
 
     // First derivative using central difference
     const firstDeriv = (psiPlus - psiMinus) / (2 * h);
@@ -748,23 +697,13 @@ export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
   const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
 
   const s = lambdaEff - n - 0.5;
-  const alpha_jac = s - mu;
-  const beta_jac = s + mu;
+  const alphaJac = s - mu;
+  const betaJac = s + mu;
 
   // Compute normalization constant
   const xMin = Math.min(...xGrid);
   const xMax = Math.max(...xGrid);
-  const normalization = computeRosenMorseNormalization(
-    a,
-    s,
-    mu,
-    n,
-    alpha_jac,
-    beta_jac,
-    xMin,
-    xMax,
-    1000,
-  );
+  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, 1000);
 
   const secondDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -776,27 +715,18 @@ export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
 
     const tanhMinus = Math.tanh(xMinus / a);
     const sechMinus = 1.0 / Math.cosh(xMinus / a);
-    const jacobiMinus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhMinus);
-    const psiMinus =
-      normalization *
-      Math.pow(sechMinus, s) *
-      Math.exp(mu * tanhMinus) *
-      jacobiMinus;
+    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
+    const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
 
     const tanh = Math.tanh(x / a);
     const sech = 1.0 / Math.cosh(x / a);
-    const jacobi = jacobiPolynomial(n, alpha_jac, beta_jac, tanh);
-    const psi =
-      normalization * Math.pow(sech, s) * Math.exp(mu * tanh) * jacobi;
+    const jacobi = jacobiPolynomial(n, alphaJac, betaJac, tanh);
+    const psi = normalization * sech ** s * Math.exp(mu * tanh) * jacobi;
 
     const tanhPlus = Math.tanh(xPlus / a);
     const sechPlus = 1.0 / Math.cosh(xPlus / a);
-    const jacobiPlus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhPlus);
-    const psiPlus =
-      normalization *
-      Math.pow(sechPlus, s) *
-      Math.exp(mu * tanhPlus) *
-      jacobiPlus;
+    const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
+    const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
 
     // Second derivative using central difference
     const secondDeriv = (psiPlus - 2 * psi + psiMinus) / (h * h);
@@ -840,21 +770,11 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
   const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
 
   const s = lambdaEff - n - 0.5;
-  const alpha_jac = s - mu;
-  const beta_jac = s + mu;
+  const alphaJac = s - mu;
+  const betaJac = s + mu;
 
   // Compute normalization constant
-  const normalization = computeRosenMorseNormalization(
-    a,
-    s,
-    mu,
-    n,
-    alpha_jac,
-    beta_jac,
-    xMin,
-    xMax,
-    numPoints,
-  );
+  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, numPoints);
 
   let min = Infinity;
   let max = -Infinity;
@@ -869,12 +789,8 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
 
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, tanhVal);
-    const psi =
-      normalization *
-      Math.pow(sechVal, s) *
-      Math.exp(mu * tanhVal) *
-      jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
+    const psi = normalization * sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
 
     // Calculate derivative using central difference for extrema detection
     let derivative = 0;
@@ -884,27 +800,23 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
 
       const tanhMinus = Math.tanh(xMinus / a);
       const sechMinus = 1.0 / Math.cosh(xMinus / a);
-      const jacobiMinus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhMinus);
-      const psiMinus =
-        normalization *
-        Math.pow(sechMinus, s) *
-        Math.exp(mu * tanhMinus) *
-        jacobiMinus;
+      const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
+      const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
 
       const tanhPlus = Math.tanh(xPlus / a);
       const sechPlus = 1.0 / Math.cosh(xPlus / a);
-      const jacobiPlus = jacobiPolynomial(n, alpha_jac, beta_jac, tanhPlus);
-      const psiPlus =
-        normalization *
-        Math.pow(sechPlus, s) *
-        Math.exp(mu * tanhPlus) *
-        jacobiPlus;
+      const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
+      const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
 
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -972,34 +884,20 @@ export function calculateRosenMorsePotentialSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       const s = lambdaEff - n - 0.5;
-      const alpha_jac = s - mu;
-      const beta_jac = s + mu;
+      const alphaJac = s - mu;
+      const betaJac = s + mu;
 
       // Compute normalization constant for this state
-      const normalization = computeRosenMorseNormalization(
-        a,
-        s,
-        mu,
-        n,
-        alpha_jac,
-        beta_jac,
-        xMin,
-        xMax,
-        numPoints,
-      );
+      const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, numPoints);
 
       const tanhVal = Math.tanh(x / a);
       const sechVal = 1.0 / Math.cosh(x / a);
-      const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, tanhVal);
-      const psi =
-        normalization *
-        Math.pow(sechVal, s) *
-        Math.exp(mu * tanhVal) *
-        jacobiPoly;
+      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
+      const psi = normalization * sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
 
       // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
       const phase = (-energy * time) / HBAR;
@@ -1010,8 +908,12 @@ export function calculateRosenMorsePotentialSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

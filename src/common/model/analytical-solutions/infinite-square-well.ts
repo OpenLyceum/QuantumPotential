@@ -23,13 +23,8 @@
  *   ψ_n(x) = 0,  |x| > L/2
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 
 /**
@@ -39,9 +34,7 @@ import { AnalyticalSolution } from "./AnalyticalSolution.js";
  * @param wellWidth - Width of the well (L) in meters
  * @returns Potential function V(x) in Joules
  */
-export function createInfiniteWellPotential(
-  wellWidth: number,
-): PotentialFunction {
+export function createInfiniteWellPotential(wellWidth: number): PotentialFunction {
   const halfWidth = wellWidth / 2;
   return (x: number) => {
     if (x >= -halfWidth && x <= halfWidth) {
@@ -99,10 +92,7 @@ export function calculateInfiniteWellClassicalProbability(
  * @param stateIndex - Index of the eigenstate (0 for ground state, 1 for first excited, etc.)
  * @returns Array of x positions (in meters) where the wavefunction is zero
  */
-export function calculateInfiniteWellWavefunctionZeros(
-  wellWidth: number,
-  stateIndex: number,
-): number[] {
+export function calculateInfiniteWellWavefunctionZeros(wellWidth: number, stateIndex: number): number[] {
   const n = stateIndex + 1; // Quantum number (1, 2, 3, ...)
   const zeros: number[] = [];
 
@@ -171,8 +161,7 @@ export function calculateInfiniteWellWavefunctionFirstDerivative(
       const xShifted = x + halfWidth;
 
       // ψ'_n(x) = normalization * waveFactor * cos(waveFactor * xShifted)
-      const firstDeriv =
-        normalization * waveFactor * Math.cos(waveFactor * xShifted);
+      const firstDeriv = normalization * waveFactor * Math.cos(waveFactor * xShifted);
       firstDerivative.push(firstDeriv);
     } else {
       // Outside the well, wavefunction and derivatives are zero
@@ -214,11 +203,7 @@ export function calculateInfiniteWellWavefunctionSecondDerivative(
       const xShifted = x + halfWidth;
 
       // ψ''_n(x) = -normalization * waveFactor² * sin(waveFactor * xShifted)
-      const secondDeriv =
-        -normalization *
-        waveFactor *
-        waveFactor *
-        Math.sin(waveFactor * xShifted);
+      const secondDeriv = -normalization * waveFactor * waveFactor * Math.sin(waveFactor * xShifted);
       secondDerivative.push(secondDeriv);
     } else {
       // Outside the well, wavefunction and derivatives are zero
@@ -281,8 +266,12 @@ export function calculateInfiniteWellWavefunctionMinMax(
       derivative = 0;
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -342,8 +331,8 @@ export function calculateInfiniteWellSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       // Calculate wavefunction value
       let psi: number;
@@ -365,8 +354,12 @@ export function calculateInfiniteWellSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };
@@ -413,8 +406,8 @@ export function calculateInfiniteWellFourierTransform(
       // Using sin(θ) = (e^(iθ) - e^(-iθ))/(2i)
       // and ∫ e^(iax) e^(-ibx) dx = e^(i(a-b)x) / (i(a-b))
 
-      const k_n = (n * Math.PI) / L; // Wave number of the nth state
-      const p_hbar = p / HBAR; // p/ℏ
+      const kN = (n * Math.PI) / L; // Wave number of the nth state
+      const pHbar = p / HBAR; // p/ℏ
 
       // Normalization from position space
       const normX = Math.sqrt(2 / L);
@@ -447,57 +440,52 @@ export function calculateInfiniteWellFourierTransform(
         //
         // = e^(ipL/(2ℏ))/(2i) [(e^(i(k_n - p/ℏ)L) - 1)/(i(k_n - p/ℏ)) - (e^(-i(k_n + p/ℏ)L) - 1)/(-i(k_n + p/ℏ))]
 
-        const alpha_plus = k_n - p_hbar;
-        const alpha_minus = k_n + p_hbar;
+        const alphaPlus = kN - pHbar;
+        const alphaMinus = kN + pHbar;
 
         const phase = (p * L) / (2 * HBAR);
 
         // Compute the integrals
-        let integral_real = 0;
-        let integral_imag = 0;
+        let integralReal = 0;
+        let integralImag = 0;
 
         // First term: (e^(iα₊L) - 1)/(iα₊)
-        if (Math.abs(alpha_plus) > 1e-10) {
-          const angle_plus = alpha_plus * L;
-          const exp_plus_real = Math.cos(angle_plus) - 1;
-          const exp_plus_imag = Math.sin(angle_plus);
+        if (Math.abs(alphaPlus) > 1e-10) {
+          const anglePlus = alphaPlus * L;
+          const expPlusReal = Math.cos(anglePlus) - 1;
+          const expPlusImag = Math.sin(anglePlus);
           // Divide by iα₊ = multiply by -i/α₊
-          const term1_real = exp_plus_imag / alpha_plus;
-          const term1_imag = -exp_plus_real / alpha_plus;
-          integral_real += term1_real;
-          integral_imag += term1_imag;
+          const term1Real = expPlusImag / alphaPlus;
+          const term1Imag = -expPlusReal / alphaPlus;
+          integralReal += term1Real;
+          integralImag += term1Imag;
         } else {
           // Limit as α₊ → 0: L
-          integral_real += L;
+          integralReal += L;
         }
 
         // Second term: -(e^(-iα₋L) - 1)/(-iα₋)
-        if (Math.abs(alpha_minus) > 1e-10) {
-          const angle_minus = -alpha_minus * L;
-          const exp_minus_real = Math.cos(angle_minus) - 1;
-          const exp_minus_imag = Math.sin(angle_minus);
+        if (Math.abs(alphaMinus) > 1e-10) {
+          const angleMinus = -alphaMinus * L;
+          const expMinusReal = Math.cos(angleMinus) - 1;
+          const expMinusImag = Math.sin(angleMinus);
           // Divide by -iα₋ = multiply by i/α₋
-          const term2_real = -exp_minus_imag / alpha_minus;
-          const term2_imag = exp_minus_real / alpha_minus;
-          integral_real += term2_real;
-          integral_imag += term2_imag;
+          const term2Real = -expMinusImag / alphaMinus;
+          const term2Imag = expMinusReal / alphaMinus;
+          integralReal += term2Real;
+          integralImag += term2Imag;
         } else {
           // Limit as α₋ → 0: -L
-          integral_real -= L;
+          integralReal -= L;
         }
 
         // Multiply by e^(ipL/(2ℏ))/(2i)
-        const cos_phase = Math.cos(phase);
-        const sin_phase = Math.sin(phase);
-        const final_real =
-          (cos_phase * integral_imag + sin_phase * integral_real) / 2;
-        const final_imag =
-          (cos_phase * integral_real - sin_phase * integral_imag) / 2;
+        const cosPhase = Math.cos(phase);
+        const sinPhase = Math.sin(phase);
+        const finalReal = (cosPhase * integralImag + sinPhase * integralReal) / 2;
+        const finalImag = (cosPhase * integralReal - sinPhase * integralImag) / 2;
 
-        magnitude =
-          normX *
-          normFT *
-          Math.sqrt(final_real * final_real + final_imag * final_imag);
+        magnitude = normX * normFT * Math.sqrt(finalReal * finalReal + finalImag * finalImag);
       }
 
       phiP.push(magnitude);
@@ -514,11 +502,13 @@ export function calculateInfiniteWellFourierTransform(
  * Extends the AnalyticalSolution abstract base class.
  */
 export class InfiniteSquareWellSolution extends AnalyticalSolution {
-  constructor(
-    private wellWidth: number,
-    private mass: number,
-  ) {
+  private wellWidth: number;
+  private mass: number;
+
+  constructor(wellWidth: number, mass: number) {
     super();
+    this.wellWidth = wellWidth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
@@ -529,50 +519,25 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     return createInfiniteWellPotential(this.wellWidth);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateInfiniteWellClassicalProbability(
-      this.wellWidth,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateInfiniteWellClassicalProbability(this.wellWidth, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
     return calculateInfiniteWellWavefunctionZeros(this.wellWidth, stateIndex);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateInfiniteWellTurningPoints(this.wellWidth, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateInfiniteWellWavefunctionFirstDerivative(
-      this.wellWidth,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateInfiniteWellWavefunctionFirstDerivative(this.wellWidth, stateIndex, xGrid);
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateInfiniteWellWavefunctionSecondDerivative(
-      this.wellWidth,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateInfiniteWellWavefunctionSecondDerivative(this.wellWidth, stateIndex, xGrid);
   }
 
   calculateWavefunctionMinMax(
@@ -581,13 +546,7 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
-    return calculateInfiniteWellWavefunctionMinMax(
-      this.wellWidth,
-      stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
+    return calculateInfiniteWellWavefunctionMinMax(this.wellWidth, stateIndex, xMin, xMax, numPoints);
   }
 
   calculateSuperpositionMinMax(
@@ -628,13 +587,12 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     const actualPMax = pMax || defaultPMax;
 
     // Use analytical Fourier transform
-    const { pGrid, momentumWavefunctions } =
-      calculateInfiniteWellFourierTransform(
-        this.wellWidth,
-        numStates,
-        nMomentum,
-        actualPMax,
-      );
+    const { pGrid, momentumWavefunctions } = calculateInfiniteWellFourierTransform(
+      this.wellWidth,
+      numStates,
+      nMomentum,
+      actualPMax,
+    );
 
     return {
       pGrid,
@@ -667,8 +625,7 @@ export function solveInfiniteWell(
   // Calculate energies: E_n = (n^2 * π^2 * ℏ^2) / (2 * m * L^2) for n = 1, 2, 3, ...
   const energies: number[] = [];
   for (let n = 1; n <= numStates; n++) {
-    const energy =
-      (n * n * Math.PI * Math.PI * HBAR * HBAR) / (2 * mass * L * L);
+    const energy = (n * n * Math.PI * Math.PI * HBAR * HBAR) / (2 * mass * L * L);
     energies.push(energy);
   }
 

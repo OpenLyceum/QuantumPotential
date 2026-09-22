@@ -3,8 +3,8 @@
  * Used by asymmetric-triangle-potential and triangular-potential solvers.
  */
 
+import type { GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import { GridConfig } from "../PotentialFunction.js";
 import { airyAi } from "./math-utilities.js";
 
 /**
@@ -12,13 +12,11 @@ import { airyAi } from "./math-utilities.js";
  * These are the first 30 zeros (negative values where Ai(z_n) = 0).
  */
 export const AIRY_ZEROS = [
-  -2.33810741046, -4.08794944413, -5.5205598281, -6.78670809007, -7.94413358712,
-  -9.02265085334, -10.0401743416, -11.0085243037, -11.9360155632,
-  -12.8287767529, -13.6914890352, -14.5278299518, -15.3407550016,
-  -16.1328355283, -16.9062914467, -17.6629059623, -18.4040686682,
-  -19.1316436363, -19.8471121589, -20.5516776771, -21.2463345333, -21.931907637,
-  -22.6091606826, -23.278791381, -23.9414358498, -24.5976826013, -25.2480724088,
-  -25.8930940959, -26.5331934669, -27.1687726548,
+  -2.33810741046, -4.08794944413, -5.5205598281, -6.78670809007, -7.94413358712, -9.02265085334, -10.0401743416,
+  -11.0085243037, -11.9360155632, -12.8287767529, -13.6914890352, -14.5278299518, -15.3407550016, -16.1328355283,
+  -16.9062914467, -17.6629059623, -18.4040686682, -19.1316436363, -19.8471121589, -20.5516776771, -21.2463345333,
+  -21.931907637, -22.6091606826, -23.278791381, -23.9414358498, -24.5976826013, -25.2480724088, -25.8930940959,
+  -26.5331934669, -27.1687726548,
 ];
 
 /**
@@ -30,7 +28,7 @@ export const AIRY_ZEROS = [
  */
 export function calculateAiryAlpha(mass: number, slope: number): number {
   const { HBAR } = QuantumConstants;
-  return Math.pow((2 * mass * slope) / (HBAR * HBAR), 1 / 3);
+  return ((2 * mass * slope) / (HBAR * HBAR)) ** (1 / 3);
 }
 
 /**
@@ -42,7 +40,7 @@ export function calculateAiryAlpha(mass: number, slope: number): number {
  * @returns Approximate value of the n-th Airy zero
  */
 function getApproximateAiryZero(n: number): number {
-  return -Math.pow((3 * Math.PI * (4 * n - 1)) / 8, 2 / 3);
+  return -(((3 * Math.PI * (4 * n - 1)) / 8) ** (2 / 3));
 }
 
 /**
@@ -55,11 +53,7 @@ function getApproximateAiryZero(n: number): number {
  * @param tolerance - Convergence tolerance
  * @returns Refined value of the Airy zero
  */
-function refineAiryZero(
-  initialGuess: number,
-  maxIterations: number = 10,
-  tolerance: number = 1e-10,
-): number {
+function refineAiryZero(initialGuess: number, maxIterations: number = 10, tolerance: number = 1e-10): number {
   let z = initialGuess;
   const h = 1e-6; // Small step for numerical derivative
 
@@ -105,7 +99,7 @@ function refineAiryZero(
  */
 export function getAiryZero(n: number): number {
   if (n < AIRY_ZEROS.length) {
-    return AIRY_ZEROS[n];
+    return AIRY_ZEROS[n]!;
   }
   // Use asymptotic approximation for states beyond the pre-computed ones
   const initialGuess = getApproximateAiryZero(n + 1); // n+1 because zeros are 1-indexed
@@ -121,18 +115,10 @@ export function getAiryZero(n: number): number {
  * @param slope - Potential slope F in Joules/meter
  * @returns Energy eigenvalue in Joules
  */
-export function calculateTriangularWellEnergy(
-  airyZero: number,
-  mass: number,
-  slope: number,
-): number {
+export function calculateTriangularWellEnergy(airyZero: number, mass: number, slope: number): number {
   const { HBAR } = QuantumConstants;
   // Since z_n < 0, we have -z_n > 0, so E > 0
-  return (
-    -airyZero *
-    Math.pow((HBAR * HBAR) / (2 * mass), 1 / 3) *
-    Math.pow(slope, 2 / 3)
-  );
+  return -airyZero * ((HBAR * HBAR) / (2 * mass)) ** (1 / 3) * slope ** (2 / 3);
 }
 
 /**
@@ -181,16 +167,13 @@ export function normalizeWavefunction(psiRaw: number[], dx: number): number[] {
  * @param stateIndex - Quantum state index (0 for ground state)
  * @returns Wavefunction with consistent sign convention
  */
-export function applySignConvention(
-  wavefunction: number[],
-  stateIndex: number,
-): number[] {
+export function applySignConvention(wavefunction: number[], stateIndex: number): number[] {
   // Find the maximum absolute value
   let maxAbsIndex = 0;
   let maxAbsValue = 0;
   for (let i = 0; i < wavefunction.length; i++) {
-    if (Math.abs(wavefunction[i]) > maxAbsValue) {
-      maxAbsValue = Math.abs(wavefunction[i]);
+    if (Math.abs(wavefunction[i]!) > maxAbsValue) {
+      maxAbsValue = Math.abs(wavefunction[i]!);
       maxAbsIndex = i;
     }
   }
@@ -198,7 +181,7 @@ export function applySignConvention(
   // For ground state (n=0), ensure it's positive
   // For excited states, use alternating convention based on state index
   const shouldBePositive = stateIndex % 2 === 0;
-  if (wavefunction[maxAbsIndex] > 0 !== shouldBePositive) {
+  if (wavefunction[maxAbsIndex]! > 0 !== shouldBePositive) {
     return wavefunction.map((psi) => -psi);
   }
 
@@ -222,28 +205,30 @@ export function refineBisection(
   tolerance: number,
   maxIterations: number,
 ): number | null {
-  let fa = f(a);
-  const fb = f(b);
+  let lo = a;
+  let hi = b;
+  let fa = f(lo);
+  const fb = f(hi);
 
   if (fa * fb > 0) {
     return null; // No sign change
   }
 
   for (let iter = 0; iter < maxIterations; iter++) {
-    const c = (a + b) / 2;
+    const c = (lo + hi) / 2;
     const fc = f(c);
 
-    if (Math.abs(fc) < tolerance || (b - a) / 2 < tolerance) {
+    if (Math.abs(fc) < tolerance || (hi - lo) / 2 < tolerance) {
       return c;
     }
 
     if (fa * fc < 0) {
-      b = c;
+      hi = c;
     } else {
-      a = c;
+      lo = c;
       fa = fc;
     }
   }
 
-  return (a + b) / 2;
+  return (lo + hi) / 2;
 }

@@ -39,29 +39,28 @@
  *   where ξ = exp(x/a) and P_n^(α,β) are Jacobi polynomials
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { jacobiPolynomial } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { jacobiPolynomial } from "./math-utilities.js";
 
 /**
  * Class-based implementation of Eckart potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class EckartPotentialSolution extends AnalyticalSolution {
-  constructor(
-    private potentialDepth: number,
-    private barrierHeight: number,
-    private wellWidth: number,
-    private mass: number,
-  ) {
+  private potentialDepth: number;
+  private barrierHeight: number;
+  private wellWidth: number;
+  private mass: number;
+
+  constructor(potentialDepth: number, barrierHeight: number, wellWidth: number, mass: number) {
     super();
+    this.potentialDepth = potentialDepth;
+    this.barrierHeight = barrierHeight;
+    this.wellWidth = wellWidth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
@@ -76,18 +75,10 @@ export class EckartPotentialSolution extends AnalyticalSolution {
   }
 
   createPotential(): PotentialFunction {
-    return createEckartPotential(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-    );
+    return createEckartPotential(this.potentialDepth, this.barrierHeight, this.wellWidth);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return calculateEckartPotentialClassicalProbability(
       this.potentialDepth,
       this.barrierHeight,
@@ -108,9 +99,7 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateEckartPotentialTurningPoints(
       this.potentialDepth,
       this.barrierHeight,
@@ -120,10 +109,7 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateEckartPotentialWavefunctionFirstDerivative(
       this.potentialDepth,
       this.barrierHeight,
@@ -134,10 +120,7 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateEckartPotentialWavefunctionSecondDerivative(
       this.potentialDepth,
       this.barrierHeight,
@@ -193,13 +176,7 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     numMomentumPoints?: number,
     pMax?: number,
   ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.potentialDepth,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.potentialDepth, numMomentumPoints, pMax);
   }
 }
 
@@ -233,13 +210,12 @@ export function solveEckartPotential(
   // Calculate dimensionless parameters (with x/a substitution)
   // α = a * sqrt(2*m*V_0) / ℏ
   // β = V_1 * a * sqrt(2*m) / (2*ℏ*sqrt(V_0))
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
   // For bound states, we need certain conditions on α and β
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
   if (s2 <= 0) {
     throw new Error("Eckart potential too shallow to support bound states");
@@ -259,7 +235,7 @@ export function solveEckartPotential(
   const energyFactor = (HBAR * HBAR) / (2 * mass * a * a);
 
   for (let n = 0; n < actualNumStates; n++) {
-    const energy = -energyFactor * Math.pow(s2 - n, 2);
+    const energy = -energyFactor * (s2 - n) ** 2;
     energies.push(energy);
   }
 
@@ -279,8 +255,8 @@ export function solveEckartPotential(
   for (let n = 0; n < actualNumStates; n++) {
     const psiRaw: number[] = [];
 
-    const alpha_jac = 2 * (s2 - n) - 1;
-    const beta_jac = 2 * (s1 - s2 + n);
+    const alphaJac = 2 * (s2 - n) - 1;
+    const betaJac = 2 * (s1 - s2 + n);
 
     // First, calculate unnormalized wavefunction
     for (const x of xGrid) {
@@ -289,11 +265,10 @@ export function solveEckartPotential(
 
       // Jacobi polynomial argument
       const jacobiArg = 1 - (2 * xi) / xiPlus1;
-      const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
+      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
 
       // Calculate wavefunction without normalization
-      const value =
-        Math.pow(xi, s2 - n) * Math.pow(xiPlus1, -s1 - s2 + n) * jacobiPoly;
+      const value = xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobiPoly;
 
       psiRaw.push(value);
     }
@@ -301,7 +276,7 @@ export function solveEckartPotential(
     // Normalize wavefunction numerically to ensure ∫|ψ|² dx = 1
     let normSq = 0;
     for (let i = 0; i < psiRaw.length; i++) {
-      normSq += psiRaw[i] * psiRaw[i] * dx;
+      normSq += psiRaw[i]! * psiRaw[i]! * dx;
     }
     const norm = 1 / Math.sqrt(normSq);
     const wavefunction = psiRaw.map((psi) => norm * psi);
@@ -362,11 +337,7 @@ export function calculateEckartPotentialClassicalProbability(
   mass: number,
   xGrid: number[],
 ): number[] {
-  const potentialFn = createEckartPotential(
-    potentialDepth,
-    barrierHeight,
-    wellWidth,
-  );
+  const potentialFn = createEckartPotential(potentialDepth, barrierHeight, wellWidth);
 
   const classicalProbability: number[] = [];
   let integralSum = 0;
@@ -374,7 +345,7 @@ export function calculateEckartPotentialClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -386,7 +357,7 @@ export function calculateEckartPotentialClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -396,8 +367,8 @@ export function calculateEckartPotentialClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -405,7 +376,7 @@ export function calculateEckartPotentialClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -428,11 +399,7 @@ export function calculateEckartPotentialTurningPoints(
   wellWidth: number,
   energy: number,
 ): { left: number; right: number } {
-  const potentialFn = createEckartPotential(
-    potentialDepth,
-    barrierHeight,
-    wellWidth,
-  );
+  const potentialFn = createEckartPotential(potentialDepth, barrierHeight, wellWidth);
   const a = wellWidth;
 
   // Search for turning points using bisection
@@ -506,8 +473,8 @@ function computeEckartNormalization(
   xMax: number = 20e-9,
   numPoints: number = 1000,
 ): number {
-  const alpha_jac = 2 * (s2 - n) - 1;
-  const beta_jac = 2 * (s1 - s2 + n);
+  const alphaJac = 2 * (s2 - n) - 1;
+  const betaJac = 2 * (s1 - s2 + n);
   const dx = (xMax - xMin) / (numPoints - 1);
   let normSq = 0;
 
@@ -516,9 +483,8 @@ function computeEckartNormalization(
     const xi = Math.exp(x / a);
     const xiPlus1 = 1 + xi;
     const jacobiArg = 1 - (2 * xi) / xiPlus1;
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
-    const psi =
-      Math.pow(xi, s2 - n) * Math.pow(xiPlus1, -s1 - s2 + n) * jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
+    const psi = xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobiPoly;
     normSq += psi * psi * dx;
   }
 
@@ -551,15 +517,14 @@ export function calculateEckartPotentialWavefunctionZeros(
   const a = wellWidth;
   const n = stateIndex;
 
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
-  const alpha_jac = 2 * (s2 - n) - 1;
-  const beta_jac = 2 * (s1 - s2 + n);
+  const alphaJac = 2 * (s2 - n) - 1;
+  const betaJac = 2 * (s1 - s2 + n);
 
   // Ground state has no zeros
   if (n === 0) {
@@ -574,18 +539,16 @@ export function calculateEckartPotentialWavefunctionZeros(
   const prevXi = Math.exp(prevX / a);
   const prevXiPlus1 = 1 + prevXi;
   const prevJacobiArg = 1 - (2 * prevXi) / prevXiPlus1;
-  const prevJacobi = jacobiPolynomial(n, alpha_jac, beta_jac, prevJacobiArg);
-  let prevVal =
-    Math.pow(prevXi, s2 - n) * Math.pow(prevXiPlus1, -s1 - s2 + n) * prevJacobi;
+  const prevJacobi = jacobiPolynomial(n, alphaJac, betaJac, prevJacobiArg);
+  let prevVal = prevXi ** (s2 - n) * prevXiPlus1 ** (-s1 - s2 + n) * prevJacobi;
 
   for (let i = 1; i <= numSamples; i++) {
     const x = -searchRange + i * dx;
     const xi = Math.exp(x / a);
     const xiPlus1 = 1 + xi;
     const jacobiArg = 1 - (2 * xi) / xiPlus1;
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
-    const val =
-      Math.pow(xi, s2 - n) * Math.pow(xiPlus1, -s1 - s2 + n) * jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
+    const val = xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobiPoly;
 
     // Sign change detected
     if (prevVal * val < 0) {
@@ -597,16 +560,8 @@ export function calculateEckartPotentialWavefunctionZeros(
         const midXi = Math.exp(mid / a);
         const midXiPlus1 = 1 + midXi;
         const midJacobiArg = 1 - (2 * midXi) / midXiPlus1;
-        const midJacobi = jacobiPolynomial(
-          n,
-          alpha_jac,
-          beta_jac,
-          midJacobiArg,
-        );
-        const valMid =
-          Math.pow(midXi, s2 - n) *
-          Math.pow(midXiPlus1, -s1 - s2 + n) *
-          midJacobi;
+        const midJacobi = jacobiPolynomial(n, alphaJac, betaJac, midJacobiArg);
+        const valMid = midXi ** (s2 - n) * midXiPlus1 ** (-s1 - s2 + n) * midJacobi;
 
         if (Math.abs(valMid) < 1e-12) {
           zeros.push(mid);
@@ -658,15 +613,14 @@ export function calculateEckartPotentialWavefunctionFirstDerivative(
   const a = wellWidth;
   const n = stateIndex;
 
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
-  const alpha_jac = 2 * (s2 - n) - 1;
-  const beta_jac = 2 * (s1 - s2 + n);
+  const alphaJac = 2 * (s2 - n) - 1;
+  const betaJac = 2 * (s1 - s2 + n);
 
   // Get numerical normalization constant
   const xMin = xGrid[0];
@@ -684,32 +638,14 @@ export function calculateEckartPotentialWavefunctionFirstDerivative(
     const xiMinus = Math.exp(xMinus / a);
     const xiMinusPlus1 = 1 + xiMinus;
     const jacobiArgMinus = 1 - (2 * xiMinus) / xiMinusPlus1;
-    const jacobiMinus = jacobiPolynomial(
-      n,
-      alpha_jac,
-      beta_jac,
-      jacobiArgMinus,
-    );
-    const psiMinus =
-      normalization *
-      Math.pow(xiMinus, s2 - n) *
-      Math.pow(xiMinusPlus1, -s1 - s2 + n) *
-      jacobiMinus;
+    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgMinus);
+    const psiMinus = normalization * xiMinus ** (s2 - n) * xiMinusPlus1 ** (-s1 - s2 + n) * jacobiMinus;
 
     const xiPlus = Math.exp(xPlus / a);
     const xiPlusPlus1 = 1 + xiPlus;
     const jacobiArgPlus = 1 - (2 * xiPlus) / xiPlusPlus1;
-    const jacobiPlusVal = jacobiPolynomial(
-      n,
-      alpha_jac,
-      beta_jac,
-      jacobiArgPlus,
-    );
-    const psiPlus =
-      normalization *
-      Math.pow(xiPlus, s2 - n) *
-      Math.pow(xiPlusPlus1, -s1 - s2 + n) *
-      jacobiPlusVal;
+    const jacobiPlusVal = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgPlus);
+    const psiPlus = normalization * xiPlus ** (s2 - n) * xiPlusPlus1 ** (-s1 - s2 + n) * jacobiPlusVal;
 
     // First derivative using central difference
     const firstDeriv = (psiPlus - psiMinus) / (2 * h);
@@ -745,15 +681,14 @@ export function calculateEckartPotentialWavefunctionSecondDerivative(
   const a = wellWidth;
   const n = stateIndex;
 
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
-  const alpha_jac = 2 * (s2 - n) - 1;
-  const beta_jac = 2 * (s1 - s2 + n);
+  const alphaJac = 2 * (s2 - n) - 1;
+  const betaJac = 2 * (s1 - s2 + n);
 
   // Get numerical normalization constant
   const xMin = xGrid[0];
@@ -771,42 +706,20 @@ export function calculateEckartPotentialWavefunctionSecondDerivative(
     const xiMinus = Math.exp(xMinus / a);
     const xiMinusPlus1 = 1 + xiMinus;
     const jacobiArgMinus = 1 - (2 * xiMinus) / xiMinusPlus1;
-    const jacobiMinus = jacobiPolynomial(
-      n,
-      alpha_jac,
-      beta_jac,
-      jacobiArgMinus,
-    );
-    const psiMinus =
-      normalization *
-      Math.pow(xiMinus, s2 - n) *
-      Math.pow(xiMinusPlus1, -s1 - s2 + n) *
-      jacobiMinus;
+    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgMinus);
+    const psiMinus = normalization * xiMinus ** (s2 - n) * xiMinusPlus1 ** (-s1 - s2 + n) * jacobiMinus;
 
     const xi = Math.exp(x / a);
     const xiPlus1 = 1 + xi;
     const jacobiArg = 1 - (2 * xi) / xiPlus1;
-    const jacobi = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
-    const psi =
-      normalization *
-      Math.pow(xi, s2 - n) *
-      Math.pow(xiPlus1, -s1 - s2 + n) *
-      jacobi;
+    const jacobi = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
+    const psi = normalization * xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobi;
 
     const xiPlus = Math.exp(xPlus / a);
     const xiPlusPlus1 = 1 + xiPlus;
     const jacobiArgPlus = 1 - (2 * xiPlus) / xiPlusPlus1;
-    const jacobiPlusVal = jacobiPolynomial(
-      n,
-      alpha_jac,
-      beta_jac,
-      jacobiArgPlus,
-    );
-    const psiPlus =
-      normalization *
-      Math.pow(xiPlus, s2 - n) *
-      Math.pow(xiPlusPlus1, -s1 - s2 + n) *
-      jacobiPlusVal;
+    const jacobiPlusVal = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgPlus);
+    const psiPlus = normalization * xiPlus ** (s2 - n) * xiPlusPlus1 ** (-s1 - s2 + n) * jacobiPlusVal;
 
     // Second derivative using central difference
     const secondDeriv = (psiPlus - 2 * psi + psiMinus) / (h * h);
@@ -845,26 +758,17 @@ export function calculateEckartPotentialWavefunctionMinMax(
   const a = wellWidth;
   const n = stateIndex;
 
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
-  const alpha_jac = 2 * (s2 - n) - 1;
-  const beta_jac = 2 * (s1 - s2 + n);
+  const alphaJac = 2 * (s2 - n) - 1;
+  const betaJac = 2 * (s1 - s2 + n);
 
   // Get numerical normalization constant
-  const normalization = computeEckartNormalization(
-    a,
-    s1,
-    s2,
-    n,
-    xMin,
-    xMax,
-    numPoints,
-  );
+  const normalization = computeEckartNormalization(a, s1, s2, n, xMin, xMax, numPoints);
 
   let min = Infinity;
   let max = -Infinity;
@@ -880,12 +784,8 @@ export function calculateEckartPotentialWavefunctionMinMax(
     const xi = Math.exp(x / a);
     const xiPlus1 = 1 + xi;
     const jacobiArg = 1 - (2 * xi) / xiPlus1;
-    const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
-    const psi =
-      normalization *
-      Math.pow(xi, s2 - n) *
-      Math.pow(xiPlus1, -s1 - s2 + n) *
-      jacobiPoly;
+    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
+    const psi = normalization * xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobiPoly;
 
     // Calculate derivative using central difference for extrema detection
     let derivative = 0;
@@ -896,38 +796,24 @@ export function calculateEckartPotentialWavefunctionMinMax(
       const xiMinus = Math.exp(xMinus / a);
       const xiPlus1Minus = 1 + xiMinus;
       const jacobiArgMinus = 1 - (2 * xiMinus) / xiPlus1Minus;
-      const jacobiPolyMinus = jacobiPolynomial(
-        n,
-        alpha_jac,
-        beta_jac,
-        jacobiArgMinus,
-      );
-      const psiMinus =
-        normalization *
-        Math.pow(xiMinus, s2 - n) *
-        Math.pow(xiPlus1Minus, -s1 - s2 + n) *
-        jacobiPolyMinus;
+      const jacobiPolyMinus = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgMinus);
+      const psiMinus = normalization * xiMinus ** (s2 - n) * xiPlus1Minus ** (-s1 - s2 + n) * jacobiPolyMinus;
 
       const xiPlusVal = Math.exp(xPlus / a);
       const xiPlus1Plus = 1 + xiPlusVal;
       const jacobiArgPlus = 1 - (2 * xiPlusVal) / xiPlus1Plus;
-      const jacobiPolyPlus = jacobiPolynomial(
-        n,
-        alpha_jac,
-        beta_jac,
-        jacobiArgPlus,
-      );
-      const psiPlus =
-        normalization *
-        Math.pow(xiPlusVal, s2 - n) *
-        Math.pow(xiPlus1Plus, -s1 - s2 + n) *
-        jacobiPolyPlus;
+      const jacobiPolyPlus = jacobiPolynomial(n, alphaJac, betaJac, jacobiArgPlus);
+      const psiPlus = normalization * xiPlusVal ** (s2 - n) * xiPlus1Plus ** (-s1 - s2 + n) * jacobiPolyPlus;
 
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -981,12 +867,11 @@ export function calculateEckartPotentialSuperpositionMinMax(
   const V1 = barrierHeight;
   const a = wellWidth;
 
-  const alpha_param = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const beta_param =
-    (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
+  const alphaParam = (a * Math.sqrt(2 * mass * V0)) / HBAR;
+  const betaParam = (V1 * a * Math.sqrt(2 * mass)) / (2 * HBAR * Math.sqrt(V0));
 
-  const s1 = -0.5 + Math.sqrt(0.25 + alpha_param);
-  const s2 = -0.5 + Math.sqrt(0.25 + alpha_param - beta_param);
+  const s1 = -0.5 + Math.sqrt(0.25 + alphaParam);
+  const s2 = -0.5 + Math.sqrt(0.25 + alphaParam - betaParam);
 
   let min = Infinity;
   let max = -Infinity;
@@ -998,32 +883,20 @@ export function calculateEckartPotentialSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
-      const alpha_jac = 2 * (s2 - n) - 1;
-      const beta_jac = 2 * (s1 - s2 + n);
+      const alphaJac = 2 * (s2 - n) - 1;
+      const betaJac = 2 * (s1 - s2 + n);
 
       // Get numerical normalization constant
-      const normalization = computeEckartNormalization(
-        a,
-        s1,
-        s2,
-        n,
-        xMin,
-        xMax,
-        numPoints,
-      );
+      const normalization = computeEckartNormalization(a, s1, s2, n, xMin, xMax, numPoints);
 
       const xi = Math.exp(x / a);
       const xiPlus1 = 1 + xi;
       const jacobiArg = 1 - (2 * xi) / xiPlus1;
-      const jacobiPoly = jacobiPolynomial(n, alpha_jac, beta_jac, jacobiArg);
-      const psi =
-        normalization *
-        Math.pow(xi, s2 - n) *
-        Math.pow(xiPlus1, -s1 - s2 + n) *
-        jacobiPoly;
+      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, jacobiArg);
+      const psi = normalization * xi ** (s2 - n) * xiPlus1 ** (-s1 - s2 + n) * jacobiPoly;
 
       // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
       const phase = (-energy * time) / HBAR;
@@ -1034,8 +907,12 @@ export function calculateEckartPotentialSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

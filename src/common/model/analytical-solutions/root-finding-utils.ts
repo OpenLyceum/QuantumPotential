@@ -35,31 +35,33 @@ export function findRootHybrid(
 ): number {
   // Hybrid Newton's/bisection method from scenerystack/dot
   // Adapted from: https://github.com/phetsims/dot/blob/main/js/util/findRoot.ts
-  let x = (minX + maxX) / 2;
-  let y: number;
-  let dy: number;
+  let lo = minX;
+  let hi = maxX;
+  let x = (lo + hi) / 2;
+  let y = valueFunction(x);
 
-  while (Math.abs((y = valueFunction(x))) > tolerance) {
-    dy = derivativeFunction(x);
+  while (Math.abs(y) > tolerance) {
+    const dy = derivativeFunction(x);
 
     if (y < 0) {
-      minX = x;
+      lo = x;
     } else {
-      maxX = x;
+      hi = x;
     }
 
     // Newton's method first
     x -= y / dy;
 
     // Bounded to be bisection at the very least
-    if (x <= minX || x >= maxX) {
-      x = (minX + maxX) / 2;
+    if (x <= lo || x >= hi) {
+      x = (lo + hi) / 2;
 
       // Check to see if it's impossible to pass our tolerance
-      if (x === minX || x === maxX) {
+      if (x === lo || x === hi) {
         break;
       }
     }
+    y = valueFunction(x);
   }
 
   return x;

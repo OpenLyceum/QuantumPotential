@@ -4,31 +4,25 @@
  * non-visual feedback for state changes.
  */
 
-import {
-  Utterance,
-  UtteranceQueue,
-  AriaLiveAnnouncer,
-} from "scenerystack/utterance-queue";
+import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 
 // Create a global utteranceQueue instance for accessibility announcements
 // Using AriaLiveAnnouncer for screen reader support via aria-live regions
 const utteranceQueue = new UtteranceQueue(new AriaLiveAnnouncer());
-import type { BaseModel } from "../../model/BaseModel.js";
+
+import type { ManyWellsModel } from "../../../many-wells/model/ManyWellsModel.js";
 import type { OneWellModel } from "../../../one-well/model/OneWellModel.js";
 import type { TwoWellsModel } from "../../../two-wells/model/TwoWellsModel.js";
-import type { ManyWellsModel } from "../../../many-wells/model/ManyWellsModel.js";
+import type { BaseModel } from "../../model/BaseModel.js";
+import type { PotentialType } from "../../model/PotentialFunction.js";
+import type { SuperpositionType } from "../../model/SuperpositionType.js";
 import { QPPWDescriber } from "./QPPWDescriber.js";
-import { PotentialType } from "../../model/PotentialFunction.js";
-import { SuperpositionType } from "../../model/SuperpositionType.js";
 
 export class QPPWAlerter {
-  private readonly model:
-    BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+  private readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
   private debouncedAlertTimer: number | null = null;
 
-  public constructor(
-    model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
-  ) {
+  public constructor(model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel) {
     this.model = model;
     this.setupAlerts();
   }
@@ -48,11 +42,9 @@ export class QPPWAlerter {
     });
 
     // Superposition type changes
-    this.model.superpositionTypeProperty.lazyLink(
-      (newType: SuperpositionType) => {
-        this.alertSuperpositionTypeChange(newType);
-      },
-    );
+    this.model.superpositionTypeProperty.lazyLink((newType: SuperpositionType) => {
+      this.alertSuperpositionTypeChange(newType);
+    });
 
     // Play/pause state
     this.model.isPlayingProperty.lazyLink((isPlaying: boolean) => {
@@ -106,14 +98,12 @@ export class QPPWAlerter {
    */
   private alertEnergyLevelChange(level: number): void {
     const energyLevels = this.model.getEnergyLevels();
-    if (energyLevels.length === 0) return;
+    if (energyLevels.length === 0) {
+      return;
+    }
 
-    const energy = energyLevels[level];
-    const announcement = QPPWDescriber.createEnergyLevelAnnouncement(
-      level,
-      energy,
-      energyLevels.length,
-    );
+    const energy = energyLevels[level]!;
+    const announcement = QPPWDescriber.createEnergyLevelAnnouncement(level, energy, energyLevels.length);
 
     utteranceQueue.addToBack(new Utterance({ alert: announcement }));
   }
@@ -142,11 +132,8 @@ export class QPPWAlerter {
   /**
    * Alert when superposition type changes.
    */
-  private alertSuperpositionTypeChange(
-    superpositionType: SuperpositionType,
-  ): void {
-    const description =
-      QPPWDescriber.getSuperpositionTypeDescription(superpositionType);
+  private alertSuperpositionTypeChange(superpositionType: SuperpositionType): void {
+    const description = QPPWDescriber.getSuperpositionTypeDescription(superpositionType);
     utteranceQueue.addToBack(new Utterance({ alert: description }));
   }
 
@@ -154,9 +141,7 @@ export class QPPWAlerter {
    * Alert when playback state changes.
    */
   private alertPlaybackStateChange(isPlaying: boolean): void {
-    const alert = isPlaying
-      ? "Simulation playing. Wavefunction evolving in time."
-      : "Simulation paused.";
+    const alert = isPlaying ? "Simulation playing. Wavefunction evolving in time." : "Simulation paused.";
     utteranceQueue.addToBack(new Utterance({ alert }));
   }
 
@@ -164,8 +149,7 @@ export class QPPWAlerter {
    * Alert that simulation was reset.
    */
   public alertResetAll(): void {
-    const alert =
-      "Simulation reset. All parameters returned to initial values.";
+    const alert = "Simulation reset. All parameters returned to initial values.";
     utteranceQueue.addToBack(new Utterance({ alert }));
   }
 

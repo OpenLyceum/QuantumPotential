@@ -383,7 +383,7 @@ Be transparent about the 1D approximation. Discuss when 1D models are good appro
 
 For technical issues, educational feedback, or suggestions for improvement:
 
-- GitHub Issues: https://github.com/veillette/QPPW/issues
+- GitHub Issues: https://github.com/OpenLyceum/QuantumPotential/issues
 - Email: [Contact repository maintainer]
 
 ## License

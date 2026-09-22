@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DVR and Spectral Method Accuracy Tests</title>
+    <style>
+      body {
+        font-family: "Courier New", monospace;
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        padding: 20px;
+        margin: 0;
+      }
+      h1 {
+        color: #4fc3f7;
+        border-bottom: 2px solid #4fc3f7;
+        padding-bottom: 10px;
+      }
+      #console {
+        background-color: #252526;
+        border: 1px solid #3e3e42;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 20px;
+        white-space: pre-wrap;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      button {
+        background-color: #0e639c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+      button:hover {
+        background-color: #1177bb;
+      }
+      .pass {
+        color: #4ec9b0;
+      }
+      .fail {
+        color: #f48771;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DVR and Spectral Method Accuracy Tests</h1>
+    <p>
+      This page runs accuracy validation tests for the DVR and Spectral methods
+      against known analytical solutions.
+    </p>
+    <p>
+      Tests check that numerical methods produce results within 1% of analytical
+      values for:
+    </p>
+    <ul>
+      <li>Harmonic Oscillator (exact solution: E_n = ℏω(n + 1/2))</li>
+      <li>Infinite Square Well (exact solution: E_n = n²π²ℏ²/(2mL²))</li>
+    </ul>
+
+    <button type="button" onclick="runFullTests()">Run Full Tests</button>
+    <button type="button" onclick="runQuickCheck()">Run Quick Check</button>
+    <button type="button" onclick="clearConsole()">Clear Console</button>
+
+    <div id="console"></div>
+
+    <script type="module">
+      import {
+        runAccuracyTests,
+        runQuickAccuracyCheck,
+      } from "./AccuracyTests.ts";
+
+      // Override console.log to display in our custom console
+      const originalLog = console.log;
+      const consoleDiv = document.getElementById("console");
+
+      console.log = (...args) => {
+        originalLog.apply(console, args);
+
+        const message = args
+          .map((arg) =>
+            typeof arg === "object" ? JSON.stringify(arg) : String(arg),
+          )
+          .join(" ");
+
+        let formattedMessage = message;
+
+        // Add color classes for pass/fail indicators
+        if (
+          message.includes("✓ PASS") ||
+          message.includes("✓ All tests passed")
+        ) {
+          formattedMessage = `<span class="pass">${message}</span>`;
+        } else if (
+          message.includes("✗ FAIL") ||
+          message.includes("✗ Some tests failed")
+        ) {
+          formattedMessage = `<span class="fail">${message}</span>`;
+        }
+
+        consoleDiv.innerHTML += formattedMessage + "\n";
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      };
+
+      // Make functions available globally
+      window.runFullTests = () => {
+        console.log("Starting full accuracy tests...\n");
+        runAccuracyTests();
+      };
+
+      window.runQuickCheck = () => {
+        console.log("Starting quick accuracy check...\n");
+        runQuickAccuracyCheck();
+      };
+
+      window.clearConsole = () => {
+        consoleDiv.innerHTML = "";
+      };
+
+      // Auto-run quick check on load
+      console.log(
+        'Page loaded. Click "Run Full Tests" or "Run Quick Check" to begin.\n',
+      );
+    </script>
+  </body>
+</html>

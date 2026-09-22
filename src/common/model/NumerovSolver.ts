@@ -9,13 +9,9 @@
  * where f_j = (h²/12) k²(x_j)
  */
 
-import QuantumConstants from "./QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
 import qppw from "../../QPPWNamespace.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 
 /**
  * Solve the 1D Schrödinger equation using the Numerov method.
@@ -56,13 +52,9 @@ export function solveNumerov(
   const energyStep = (energyMax - energyMin) / 1000;
   let prevSign = 0;
 
-  for (
-    let E = energyMin;
-    E <= energyMax && energies.length < numStates;
-    E += energyStep
-  ) {
+  for (let E = energyMin; E <= energyMax && energies.length < numStates; E += energyStep) {
     const psi = integrateNumerov(E, V, xGrid, dx, mass);
-    const endValue = psi[numPoints - 1];
+    const endValue = psi[numPoints - 1]!;
 
     // Check for sign change (indicates bound state)
     const currentSign = Math.sign(endValue);
@@ -97,13 +89,7 @@ export function solveNumerov(
  * @param mass - Particle mass (kg)
  * @returns Wavefunction array
  */
-export function integrateNumerov(
-  E: number,
-  V: number[],
-  xGrid: number[],
-  dx: number,
-  mass: number,
-): number[] {
+export function integrateNumerov(E: number, V: number[], xGrid: number[], dx: number, mass: number): number[] {
   const { HBAR } = QuantumConstants;
   const N = xGrid.length;
   const psi = new Array(N).fill(0);
@@ -120,8 +106,8 @@ export function integrateNumerov(
 
   // Numerov forward integration
   for (let j = 1; j < N - 1; j++) {
-    const numerator = (2 - 10 * f[j]) * psi[j] - (1 + f[j - 1]) * psi[j - 1];
-    const denominator = 1 + f[j + 1];
+    const numerator = (2 - 10 * f[j]!) * psi[j] - (1 + f[j - 1]!) * psi[j - 1];
+    const denominator = 1 + f[j + 1]!;
     psi[j + 1] = numerator / denominator;
 
     // Check for divergence (not a bound state)
@@ -168,9 +154,9 @@ export function integrateNumerovFromCenter(
 
   // Find center index (closest to x=0)
   let centerIdx = 0;
-  let minDist = Math.abs(xGrid[0]);
+  let minDist = Math.abs(xGrid[0]!);
   for (let i = 1; i < N; i++) {
-    const dist = Math.abs(xGrid[i]);
+    const dist = Math.abs(xGrid[i]!);
     if (dist < minDist) {
       minDist = dist;
       centerIdx = i;
@@ -195,7 +181,7 @@ export function integrateNumerovFromCenter(
     // From Schrödinger equation: ψ'' = -k²ψ
     // So ψ(dx) = ψ(0)·(1 - k²·dx²/2) = ψ(0)·(1 - 6f) where f = k²·dx²/12
     psi[centerIdx] = 1.0;
-    psi[centerIdx + 1] = 1.0 * (1 - 6 * f[centerIdx]);
+    psi[centerIdx + 1] = 1.0 * (1 - 6 * f[centerIdx]!);
   } else {
     // Antisymmetric state: ψ(-x) = -ψ(x)
     // At x=0: ψ(0) = 0 (wavefunction must be zero for antisymmetry)
@@ -209,8 +195,8 @@ export function integrateNumerovFromCenter(
   const renormalizationInterval = 50; // Renormalize every 50 steps
 
   for (let j = centerIdx + 1; j < N - 1; j++) {
-    const numerator = (2 - 10 * f[j]) * psi[j] - (1 + f[j - 1]) * psi[j - 1];
-    const denominator = 1 + f[j + 1];
+    const numerator = (2 - 10 * f[j]!) * psi[j] - (1 + f[j - 1]!) * psi[j - 1];
+    const denominator = 1 + f[j + 1]!;
     psi[j + 1] = numerator / denominator;
 
     // Stop on catastrophic numerical failure
@@ -289,10 +275,10 @@ export function refineEnergy(
   while (Ehigh - Elow > tolerance) {
     const Emid = (Elow + Ehigh) / 2;
     const psi = integrateNumerov(Emid, V, xGrid, dx, mass);
-    const endValue = psi[N - 1];
+    const endValue = psi[N - 1]!;
 
     const psiLow = integrateNumerov(Elow, V, xGrid, dx, mass);
-    const endValueLow = psiLow[N - 1];
+    const endValueLow = psiLow[N - 1]!;
 
     if (Math.sign(endValue) === Math.sign(endValueLow)) {
       Elow = Emid;
@@ -315,7 +301,7 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
   // Calculate ∫|ψ|² dx using trapezoidal rule
   let integral = 0;
   for (let i = 0; i < psi.length - 1; i++) {
-    integral += (psi[i] * psi[i] + psi[i + 1] * psi[i + 1]) / 2;
+    integral += (psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2;
   }
   integral *= dx;
 

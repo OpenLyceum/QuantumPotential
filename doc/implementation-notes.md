@@ -41,7 +41,7 @@ The simulation emphasizes:
 QPPW/
 ├── src/
 │   ├── main.ts                          # Entry point, simulation setup
-│   ├── QPPWPreferences.ts               # User preferences (numerical method, auto-pause)
+│   ├── preferences/                     # QPPWPreferencesModel, QPPWPreferencesNode, qppwQueryParameters
 │   ├── QPPWColors.ts                    # Color scheme definitions
 │   ├── i18n/                            # Internationalization strings
 │   ├── common/                          # Shared code across all screens
@@ -1050,14 +1050,14 @@ Contributions are welcome! Please:
 
 ## License
 
-MIT License - see LICENSE file for details.
+GNU Affero General Public License v3.0 or later — see the [org LICENSE](https://github.com/OpenLyceum/.github/blob/main/LICENSE).
 
 ## Contact
 
 For questions, issues, or suggestions:
 
-- GitHub Issues: https://github.com/veillette/QPPW/issues
-- Repository: https://github.com/veillette/QPPW
+- GitHub Issues: https://github.com/OpenLyceum/QuantumPotential/issues
+- Repository: https://github.com/OpenLyceum/QuantumPotential
 
 ---
 

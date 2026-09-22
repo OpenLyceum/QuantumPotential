@@ -2,16 +2,16 @@
  * SuperpositionDialog allows users to configure superposition state amplitudes.
  */
 
-import { Node, Text, VBox, HBox, RichText } from "scenerystack/scenery";
-import { HSlider, RectangularPushButton } from "scenerystack/sun";
-import { Dialog } from "scenerystack/sim";
+import { NumberProperty, type Property } from "scenerystack/axon";
 import { Dimension2, Range } from "scenerystack/dot";
-import { Property, NumberProperty } from "scenerystack/axon";
+import { HBox, type Node, RichText, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import QPPWColors from "../../QPPWColors.js";
+import { Dialog } from "scenerystack/sim";
+import { HSlider, RectangularPushButton } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import { SuperpositionConfig } from "../model/SuperpositionType.js";
-import { BoundStateResult } from "../model/PotentialFunction.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { BoundStateResult } from "../model/PotentialFunction.js";
+import type { SuperpositionConfig } from "../model/SuperpositionType.js";
 
 export class SuperpositionDialog {
   private readonly dialog: Dialog;
@@ -93,29 +93,20 @@ export class SuperpositionDialog {
     configProperty: Property<SuperpositionConfig>,
     boundStateResult: BoundStateResult | null,
   ): Node {
-    const titleText = new Text(
-      stringManager.superpositionDialogTitleStringProperty,
-      {
-        font: new PhetFont({ size: 18, weight: "bold" }),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    const titleText = new Text(stringManager.superpositionDialogTitleStringProperty, {
+      font: new PhetFont({ size: 18, weight: "bold" }),
+      fill: QPPWColors.textFillProperty,
+    });
 
-    const descriptionText = new RichText(
-      stringManager.superpositionInstructionsStringProperty,
-      {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
-        maxWidth: 400,
-      },
-    );
+    const descriptionText = new RichText(stringManager.superpositionInstructionsStringProperty, {
+      font: new PhetFont(12),
+      fill: QPPWColors.textFillProperty,
+      maxWidth: 400,
+    });
 
     // Determine how many states to show based on the current config
     const config = configProperty.value;
-    const numStates = Math.min(
-      config.amplitudes.length,
-      boundStateResult?.energies.length || 5,
-    );
+    const numStates = Math.min(config.amplitudes.length, boundStateResult?.energies.length || 5);
 
     // Create sliders for each amplitude
     const sliderNodes: Node[] = [];
@@ -188,13 +179,8 @@ export class SuperpositionDialog {
     });
 
     const updateNormalization = () => {
-      const sumSquared = this.amplitudeProperties.reduce(
-        (sum, prop) => sum + prop.value * prop.value,
-        0,
-      );
-      normalizationText.string =
-        stringManager.normalizationSumStringProperty.value +
-        sumSquared.toFixed(3);
+      const sumSquared = this.amplitudeProperties.reduce((sum, prop) => sum + prop.value * prop.value, 0);
+      normalizationText.string = stringManager.normalizationSumStringProperty.value + sumSquared.toFixed(3);
 
       // Change color if not normalized
       if (Math.abs(sumSquared - 1.0) > 0.01) {
@@ -215,10 +201,7 @@ export class SuperpositionDialog {
         fill: QPPWColors.textFillProperty,
       }),
       listener: () => {
-        const sumSquared = this.amplitudeProperties.reduce(
-          (sum, prop) => sum + prop.value * prop.value,
-          0,
-        );
+        const sumSquared = this.amplitudeProperties.reduce((sum, prop) => sum + prop.value * prop.value, 0);
         const normFactor = Math.sqrt(sumSquared);
 
         if (normFactor > 0) {
@@ -269,13 +252,7 @@ export class SuperpositionDialog {
     return new VBox({
       spacing: 15,
       align: "left",
-      children: [
-        titleText,
-        descriptionText,
-        slidersVBox,
-        normalizationRowHBox,
-        buttonRowHBox,
-      ],
+      children: [titleText, descriptionText, slidersVBox, normalizationRowHBox, buttonRowHBox],
     });
   }
 }

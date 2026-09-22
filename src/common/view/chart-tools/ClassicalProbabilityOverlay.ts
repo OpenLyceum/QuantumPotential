@@ -3,18 +3,15 @@
  * and highlights the classically forbidden regions where quantum tunneling occurs.
  */
 
-import { Node, Line, Path, Text, Rectangle } from "scenerystack/scenery";
 import { Shape } from "scenerystack/kite";
+import { Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import type { ScreenModel } from "../../model/ScreenModels.js";
-import {
-  hasClassicalTurningPoints,
-  hasClassicallyForbiddenProbability,
-} from "../../model/ModelTypeGuards.js";
+import stringManager from "../../../i18n/StringManager.js";
+import QPPWColors from "../../../QPPWColors.js";
+import { hasClassicallyForbiddenProbability, hasClassicalTurningPoints } from "../../model/ModelTypeGuards.js";
 import type { BoundStateResult } from "../../model/PotentialFunction.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
-import QPPWColors from "../../../QPPWColors.js";
-import stringManager from "../../../i18n/StringManager.js";
+import type { ScreenModel } from "../../model/ScreenModels.js";
 
 export type ClassicalProbabilityOverlayOptions = {
   chartMargins: { left: number; right: number; top: number; bottom: number };
@@ -113,17 +110,12 @@ export class ClassicalProbabilityOverlay extends Node {
     // Add hover listeners to forbidden regions to show probability percentage
     const showForbiddenProbability = () => {
       const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-      if (
-        hasClassicallyForbiddenProbability(this.model) &&
-        selectedIndex >= 0
-      ) {
-        const percentage =
-          this.model.getClassicallyForbiddenProbability(selectedIndex);
-        this.forbiddenProbabilityLabel.string =
-          stringManager.classicallyForbiddenLabelStringProperty.value.replace(
-            "{{percentage}}",
-            percentage.toFixed(1),
-          );
+      if (hasClassicallyForbiddenProbability(this.model) && selectedIndex >= 0) {
+        const percentage = this.model.getClassicallyForbiddenProbability(selectedIndex);
+        this.forbiddenProbabilityLabel.string = stringManager.classicallyForbiddenLabelStringProperty.value.replace(
+          "{{percentage}}",
+          percentage.toFixed(1),
+        );
         this.forbiddenProbabilityLabel.visible = true;
       }
     };
@@ -177,13 +169,11 @@ export class ClassicalProbabilityOverlay extends Node {
     showClassicalProbability: boolean,
     showClassicalProbabilityCurve: boolean = true, // Whether to show the curve (optional, defaults to true)
   ): void {
-    const { chartMargins, plotWidth, plotHeight, dataToViewX, dataToViewY } =
-      this.options;
+    const { chartMargins, plotWidth, plotHeight, dataToViewX, dataToViewY } = this.options;
 
     // Early return if conditions aren't met
     if (
-      !showClassicalProbability ||
-      !hasClassicalTurningPoints(this.model) ||
+      !(showClassicalProbability && hasClassicalTurningPoints(this.model)) ||
       selectedIndex < 0 ||
       selectedIndex >= boundStates.energies.length
     ) {
@@ -213,22 +203,12 @@ export class ClassicalProbabilityOverlay extends Node {
     // Draw faint rectangular backgrounds for forbidden regions
     const leftRegionX = chartMargins.left;
     const leftRegionWidth = xLeft - leftRegionX;
-    this.leftForbiddenBackground.setRect(
-      leftRegionX,
-      yTop,
-      leftRegionWidth,
-      plotHeight,
-    );
+    this.leftForbiddenBackground.setRect(leftRegionX, yTop, leftRegionWidth, plotHeight);
     this.leftForbiddenBackground.visible = true;
 
     const rightRegionX = xRight;
     const rightRegionWidth = chartMargins.left + plotWidth - xRight;
-    this.rightForbiddenBackground.setRect(
-      rightRegionX,
-      yTop,
-      rightRegionWidth,
-      plotHeight,
-    );
+    this.rightForbiddenBackground.setRect(rightRegionX, yTop, rightRegionWidth, plotHeight);
     this.rightForbiddenBackground.visible = true;
 
     // Create and draw highlighted forbidden regions that follow the classical probability curve
@@ -248,15 +228,9 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Update classical probability path (in nm^-1 units) - only if requested
     if (showClassicalProbabilityCurve) {
-      const classicalProbability =
-        this.model.getClassicalProbabilityDensityInNmUnits(selectedIndex);
+      const classicalProbability = this.model.getClassicalProbabilityDensityInNmUnits(selectedIndex);
       if (classicalProbability) {
-        this.plotClassicalProbabilityDensity(
-          boundStates.xGrid,
-          classicalProbability,
-          dataToViewX,
-          dataToViewY,
-        );
+        this.plotClassicalProbabilityDensity(boundStates.xGrid, classicalProbability, dataToViewX, dataToViewY);
         this.classicalProbabilityPath.visible = true;
       } else {
         this.classicalProbabilityPath.visible = false;
@@ -280,10 +254,10 @@ export class ClassicalProbabilityOverlay extends Node {
     // Build points array, filtering out zero probability points
     const points: { x: number; y: number }[] = [];
     for (let i = 0; i < xGrid.length; i++) {
-      const dataValue = classicalProbability[i];
+      const dataValue = classicalProbability[i]!;
       // Only include non-zero probability points
       if (dataValue > 0) {
-        const x = dataToViewX(xGrid[i] * QuantumConstants.M_TO_NM);
+        const x = dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
         const y = dataToViewY(dataValue);
         points.push({ x, y });
       }
@@ -291,10 +265,10 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Draw curve - only connect consecutive non-zero points
     if (points.length > 0) {
-      shape.moveTo(points[0].x, points[0].y);
+      shape.moveTo(points[0]!.x, points[0]!.y);
 
       for (let i = 1; i < points.length; i++) {
-        shape.lineTo(points[i].x, points[i].y);
+        shape.lineTo(points[i]!.x, points[i]!.y);
       }
     }
 
@@ -321,8 +295,7 @@ export class ClassicalProbabilityOverlay extends Node {
     }
 
     // Get classical probability density data (in nm^-1 units)
-    const classicalProbability =
-      this.model.getClassicalProbabilityDensityInNmUnits(selectedIndex);
+    const classicalProbability = this.model.getClassicalProbabilityDensityInNmUnits(selectedIndex);
     if (!classicalProbability) {
       return { leftShape, rightShape };
     }
@@ -333,11 +306,11 @@ export class ClassicalProbabilityOverlay extends Node {
     // Build left forbidden region (from left edge to left turning point)
     const leftPoints: { x: number; y: number }[] = [];
     for (let i = 0; i < xGrid.length; i++) {
-      const xData = xGrid[i] * QuantumConstants.M_TO_NM;
+      const xData = xGrid[i]! * QuantumConstants.M_TO_NM;
 
       if (xData <= turningPoints.left) {
         const x = dataToViewX(xData);
-        const y = dataToViewY(classicalProbability[i]);
+        const y = dataToViewY(classicalProbability[i]!);
         leftPoints.push({ x, y });
       }
     }
@@ -345,13 +318,13 @@ export class ClassicalProbabilityOverlay extends Node {
     if (leftPoints.length > 0) {
       const leftEdgeX = chartMargins.left;
       leftShape.moveTo(leftEdgeX, y0);
-      leftShape.lineTo(leftEdgeX, leftPoints[0].y);
+      leftShape.lineTo(leftEdgeX, leftPoints[0]!.y);
 
       for (let i = 0; i < leftPoints.length; i++) {
-        leftShape.lineTo(leftPoints[i].x, leftPoints[i].y);
+        leftShape.lineTo(leftPoints[i]!.x, leftPoints[i]!.y);
       }
 
-      const lastPoint = leftPoints[leftPoints.length - 1];
+      const lastPoint = leftPoints[leftPoints.length - 1]!;
       leftShape.lineTo(lastPoint.x, y0);
       leftShape.close();
     }
@@ -359,25 +332,25 @@ export class ClassicalProbabilityOverlay extends Node {
     // Build right forbidden region (from right turning point to right edge)
     const rightPoints: { x: number; y: number }[] = [];
     for (let i = 0; i < xGrid.length; i++) {
-      const xData = xGrid[i] * QuantumConstants.M_TO_NM;
+      const xData = xGrid[i]! * QuantumConstants.M_TO_NM;
 
       if (xData >= turningPoints.right) {
         const x = dataToViewX(xData);
-        const y = dataToViewY(classicalProbability[i]);
+        const y = dataToViewY(classicalProbability[i]!);
         rightPoints.push({ x, y });
       }
     }
 
     if (rightPoints.length > 0) {
-      const firstPoint = rightPoints[0];
+      const firstPoint = rightPoints[0]!;
       rightShape.moveTo(firstPoint.x, y0);
       rightShape.lineTo(firstPoint.x, firstPoint.y);
 
       for (let i = 0; i < rightPoints.length; i++) {
-        rightShape.lineTo(rightPoints[i].x, rightPoints[i].y);
+        rightShape.lineTo(rightPoints[i]!.x, rightPoints[i]!.y);
       }
 
-      const lastPoint = rightPoints[rightPoints.length - 1];
+      const lastPoint = rightPoints[rightPoints.length - 1]!;
       const rightEdgeX = chartMargins.left + plotWidth;
       rightShape.lineTo(rightEdgeX, lastPoint.y);
       rightShape.lineTo(rightEdgeX, y0);

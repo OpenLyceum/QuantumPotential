@@ -3,9 +3,9 @@
  * V(x) = -V₀tanh²(x/a) + V₁tanh(x/a)
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { RosenMorsePotentialSolution } from "../analytical-solutions/rosen-morse-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class RosenMorsePotential extends AnalyticalPotential {
   private potentialDepth: number;
@@ -19,18 +19,8 @@ export class RosenMorsePotential extends AnalyticalPotential {
    * @param wellWidth - Well width parameter (a) in meters
    * @param mass - Particle mass in kg
    */
-  constructor(
-    potentialDepth: number,
-    barrierHeight: number,
-    wellWidth: number,
-    mass: number,
-  ) {
-    const solution = new RosenMorsePotentialSolution(
-      potentialDepth,
-      barrierHeight,
-      wellWidth,
-      mass,
-    );
+  constructor(potentialDepth: number, barrierHeight: number, wellWidth: number, mass: number) {
+    const solution = new RosenMorsePotentialSolution(potentialDepth, barrierHeight, wellWidth, mass);
     super(solution, mass);
     this.potentialDepth = potentialDepth;
     this.barrierHeight = barrierHeight;

@@ -5,15 +5,12 @@
  * - Multi-Coulomb 1D (multiple Coulomb centers)
  */
 
-import {
-  BaseScreenView,
-  ScreenStringProperties,
-} from "../../common/view/BaseScreenView.js";
-import { ManyWellsModel } from "../model/ManyWellsModel.js";
+import type { TReadOnlyProperty } from "scenerystack/axon";
+import type { ScreenViewOptions } from "scenerystack/sim";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
-import { ScreenViewOptions } from "scenerystack/sim";
-import { TReadOnlyProperty } from "scenerystack/axon";
+import { BaseScreenView, type ScreenStringProperties } from "../../common/view/BaseScreenView.js";
 import stringManager from "../../i18n/StringManager.js";
+import type { ManyWellsModel } from "../model/ManyWellsModel.js";
 import { ManyWellsViewState } from "./ManyWellsViewState.js";
 
 export class ManyWellsScreenView extends BaseScreenView {
@@ -39,10 +36,7 @@ export class ManyWellsScreenView extends BaseScreenView {
     // - Show number of wells slider (1-10)
     this.createStandardLayout(model, this.viewState, {
       showParticleMass: false,
-      allowedPotentialTypes: [
-        PotentialType.MULTI_SQUARE_WELL,
-        PotentialType.MULTI_COULOMB_1D,
-      ],
+      allowedPotentialTypes: [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_COULOMB_1D],
     });
 
     // Set up PDOM (Parallel DOM) structure for accessibility
@@ -76,14 +70,10 @@ export class ManyWellsScreenView extends BaseScreenView {
   protected getScreenStringProperties(): ScreenStringProperties {
     return {
       titleStringProperty: stringManager.manyWellsStringProperty,
-      descriptionStringProperty:
-        stringManager.manyWellsDescriptionStringProperty,
-      keyConceptsStringProperty:
-        stringManager.manyWellsKeyConceptsStringProperty,
-      interactionsStringProperty:
-        stringManager.manyWellsInteractionsStringProperty,
-      educationalContentStringProperty:
-        stringManager.manyWellsEducationalContentStringProperty,
+      descriptionStringProperty: stringManager.manyWellsDescriptionStringProperty,
+      keyConceptsStringProperty: stringManager.manyWellsKeyConceptsStringProperty,
+      interactionsStringProperty: stringManager.manyWellsInteractionsStringProperty,
+      educationalContentStringProperty: stringManager.manyWellsEducationalContentStringProperty,
     };
   }
 

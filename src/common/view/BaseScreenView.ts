@@ -3,36 +3,24 @@
  * It provides common functionality including standard layout for quantum well simulations.
  */
 
-import {
-  ScreenView,
-  ScreenViewOptions,
-  ScreenSummaryContent,
-} from "scenerystack/sim";
-import { ResetAllButton } from "scenerystack/scenery-phet";
-import { Node, Text, VBox, RichText } from "scenerystack/scenery";
-import { PhetFont } from "scenerystack/scenery-phet";
-import {
-  TReadOnlyProperty,
-  DerivedProperty,
-  Property,
-} from "scenerystack/axon";
-import QPPWColors from "../../QPPWColors.js";
-import { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
-import { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import { EnergyChartNode } from "./EnergyChartNode.js";
-import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
-import {
-  ControlPanelNode,
-  ControlPanelNodeOptions,
-} from "./ControlPanelNode.js";
-import { SimulationControlBar } from "./SimulationControlBar.js";
-import { BaseModel } from "../model/BaseModel.js";
-import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
-import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
+import { DerivedProperty, Property, type TReadOnlyProperty } from "scenerystack/axon";
+import { Node, RichText, Text, VBox } from "scenerystack/scenery";
+import { PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
+import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
+import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
+import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
+import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
+import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
+import type { BaseModel } from "../model/BaseModel.js";
 import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
+import { EnergyChartNode } from "./EnergyChartNode.js";
+import { SimulationControlBar } from "./SimulationControlBar.js";
+import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
 
 /**
  * Screen-specific string properties for info dialog and screen summary.
@@ -55,8 +43,7 @@ export type ScreenSummaryOptions = {
 
 export abstract class BaseScreenView extends ScreenView {
   protected readonly resetButton: ResetAllButton;
-  protected readonly model:
-    BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+  protected readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
 
   // Common components (may be undefined for screens that don't use them)
   protected energyChart?: EnergyChartNode;
@@ -75,10 +62,7 @@ export abstract class BaseScreenView extends ScreenView {
     options?: ScreenViewOptions,
   ) {
     // Create screen summary content before calling super()
-    const screenSummaryContent = BaseScreenView.createScreenSummaryContent(
-      model,
-      screenSummaryOptions,
-    );
+    const screenSummaryContent = BaseScreenView.createScreenSummaryContent(model, screenSummaryOptions);
 
     super({
       ...options,
@@ -164,12 +148,7 @@ export abstract class BaseScreenView extends ScreenView {
     }
 
     // Create control panel with optional configuration
-    this.controlPanel = new ControlPanelNode(
-      model,
-      viewState,
-      this.listBoxParent,
-      controlPanelOptions,
-    );
+    this.controlPanel = new ControlPanelNode(model, viewState, this.listBoxParent, controlPanelOptions);
     this.controlPanel.left = chartsWidth + margin * 2;
     this.controlPanel.top = margin;
 
@@ -302,7 +281,7 @@ export abstract class BaseScreenView extends ScreenView {
    * @param dt - The time step in seconds
    */
 
-  public step(_dt: number): void {
+  public override step(_dt: number): void {
     // Base implementation - subclasses should override
   }
 
@@ -327,7 +306,7 @@ export abstract class BaseScreenView extends ScreenView {
           return `Currently exploring a ${potentialName} potential well. No bound states found.`;
         }
 
-        const energy = energyLevels[levelIndex];
+        const energy = energyLevels[levelIndex]!;
         const levelNumber = levelIndex + 1;
         const totalLevels = energyLevels.length;
 
@@ -343,10 +322,7 @@ export abstract class BaseScreenView extends ScreenView {
     const parametersProperty = new DerivedProperty(
       [model.particleMassProperty, model.wellWidthProperty],
       (mass, width) => {
-        return (
-          `Particle mass: ${mass.toFixed(2)} electron masses. ` +
-          `Well width: ${width.toFixed(2)} nanometers.`
-        );
+        return `Particle mass: ${mass.toFixed(2)} electron masses. Well width: ${width.toFixed(2)} nanometers.`;
       },
     );
 
@@ -372,10 +348,7 @@ export abstract class BaseScreenView extends ScreenView {
    * @param playAreaChildren - Nodes to add to the play area (charts, visualizations)
    * @param controlAreaChildren - Nodes to add to the control area (control panels)
    */
-  protected setupPDOMStructure(
-    playAreaChildren: Node[],
-    controlAreaChildren: Node[],
-  ): void {
+  protected setupPDOMStructure(playAreaChildren: Node[], controlAreaChildren: Node[]): void {
     // Add children to the parent ScreenView's PDOM nodes
     this.pdomPlayAreaNode.pdomOrder = playAreaChildren;
     this.pdomControlAreaNode.pdomOrder = controlAreaChildren;

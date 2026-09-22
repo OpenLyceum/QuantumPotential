@@ -40,113 +40,74 @@
  * Boundary condition: ψ(0) = 0 leads to Ai(-αx_n) = 0, giving αx_n = -z_n.
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { airyAi } from "./math-utilities.js";
+import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
   calculateAiryAlpha,
-  getAiryZero,
   calculateTriangularWellEnergy,
   generateGrid,
+  getAiryZero,
   normalizeWavefunction,
 } from "./airy-utilities.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { airyAi } from "./math-utilities.js";
 
 /**
  * Class-based implementation of asymmetric triangle potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
-  constructor(
-    private slope: number,
-    private wellWidth: number,
-    private mass: number,
-  ) {
+  private slope: number;
+  private wellWidth: number;
+  private mass: number;
+
+  constructor(slope: number, wellWidth: number, mass: number) {
     super();
+    this.slope = slope;
+    this.wellWidth = wellWidth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    return solveAsymmetricTrianglePotential(
-      this.slope,
-      this.wellWidth,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    return solveAsymmetricTrianglePotential(this.slope, this.wellWidth, this.mass, numStates, gridConfig);
   }
 
   createPotential(): PotentialFunction {
     return createAsymmetricTrianglePotential(this.slope);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateAsymmetricTriangleClassicalProbability(
-      this.slope,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateAsymmetricTriangleClassicalProbability(this.slope, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
     // Get energy from Airy zero
-    const z_n = getAiryZero(stateIndex);
-    const energy = calculateTriangularWellEnergy(z_n, this.mass, this.slope);
+    const zN = getAiryZero(stateIndex);
+    const energy = calculateTriangularWellEnergy(zN, this.mass, this.slope);
 
-    return calculateAsymmetricTriangleWavefunctionZeros(
-      this.slope,
-      this.mass,
-      energy,
-    );
+    return calculateAsymmetricTriangleWavefunctionZeros(this.slope, this.mass, energy);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateAsymmetricTriangleTurningPoints(this.slope, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     // Get energy from Airy zero
-    const z_n = getAiryZero(stateIndex);
-    const energy = calculateTriangularWellEnergy(z_n, this.mass, this.slope);
+    const zN = getAiryZero(stateIndex);
+    const energy = calculateTriangularWellEnergy(zN, this.mass, this.slope);
 
-    return calculateAsymmetricTriangleWavefunctionFirstDerivative(
-      this.slope,
-      this.mass,
-      energy,
-      xGrid,
-    );
+    return calculateAsymmetricTriangleWavefunctionFirstDerivative(this.slope, this.mass, energy, xGrid);
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     // Get energy from Airy zero
-    const z_n = getAiryZero(stateIndex);
-    const energy = calculateTriangularWellEnergy(z_n, this.mass, this.slope);
+    const zN = getAiryZero(stateIndex);
+    const energy = calculateTriangularWellEnergy(zN, this.mass, this.slope);
 
-    return calculateAsymmetricTriangleWavefunctionSecondDerivative(
-      this.slope,
-      this.mass,
-      energy,
-      xGrid,
-    );
+    return calculateAsymmetricTriangleWavefunctionSecondDerivative(this.slope, this.mass, energy, xGrid);
   }
 
   calculateWavefunctionMinMax(
@@ -155,14 +116,7 @@ export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
-    return calculateAsymmetricTriangleWavefunctionMinMax(
-      this.slope,
-      this.mass,
-      stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
+    return calculateAsymmetricTriangleWavefunctionMinMax(this.slope, this.mass, stateIndex, xMin, xMax, numPoints);
   }
 
   calculateSuperpositionMinMax(
@@ -223,8 +177,8 @@ export function solveAsymmetricTrianglePotential(
   // Calculate energies using Airy zeros
   const energies: number[] = [];
   for (let n = 0; n < numStates; n++) {
-    const z_n = getAiryZero(n);
-    const energy = calculateTriangularWellEnergy(z_n, mass, F);
+    const zN = getAiryZero(n);
+    const energy = calculateTriangularWellEnergy(zN, mass, F);
     energies.push(energy);
   }
 
@@ -237,7 +191,7 @@ export function solveAsymmetricTrianglePotential(
   const wavefunctions: number[][] = [];
 
   for (let n = 0; n < actualNumStates; n++) {
-    const E = energies[n];
+    const E = energies[n]!;
 
     // Classical turning point: x_0 = E/F (where V(x_0) = F·x_0 = E)
     const x0 = E / F;
@@ -276,9 +230,7 @@ export function solveAsymmetricTrianglePotential(
  * @param slope - Slope parameter F in Joules/meter (field strength)
  * @returns Potential function V(x) in Joules
  */
-export function createAsymmetricTrianglePotential(
-  slope: number,
-): (x: number) => number {
+export function createAsymmetricTrianglePotential(slope: number): (x: number) => number {
   const F = slope;
 
   return (x: number) => {
@@ -316,7 +268,7 @@ export function calculateAsymmetricTriangleClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i];
+    const x = xGrid[i]!;
     if (x >= 0 && x <= x0) {
       const ke = energy - F * x;
       if (ke > maxKE) {
@@ -331,7 +283,7 @@ export function calculateAsymmetricTriangleClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i];
+    const x = xGrid[i]!;
 
     // Only classically allowed in region 0 ≤ x ≤ x_0
     if (x < 0 || x > x0) {
@@ -343,8 +295,8 @@ export function calculateAsymmetricTriangleClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -352,7 +304,7 @@ export function calculateAsymmetricTriangleClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -518,14 +470,9 @@ export function calculateAsymmetricTriangleWavefunctionFirstDerivative(
   const x0 = energy / F;
 
   // Compute normalization to match the wavefunction normalization
-  const xMin = xGrid[0];
-  const xMax = xGrid[xGrid.length - 1];
-  const normalization = computeAsymmetricTriangleNormalization(
-    alpha,
-    x0,
-    xMin,
-    xMax,
-  );
+  const xMin = xGrid[0]!;
+  const xMax = xGrid[xGrid.length - 1]!;
+  const normalization = computeAsymmetricTriangleNormalization(alpha, x0, xMin, xMax);
 
   const firstDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -576,14 +523,9 @@ export function calculateAsymmetricTriangleWavefunctionSecondDerivative(
   const x0 = energy / F;
 
   // Compute normalization to match the wavefunction normalization
-  const xMin = xGrid[0];
-  const xMax = xGrid[xGrid.length - 1];
-  const normalization = computeAsymmetricTriangleNormalization(
-    alpha,
-    x0,
-    xMin,
-    xMax,
-  );
+  const xMin = xGrid[0]!;
+  const xMax = xGrid[xGrid.length - 1]!;
+  const normalization = computeAsymmetricTriangleNormalization(alpha, x0, xMin, xMax);
 
   const secondDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -639,8 +581,8 @@ export function calculateAsymmetricTriangleWavefunctionMinMax(
   const alpha = calculateAiryAlpha(mass, F);
 
   // Get energy from Airy zero
-  const z_n = getAiryZero(stateIndex);
-  const energy = calculateTriangularWellEnergy(z_n, mass, F);
+  const zN = getAiryZero(stateIndex);
+  const energy = calculateTriangularWellEnergy(zN, mass, F);
   const x0 = energy / F;
 
   let min = Infinity;
@@ -673,8 +615,12 @@ export function calculateAsymmetricTriangleWavefunctionMinMax(
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -733,8 +679,8 @@ export function calculateAsymmetricTriangleSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       const x0 = energy / F;
 
@@ -755,8 +701,12 @@ export function calculateAsymmetricTriangleSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

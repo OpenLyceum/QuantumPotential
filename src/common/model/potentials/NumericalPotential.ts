@@ -12,8 +12,8 @@
  * - Arbitrary shape potentials
  */
 
+import { type PotentialFunction, PotentialType } from "../PotentialFunction.js";
 import { BasePotential } from "./BasePotential.js";
-import { PotentialFunction, PotentialType } from "../PotentialFunction.js";
 
 export class NumericalPotential extends BasePotential {
   private potentialFunction: PotentialFunction;
@@ -25,11 +25,7 @@ export class NumericalPotential extends BasePotential {
    * @param mass - Particle mass in kg
    * @param type - Optional type identifier (defaults to CUSTOM)
    */
-  constructor(
-    potentialFunction: PotentialFunction,
-    mass: number,
-    type: PotentialType = PotentialType.CUSTOM,
-  ) {
+  constructor(potentialFunction: PotentialFunction, mass: number, type: PotentialType = PotentialType.CUSTOM) {
     super(mass);
     this.potentialFunction = potentialFunction;
     this.potentialType = type;
@@ -60,10 +56,7 @@ export class NumericalPotential extends BasePotential {
    * Create a simple numerical potential from a function.
    * Convenience factory method.
    */
-  public static fromFunction(
-    func: PotentialFunction,
-    mass: number,
-  ): NumericalPotential {
+  public static fromFunction(func: PotentialFunction, mass: number): NumericalPotential {
     return new NumericalPotential(func, mass);
   }
 }

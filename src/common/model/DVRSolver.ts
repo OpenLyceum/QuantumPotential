@@ -17,22 +17,17 @@
  *   arXiv:2008.12936. https://arxiv.org/abs/2008.12936
  */
 
-import QuantumConstants from "./QuantumConstants.js";
+import qppw from "../../QPPWNamespace.js";
 import {
-  BoundStateResult,
-  EnergyOnlyResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
-import {
+  cubicSplineInterpolation,
   DotMatrix,
   diagonalize,
-  normalizeWavefunction,
   matrixToArray,
-  cubicSplineInterpolation,
+  normalizeWavefunction,
 } from "./LinearAlgebraUtils.js";
+import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 import { standardizeWavefunction } from "./WavefunctionStandardization.js";
-import qppw from "../../QPPWNamespace.js";
 
 /**
  * Solve the 1D Schrödinger equation using DVR method with Colbert-Miller kinetic energy.
@@ -103,14 +98,14 @@ export function solveDVR(
   // Extract the lowest numStates bound states
   const energies: number[] = [];
 
-  const V_boundary = Math.max(potential(xMin), potential(xMax));
+  const VBoundary = Math.max(potential(xMin), potential(xMax));
 
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (energy < V at boundaries)
-    if (energy < V_boundary) {
+    if (energy < VBoundary) {
       energies.push(energy);
     }
   }
@@ -126,13 +121,13 @@ export function solveDVR(
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (energy < V at boundaries)
-    if (energy < V_boundary) {
+    if (energy < VBoundary) {
       // Normalize wavefunction
-      const wavefunction = eigen.eigenvectors[idx];
+      const wavefunction = eigen.eigenvectors[idx]!;
       const normalizedPsi = normalizeWavefunction(wavefunction, dx);
       // Standardize sign for consistency across solvers
       const standardizedPsi = standardizeWavefunction(normalizedPsi, xGrid);
@@ -151,19 +146,11 @@ export function solveDVR(
   }
 
   const upsampleFactor = 8;
-  const { fineXGrid } = cubicSplineInterpolation(
-    xGrid,
-    wavefunctions[0],
-    upsampleFactor,
-  );
+  const { fineXGrid } = cubicSplineInterpolation(xGrid, wavefunctions[0]!, upsampleFactor);
 
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
-    const { fineYValues } = cubicSplineInterpolation(
-      xGrid,
-      wavefunction,
-      upsampleFactor,
-    );
+    const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
     fineWavefunctions.push(fineYValues);
   }
 
@@ -184,11 +171,7 @@ export function solveDVR(
  * @param mass - Particle mass (kg)
  * @returns N×N kinetic energy matrix
  */
-function createKineticEnergyMatrix(
-  N: number,
-  dx: number,
-  mass: number,
-): DotMatrix {
+function createKineticEnergyMatrix(N: number, dx: number, mass: number): DotMatrix {
   const { HBAR } = QuantumConstants;
   const prefactor = (HBAR * HBAR) / (2 * mass * dx * dx);
 
@@ -201,7 +184,7 @@ function createKineticEnergyMatrix(
       } else {
         // Off-diagonal elements
         const diff = i - j;
-        const sign = Math.pow(-1, diff);
+        const sign = (-1) ** diff;
         T.set(i, j, (prefactor * (2 * sign)) / (diff * diff));
       }
     }

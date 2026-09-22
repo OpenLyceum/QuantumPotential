@@ -48,102 +48,67 @@
  * that determines allowed energies. Must be solved numerically.
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
+import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { airyAi, airyBi, airyAiPrime, airyBiPrime } from "./math-utilities.js";
-import {
+  applySignConvention,
   calculateAiryAlpha,
   generateGrid,
   normalizeWavefunction,
-  applySignConvention,
   refineBisection,
 } from "./airy-utilities.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { airyAi, airyAiPrime, airyBi, airyBiPrime } from "./math-utilities.js";
 
 /**
  * Class-based implementation of triangular potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class TriangularPotentialSolution extends AnalyticalSolution {
-  constructor(
-    private height: number,
-    private width: number,
-    private offset: number,
-    private mass: number,
-  ) {
+  private height: number;
+  private width: number;
+  private offset: number;
+  private mass: number;
+
+  constructor(height: number, width: number, offset: number, mass: number) {
     super();
+    this.height = height;
+    this.width = width;
+    this.offset = offset;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    return solveTriangularPotential(
-      this.height,
-      this.width,
-      this.offset,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    return solveTriangularPotential(this.height, this.width, this.offset, this.mass, numStates, gridConfig);
   }
 
   createPotential(): PotentialFunction {
     return createTriangularPotential(this.height, this.width, this.offset);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateTriangularPotentialClassicalProbability(
-      this.height,
-      this.width,
-      this.offset,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateTriangularPotentialClassicalProbability(this.height, this.width, this.offset, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(_stateIndex: number, energy: number): number[] {
-    return calculateTriangularPotentialWavefunctionZeros(
-      this.height,
-      this.width,
-      this.offset,
-      this.mass,
-      energy,
-    );
+    return calculateTriangularPotentialWavefunctionZeros(this.height, this.width, this.offset, this.mass, energy);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
-    const points = calculateTriangularPotentialTurningPoints(
-      this.height,
-      this.width,
-      this.offset,
-      energy,
-    );
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
+    const points = calculateTriangularPotentialTurningPoints(this.height, this.width, this.offset, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     // Need energy to calculate first derivative
     // Solve if not already done
     const result = this.solve(stateIndex + 1, {
-      xMin: xGrid[0],
-      xMax: xGrid[xGrid.length - 1],
+      xMin: xGrid[0]!,
+      xMax: xGrid[xGrid.length - 1]!,
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex];
+    const energy = result.energies[stateIndex]!;
 
     return calculateTriangularPotentialWavefunctionFirstDerivative(
       this.height,
@@ -155,18 +120,15 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     // Need energy to calculate second derivative
     // Solve if not already done
     const result = this.solve(stateIndex + 1, {
-      xMin: xGrid[0],
-      xMax: xGrid[xGrid.length - 1],
+      xMin: xGrid[0]!,
+      xMax: xGrid[xGrid.length - 1]!,
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex];
+    const energy = result.energies[stateIndex]!;
 
     return calculateTriangularPotentialWavefunctionSecondDerivative(
       this.height,
@@ -191,7 +153,7 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
       xMax,
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex];
+    const energy = result.energies[stateIndex]!;
 
     return calculateTriangularPotentialWavefunctionMinMax(
       this.height,
@@ -232,13 +194,7 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
     numMomentumPoints?: number,
     pMax?: number,
   ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.height,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.height, numMomentumPoints, pMax);
   }
 }
 
@@ -367,7 +323,7 @@ export function solveTriangularPotential(
   const wavefunctions: number[][] = [];
 
   for (let n = 0; n < actualNumStates; n++) {
-    const E = energies[n];
+    const E = energies[n]!;
 
     // Decay constant
     const kappa = Math.sqrt(2 * mass * (V0 - E)) / HBAR;
@@ -493,13 +449,10 @@ export function solveTriangularPotential(
           psi = psiAtX0 * (aiAtZ / aiAt0);
         } else {
           // For larger z, use asymptotic form of Ai
-          const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+          const zeta = (2.0 / 3.0) * z ** 1.5;
           const aiAt0 = airyAi(0);
           // Ai(z)/Ai(0) ~ (1/(2*sqrt(pi)*z^(1/4))) * exp(-zeta) / Ai(0)
-          const ratio =
-            ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-              Math.exp(-zeta)) /
-            aiAt0;
+          const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
           psi = psiAtX0 * ratio;
         }
       } else {
@@ -513,12 +466,9 @@ export function solveTriangularPotential(
           const aiAt0 = airyAi(0);
           psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
         } else {
-          const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+          const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
           const aiAt0 = airyAi(0);
-          const ratio =
-            ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-              Math.exp(-zeta)) /
-            aiAt0;
+          const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
           psiAtWidth = psiAtX0 * ratio;
         }
 
@@ -553,11 +503,7 @@ export function solveTriangularPotential(
  * @param offset - Energy offset/minimum of the well (Joules)
  * @returns Potential function V(x) in Joules
  */
-export function createTriangularPotential(
-  height: number,
-  width: number,
-  offset: number,
-): (x: number) => number {
+export function createTriangularPotential(height: number, width: number, offset: number): (x: number) => number {
   const F = height / width;
   const V0 = height + offset;
 
@@ -632,12 +578,9 @@ function computeTriangularPotentialNormalization(
         const aiAt0 = airyAi(0);
         psi = psiAtX0 * (aiAtZ / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+        const zeta = (2.0 / 3.0) * z ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psi = psiAtX0 * ratio;
       }
     } else {
@@ -648,12 +591,9 @@ function computeTriangularPotentialNormalization(
         const aiAt0 = airyAi(0);
         psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+        const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psiAtWidth = psiAtX0 * ratio;
       }
       psi = psiAtWidth * Math.exp(-kappa * (x - width));
@@ -699,7 +639,7 @@ export function calculateTriangularPotentialClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -711,7 +651,7 @@ export function calculateTriangularPotentialClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -721,8 +661,8 @@ export function calculateTriangularPotentialClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -730,7 +670,7 @@ export function calculateTriangularPotentialClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -830,12 +770,9 @@ export function calculateTriangularPotentialWavefunctionZeros(
         const aiAt0 = airyAi(0);
         return psiAtX0 * (aiAtZ / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+        const zeta = (2.0 / 3.0) * z ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         return psiAtX0 * ratio;
       }
     } else {
@@ -846,12 +783,9 @@ export function calculateTriangularPotentialWavefunctionZeros(
         const aiAt0 = airyAi(0);
         psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+        const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psiAtWidth = psiAtX0 * ratio;
       }
       return psiAtWidth * Math.exp(-kappa * (x - width));
@@ -987,12 +921,9 @@ export function calculateTriangularPotentialWavefunctionFirstDerivative(
         const aiAt0 = airyAi(0);
         return normalization * psiAtX0 * (aiAtZ / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+        const zeta = (2.0 / 3.0) * z ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         return normalization * psiAtX0 * ratio;
       }
     } else {
@@ -1003,12 +934,9 @@ export function calculateTriangularPotentialWavefunctionFirstDerivative(
         const aiAt0 = airyAi(0);
         psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+        const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psiAtWidth = psiAtX0 * ratio;
       }
       return normalization * psiAtWidth * Math.exp(-kappa * (x - width));
@@ -1111,12 +1039,9 @@ export function calculateTriangularPotentialWavefunctionSecondDerivative(
         const aiAt0 = airyAi(0);
         return normalization * psiAtX0 * (aiAtZ / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+        const zeta = (2.0 / 3.0) * z ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         return normalization * psiAtX0 * ratio;
       }
     } else {
@@ -1127,12 +1052,9 @@ export function calculateTriangularPotentialWavefunctionSecondDerivative(
         const aiAt0 = airyAi(0);
         psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+        const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psiAtWidth = psiAtX0 * ratio;
       }
       return normalization * psiAtWidth * Math.exp(-kappa * (x - width));
@@ -1242,12 +1164,9 @@ export function calculateTriangularPotentialWavefunctionMinMax(
         const aiAt0 = airyAi(0);
         return normalization * psiAtX0 * (aiAtZ / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+        const zeta = (2.0 / 3.0) * z ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         return normalization * psiAtX0 * ratio;
       }
     } else {
@@ -1258,12 +1177,9 @@ export function calculateTriangularPotentialWavefunctionMinMax(
         const aiAt0 = airyAi(0);
         psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
       } else {
-        const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+        const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
         const aiAt0 = airyAi(0);
-        const ratio =
-          ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-            Math.exp(-zeta)) /
-          aiAt0;
+        const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
         psiAtWidth = psiAtX0 * ratio;
       }
       return normalization * psiAtWidth * Math.exp(-kappa * (x - width));
@@ -1282,8 +1198,12 @@ export function calculateTriangularPotentialWavefunctionMinMax(
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -1347,8 +1267,8 @@ export function calculateTriangularPotentialSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       const kappa = Math.sqrt(2 * mass * (V0 - energy)) / HBAR;
       const x0 = (energy - offset) / F;
@@ -1405,12 +1325,9 @@ export function calculateTriangularPotentialSuperpositionMinMax(
           const aiAt0 = airyAi(0);
           psi = normalization * psiAtX0 * (aiAtZ / aiAt0);
         } else {
-          const zeta = (2.0 / 3.0) * Math.pow(z, 1.5);
+          const zeta = (2.0 / 3.0) * z ** 1.5;
           const aiAt0 = airyAi(0);
-          const ratio =
-            ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(z, 0.25))) *
-              Math.exp(-zeta)) /
-            aiAt0;
+          const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * z ** 0.25)) * Math.exp(-zeta)) / aiAt0;
           psi = normalization * psiAtX0 * ratio;
         }
       } else {
@@ -1421,12 +1338,9 @@ export function calculateTriangularPotentialSuperpositionMinMax(
           const aiAt0 = airyAi(0);
           psiAtWidth = psiAtX0 * (aiAtWidth / aiAt0);
         } else {
-          const zeta = (2.0 / 3.0) * Math.pow(zAtWidth, 1.5);
+          const zeta = (2.0 / 3.0) * zAtWidth ** 1.5;
           const aiAt0 = airyAi(0);
-          const ratio =
-            ((1.0 / (2.0 * Math.sqrt(Math.PI) * Math.pow(zAtWidth, 0.25))) *
-              Math.exp(-zeta)) /
-            aiAt0;
+          const ratio = ((1.0 / (2.0 * Math.sqrt(Math.PI) * zAtWidth ** 0.25)) * Math.exp(-zeta)) / aiAt0;
           psiAtWidth = psiAtX0 * ratio;
         }
         psi = normalization * psiAtWidth * Math.exp(-kappa * (x - width));
@@ -1441,8 +1355,12 @@ export function calculateTriangularPotentialSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

@@ -3,30 +3,14 @@
  * of the wavefunction at a specific point. Shows a parabola based on Taylor expansion.
  */
 
-import {
-  Node,
-  Line,
-  Path,
-  Text,
-  Circle,
-  DragListener,
-  KeyboardDragListener,
-} from "scenerystack/scenery";
+import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
-import {
-  NumberProperty,
-  BooleanProperty,
-  DerivedProperty,
-} from "scenerystack/axon";
+import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import type { ScreenModel } from "../../model/ScreenModels.js";
-import QPPWColors from "../../../QPPWColors.js";
+import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
-import {
-  Utterance,
-  UtteranceQueue,
-  AriaLiveAnnouncer,
-} from "scenerystack/utterance-queue";
+import QPPWColors from "../../../QPPWColors.js";
+import type { ScreenModel } from "../../model/ScreenModels.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
 // Using AriaLiveAnnouncer for screen reader support via aria-live regions
@@ -60,11 +44,7 @@ export class CurvatureTool extends Node {
   private extremaPositionsCache: number[] | null = null;
   private lastCachedEnergyLevel: number = -1;
 
-  constructor(
-    model: ScreenModel,
-    getEffectiveDisplayMode: () => string,
-    options: CurvatureToolOptions,
-  ) {
+  constructor(model: ScreenModel, getEffectiveDisplayMode: () => string, options: CurvatureToolOptions) {
     // Initialize properties first so they can be used in super()
     const showPropertyInternal = new BooleanProperty(false);
 
@@ -74,13 +54,11 @@ export class CurvatureTool extends Node {
       labelTagName: "h3",
       labelContent: "Curvature Visualization",
       descriptionTagName: "p",
-      descriptionContent: new DerivedProperty(
-        [showPropertyInternal],
-        (enabled) =>
-          enabled
-            ? "Showing second derivative d²ψ/dx². Curvature is proportional to (V(x) - E)ψ(x) " +
-              "according to the Schrödinger equation. Positive curvature where V > E, negative where V < E."
-            : "Curvature visualization disabled.",
+      descriptionContent: new DerivedProperty([showPropertyInternal], (enabled) =>
+        enabled
+          ? "Showing second derivative d²ψ/dx². Curvature is proportional to (V(x) - E)ψ(x) " +
+            "according to the Schrödinger equation. Positive curvature where V > E, negative where V < E."
+          : "Curvature visualization disabled.",
       ),
     });
 
@@ -133,10 +111,7 @@ export class CurvatureTool extends Node {
     // Update aria-valuetext when position changes
     this.markerXProperty.link((position) => {
       this.marker.setPDOMAttribute("aria-valuenow", position.toFixed(2));
-      this.marker.setPDOMAttribute(
-        "aria-valuetext",
-        `Position: ${position.toFixed(2)} nanometers`,
-      );
+      this.marker.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
     });
 
     // Create position tracking circle (shows position on wavefunction)
@@ -191,14 +166,12 @@ export class CurvatureTool extends Node {
 
     // Check for optional properties using type guards
     if ("wellOffsetProperty" in model) {
-      (
-        model as { wellOffsetProperty: NumberProperty }
-      ).wellOffsetProperty.lazyLink(() => this.invalidateCache());
+      (model as { wellOffsetProperty: NumberProperty }).wellOffsetProperty.lazyLink(() => this.invalidateCache());
     }
     if ("wellSeparationProperty" in model) {
-      (
-        model as { wellSeparationProperty: NumberProperty }
-      ).wellSeparationProperty.lazyLink(() => this.invalidateCache());
+      (model as { wellSeparationProperty: NumberProperty }).wellSeparationProperty.lazyLink(() =>
+        this.invalidateCache(),
+      );
     }
   }
 
@@ -214,8 +187,7 @@ export class CurvatureTool extends Node {
    * Setup drag listeners for marker handle (both mouse and keyboard)
    */
   private setupDragListener(): void {
-    const { parentNode, viewToDataX, xMinProperty, xMaxProperty } =
-      this.options;
+    const { parentNode, viewToDataX, xMinProperty, xMaxProperty } = this.options;
 
     // Mouse drag listener
     const dragListener = new DragListener({
@@ -225,10 +197,7 @@ export class CurvatureTool extends Node {
         let dataX = viewToDataX(parentPoint.x);
 
         // Clamp to chart bounds
-        dataX = Math.max(
-          xMinProperty.value,
-          Math.min(xMaxProperty.value, dataX),
-        );
+        dataX = Math.max(xMinProperty.value, Math.min(xMaxProperty.value, dataX));
 
         // Apply snapping to extrema (max/min values)
         const snappedX = this.snapToExtrema(dataX);
@@ -303,11 +272,10 @@ export class CurvatureTool extends Node {
       this.positionCircle.centerY = dataToViewY(derivatives.wavefunctionValue);
 
       // Update label with proper units (nm^-5/2)
-      this.label.string =
-        stringManager.secondDerivativeLabelStringProperty.value.replace(
-          "{{value}}",
-          derivatives.secondDerivative.toFixed(3),
-        );
+      this.label.string = stringManager.secondDerivativeLabelStringProperty.value.replace(
+        "{{value}}",
+        derivatives.secondDerivative.toFixed(3),
+      );
       this.label.centerX = viewX;
       this.label.top = yTop + 5; // Position just inside the chart area
     } else {
@@ -325,10 +293,7 @@ export class CurvatureTool extends Node {
     const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
 
     // Return cached result if energy level hasn't changed
-    if (
-      this.extremaPositionsCache !== null &&
-      this.lastCachedEnergyLevel === selectedIndex
-    ) {
+    if (this.extremaPositionsCache !== null && this.lastCachedEnergyLevel === selectedIndex) {
       return this.extremaPositionsCache;
     }
 
@@ -437,15 +402,10 @@ export class CurvatureTool extends Node {
     const points: { x: number; y: number }[] = [];
 
     // Generate parabola points
-    for (
-      let dx = -parabolaHalfWidth;
-      dx <= parabolaHalfWidth;
-      dx += parabolaHalfWidth / 10
-    ) {
+    for (let dx = -parabolaHalfWidth; dx <= parabolaHalfWidth; dx += parabolaHalfWidth / 10) {
       const x = centerX + dx;
       // Taylor expansion with first and second derivative terms
-      const y =
-        centerY + firstDerivative * dx + 0.5 * secondDerivative * dx * dx;
+      const y = centerY + firstDerivative * dx + 0.5 * secondDerivative * dx * dx;
 
       const viewX = dataToViewX(x);
       const viewY = dataToViewY(y);
@@ -454,9 +414,9 @@ export class CurvatureTool extends Node {
     }
 
     if (points.length > 0) {
-      shape.moveTo(points[0].x, points[0].y);
+      shape.moveTo(points[0]!.x, points[0]!.y);
       for (let i = 1; i < points.length; i++) {
-        shape.lineTo(points[i].x, points[i].y);
+        shape.lineTo(points[i]!.x, points[i]!.y);
       }
     }
 

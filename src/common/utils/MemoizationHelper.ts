@@ -117,9 +117,7 @@ export function memoize<T, Args extends readonly unknown[]>(
   const cache = new MemoizationCache<T>(maxSize);
 
   return (...args: Args): T => {
-    const key = keyGenerator
-      ? keyGenerator(...args)
-      : MemoizationCache.generateKey(...args.map(String));
+    const key = keyGenerator ? keyGenerator(...args) : MemoizationCache.generateKey(...args.map(String));
 
     return cache.getOrCompute(key, () => fn(...args));
   };

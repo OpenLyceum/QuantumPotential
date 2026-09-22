@@ -3,34 +3,17 @@
  * Displays two draggable markers and calculates the probability between them.
  */
 
-import {
-  Node,
-  Line,
-  Path,
-  Text,
-  Rectangle,
-  Circle,
-  DragListener,
-  KeyboardDragListener,
-} from "scenerystack/scenery";
+import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
-import {
-  NumberProperty,
-  BooleanProperty,
-  DerivedProperty,
-} from "scenerystack/axon";
+import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import type { ScreenModel } from "../../model/ScreenModels.js";
-import { hasSuperpositionConfig } from "../../model/ModelTypeGuards.js";
-import { SuperpositionType } from "../../model/SuperpositionType.js";
-import QuantumConstants from "../../model/QuantumConstants.js";
-import QPPWColors from "../../../QPPWColors.js";
+import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
-import {
-  Utterance,
-  UtteranceQueue,
-  AriaLiveAnnouncer,
-} from "scenerystack/utterance-queue";
+import QPPWColors from "../../../QPPWColors.js";
+import { hasSuperpositionConfig } from "../../model/ModelTypeGuards.js";
+import QuantumConstants from "../../model/QuantumConstants.js";
+import type { ScreenModel } from "../../model/ScreenModels.js";
+import { SuperpositionType } from "../../model/SuperpositionType.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
 // Using AriaLiveAnnouncer for screen reader support via aria-live regions
@@ -69,11 +52,7 @@ export class AreaMeasurementTool extends Node {
   private readonly probabilityReadout: Node;
   private alertTimeout: number | null = null;
 
-  constructor(
-    model: ScreenModel,
-    getEffectiveDisplayMode: () => string,
-    options: AreaMeasurementToolOptions,
-  ) {
+  constructor(model: ScreenModel, getEffectiveDisplayMode: () => string, options: AreaMeasurementToolOptions) {
     super({
       // pdom - container for the entire measurement tool
       tagName: "div",
@@ -81,8 +60,7 @@ export class AreaMeasurementTool extends Node {
       labelContent: "Area Measurement Tool",
       descriptionTagName: "p",
       descriptionContent:
-        "Drag markers to measure probability between two positions. " +
-        "Use keyboard to fine-tune marker positions.",
+        "Drag markers to measure probability between two positions. Use keyboard to fine-tune marker positions.",
     });
 
     this.model = model;
@@ -164,14 +142,8 @@ export class AreaMeasurementTool extends Node {
 
     // Update aria-valuetext when left marker position changes
     this.leftMarkerXProperty.link((position) => {
-      this.leftMarkerHandle.setPDOMAttribute(
-        "aria-valuenow",
-        position.toFixed(2),
-      );
-      this.leftMarkerHandle.setPDOMAttribute(
-        "aria-valuetext",
-        `Position: ${position.toFixed(2)} nanometers`,
-      );
+      this.leftMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
+      this.leftMarkerHandle.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
     });
 
     // Create right marker handle (draggable circle at top)
@@ -209,14 +181,8 @@ export class AreaMeasurementTool extends Node {
 
     // Update aria-valuetext when right marker position changes
     this.rightMarkerXProperty.link((position) => {
-      this.rightMarkerHandle.setPDOMAttribute(
-        "aria-valuenow",
-        position.toFixed(2),
-      );
-      this.rightMarkerHandle.setPDOMAttribute(
-        "aria-valuetext",
-        `Position: ${position.toFixed(2)} nanometers`,
-      );
+      this.rightMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
+      this.rightMarkerHandle.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
     });
 
     // Create area percentage label
@@ -233,21 +199,13 @@ export class AreaMeasurementTool extends Node {
       ariaRole: "status",
       pdomAttributes: [{ attribute: "aria-live", value: "polite" }],
       innerContent: new DerivedProperty(
-        [
-          this.leftMarkerXProperty,
-          this.rightMarkerXProperty,
-          this.showProperty,
-        ],
+        [this.leftMarkerXProperty, this.rightMarkerXProperty, this.showProperty],
         (left, right, show) => {
           if (!show) {
             return "";
           }
           const displayMode = getEffectiveDisplayMode();
-          const probability = this.calculateProbabilityInRegion(
-            left,
-            right,
-            displayMode,
-          );
+          const probability = this.calculateProbabilityInRegion(left, right, displayMode);
           if (probability !== null) {
             return `Measuring from ${left.toFixed(2)} to ${right.toFixed(2)} nanometers. Integrated probability: ${probability.toFixed(1)} percent.`;
           }
@@ -290,16 +248,13 @@ export class AreaMeasurementTool extends Node {
    * Setup drag listeners for marker handles (both mouse and keyboard)
    */
   private setupDragListeners(): void {
-    const { parentNode, viewToDataX, xMinProperty, xMaxProperty } =
-      this.options;
+    const { parentNode, viewToDataX, xMinProperty, xMaxProperty } = this.options;
 
     // Left marker - mouse drag listener
     this.leftMarkerHandle.addInputListener(
       new DragListener({
         drag: (event) => {
-          const parentPoint = parentNode.globalToLocalPoint(
-            event.pointer.point,
-          );
+          const parentPoint = parentNode.globalToLocalPoint(event.pointer.point);
           let newX = viewToDataX(parentPoint.x);
 
           // Constrain to chart bounds and ensure left marker stays left of right marker
@@ -315,8 +270,7 @@ export class AreaMeasurementTool extends Node {
     this.leftMarkerHandle.addInputListener(
       new KeyboardDragListener({
         drag: (_event, listener) => {
-          let newX =
-            this.leftMarkerXProperty.value + listener.modelDelta.x * 0.1;
+          let newX = this.leftMarkerXProperty.value + listener.modelDelta.x * 0.1;
 
           // Constrain to chart bounds and ensure left marker stays left of right marker
           newX = Math.max(xMinProperty.value, newX);
@@ -356,9 +310,7 @@ export class AreaMeasurementTool extends Node {
     this.rightMarkerHandle.addInputListener(
       new DragListener({
         drag: (event) => {
-          const parentPoint = parentNode.globalToLocalPoint(
-            event.pointer.point,
-          );
+          const parentPoint = parentNode.globalToLocalPoint(event.pointer.point);
           let newX = viewToDataX(parentPoint.x);
 
           // Constrain to chart bounds and ensure right marker stays right of left marker
@@ -374,8 +326,7 @@ export class AreaMeasurementTool extends Node {
     this.rightMarkerHandle.addInputListener(
       new KeyboardDragListener({
         drag: (_event, listener) => {
-          let newX =
-            this.rightMarkerXProperty.value + listener.modelDelta.x * 0.1;
+          let newX = this.rightMarkerXProperty.value + listener.modelDelta.x * 0.1;
 
           // Constrain to chart bounds and ensure right marker stays right of left marker
           newX = Math.min(xMaxProperty.value, newX);
@@ -444,37 +395,21 @@ export class AreaMeasurementTool extends Node {
     this.rightMarkerHandle.centerY = yTop + 15;
 
     // Update faint background rectangle (shows full measurement region)
-    this.areaBackgroundRegion.setRect(
-      leftViewX,
-      yTop,
-      rightViewX - leftViewX,
-      plotHeight,
-    );
+    this.areaBackgroundRegion.setRect(leftViewX, yTop, rightViewX - leftViewX, plotHeight);
 
     // Create shape that follows the probability density curve
-    const shape = this.createAreaShape(
-      leftX,
-      rightX,
-      displayMode,
-      dataToViewX,
-      dataToViewY,
-    );
+    const shape = this.createAreaShape(leftX, rightX, displayMode, dataToViewX, dataToViewY);
     this.areaRegion.shape = shape;
 
     // Calculate probability in the selected region
-    const probability = this.calculateProbabilityInRegion(
-      leftX,
-      rightX,
-      displayMode,
-    );
+    const probability = this.calculateProbabilityInRegion(leftX, rightX, displayMode);
 
     // Update label
     if (probability !== null) {
-      this.areaLabel.string =
-        stringManager.percentageValueStringProperty.value.replace(
-          "{{value}}",
-          probability.toFixed(1),
-        );
+      this.areaLabel.string = stringManager.percentageValueStringProperty.value.replace(
+        "{{value}}",
+        probability.toFixed(1),
+      );
       // Position label at the center between markers, near the top
       this.areaLabel.centerX = (leftViewX + rightViewX) / 2;
       this.areaLabel.top = chartMargins.top + 35;
@@ -523,10 +458,7 @@ export class AreaMeasurementTool extends Node {
     } else {
       // Single eigenstate - get probability density in nm units
       const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-      if (
-        selectedIndex < 0 ||
-        selectedIndex >= boundStates.wavefunctions.length
-      ) {
+      if (selectedIndex < 0 || selectedIndex >= boundStates.wavefunctions.length) {
         return shape; // Return empty shape
       }
 
@@ -546,11 +478,11 @@ export class AreaMeasurementTool extends Node {
 
     // Add points within the region
     for (let i = 0; i < xGrid.length; i++) {
-      const xData = xGrid[i] * QuantumConstants.M_TO_NM; // Convert to nm
+      const xData = xGrid[i]! * QuantumConstants.M_TO_NM; // Convert to nm
 
       if (xData >= xStart && xData <= xEnd) {
         const x = dataToViewX(xData);
-        const y = dataToViewY(probabilityDensity[i]);
+        const y = dataToViewY(probabilityDensity[i]!);
         points.push({ x, y });
       }
     }
@@ -567,15 +499,15 @@ export class AreaMeasurementTool extends Node {
     shape.moveTo(leftViewX, y0);
 
     // Draw line up to the first point's y-coordinate
-    shape.lineTo(leftViewX, points[0].y);
+    shape.lineTo(leftViewX, points[0]!.y);
 
     // Trace along the curve
     for (let i = 0; i < points.length; i++) {
-      shape.lineTo(points[i].x, points[i].y);
+      shape.lineTo(points[i]!.x, points[i]!.y);
     }
 
     // Draw line down from last point to baseline
-    shape.lineTo(rightViewX, points[points.length - 1].y);
+    shape.lineTo(rightViewX, points[points.length - 1]!.y);
     shape.lineTo(rightViewX, y0);
 
     // Close the shape back to starting point
@@ -588,11 +520,7 @@ export class AreaMeasurementTool extends Node {
    * Calculates the probability (area under the curve) in the specified region.
    * Uses trapezoidal integration of the probability density.
    */
-  private calculateProbabilityInRegion(
-    xStart: number,
-    xEnd: number,
-    displayMode: string,
-  ): number | null {
+  private calculateProbabilityInRegion(xStart: number, xEnd: number, displayMode: string): number | null {
     // Only calculate for probability density mode
     if (displayMode !== "probabilityDensity") {
       return null;
@@ -606,12 +534,6 @@ export class AreaMeasurementTool extends Node {
     const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
 
     // Use model's calculation method
-    return this.model.getProbabilityInRegion(
-      xStart,
-      xEnd,
-      selectedIndex,
-      time,
-      isSuperposition,
-    );
+    return this.model.getProbabilityInRegion(xStart, xEnd, selectedIndex, time, isSuperposition);
   }
 }

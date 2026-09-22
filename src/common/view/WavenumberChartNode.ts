@@ -6,33 +6,24 @@
  * the average wavenumber <k> and RMS wavenumber k_rms.
  */
 
-import { Node, Line, Path, Text } from "scenerystack/scenery";
-import { Shape } from "scenerystack/kite";
-import { NumberProperty, DerivedProperty } from "scenerystack/axon";
+import { DerivedProperty, NumberProperty } from "scenerystack/axon";
+import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
+import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
-import {
-  ChartTransform,
-  ChartRectangle,
-  AxisLine,
-  TickMarkSet,
-  TickLabelSet,
-} from "scenerystack/bamboo";
-import type { ScreenModel } from "../model/ScreenModels.js";
-import type { ScreenViewState } from "./ScreenViewStates.js";
-import { PotentialType } from "../model/PotentialFunction.js";
-import QuantumConstants from "../model/QuantumConstants.js";
-import QPPWColors from "../../QPPWColors.js";
+import { Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
-import {
-  createDoubleArrowShape,
-  calculateRMSStatistics,
-} from "./RMSIndicatorUtils.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { PotentialType } from "../model/PotentialFunction.js";
+import QuantumConstants from "../model/QuantumConstants.js";
+import type { ScreenModel } from "../model/ScreenModels.js";
+import { calculateRMSStatistics, createDoubleArrowShape } from "./RMSIndicatorUtils.js";
+import type { ScreenViewState } from "./ScreenViewStates.js";
 
 export class WavenumberChartNode extends Node {
   private readonly model: ScreenModel;
-  private readonly viewState?: ScreenViewState;
+  private readonly viewState: ScreenViewState | undefined;
   private readonly chartWidth: number;
   private readonly chartHeight: number;
   private readonly chartMargins = { left: 60, right: 20, top: 40, bottom: 40 };
@@ -85,26 +76,16 @@ export class WavenumberChartNode extends Node {
 
     // Set up accessible description after this.model is initialized
     this.descriptionContent = new DerivedProperty(
-      [
-        model.selectedEnergyLevelIndexProperty,
-        model.potentialTypeProperty,
-        model.wellWidthProperty,
-      ],
+      [model.selectedEnergyLevelIndexProperty, model.potentialTypeProperty, model.wellWidthProperty],
       (selectedIndex: number, potentialType: PotentialType, width: number) => {
-        return this.createWavenumberDescription(
-          selectedIndex,
-          potentialType,
-          width,
-        );
+        return this.createWavenumberDescription(selectedIndex, potentialType, width);
       },
     );
     this.chartWidth = options?.width ?? 600;
     this.chartHeight = options?.height ?? 140;
 
-    this.plotWidth =
-      this.chartWidth - this.chartMargins.left - this.chartMargins.right;
-    this.plotHeight =
-      this.chartHeight - this.chartMargins.top - this.chartMargins.bottom;
+    this.plotWidth = this.chartWidth - this.chartMargins.left - this.chartMargins.right;
+    this.plotHeight = this.chartHeight - this.chartMargins.top - this.chartMargins.bottom;
 
     // Initialize view range (will be updated based on data)
     this.kMinProperty = new NumberProperty(-5);
@@ -145,12 +126,7 @@ export class WavenumberChartNode extends Node {
 
     // Create a clipped content node for all plot elements
     this.plotContentNode = new Node({
-      clipArea: Shape.rectangle(
-        this.chartMargins.left,
-        this.chartMargins.top,
-        this.plotWidth,
-        this.plotHeight,
-      ),
+      clipArea: Shape.rectangle(this.chartMargins.left, this.chartMargins.top, this.plotWidth, this.plotHeight),
     });
     this.addChild(this.plotContentNode);
 
@@ -209,22 +185,14 @@ export class WavenumberChartNode extends Node {
    * Creates an accessible description of the wavenumber chart based on current state.
    * This provides screen reader users with meaningful information about the momentum distribution.
    */
-  private createWavenumberDescription(
-    selectedIndex: number,
-    _potentialType: PotentialType,
-    _width: number,
-  ): string {
+  private createWavenumberDescription(selectedIndex: number, _potentialType: PotentialType, _width: number): string {
     const wavenumberResult = this.model.getWavenumberTransform();
-    if (
-      !wavenumberResult ||
-      selectedIndex < 0 ||
-      selectedIndex >= wavenumberResult.wavenumberWavefunctions.length
-    ) {
+    if (!wavenumberResult || selectedIndex < 0 || selectedIndex >= wavenumberResult.wavenumberWavefunctions.length) {
       return "No momentum distribution data available.";
     }
 
     const kGrid = wavenumberResult.kGrid;
-    const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex];
+    const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex]!;
 
     // Convert k from rad/m to nm^-1
     const kGridNm = kGrid.map((k) => k / (2 * Math.PI * 1e9));
@@ -253,10 +221,7 @@ export class WavenumberChartNode extends Node {
       const boundStates = this.model.getBoundStates();
       if (boundStates) {
         const xGrid = boundStates.xGrid.map((x) => x * 1e9);
-        const { rms: positionRms } = calculateRMSStatistics(
-          xGrid,
-          nmData.probabilityDensity,
-        );
+        const { rms: positionRms } = calculateRMSStatistics(xGrid, nmData.probabilityDensity);
 
         // Uncertainty product in dimensionless units
         const uncertaintyProduct = positionRms * rms;
@@ -275,15 +240,11 @@ export class WavenumberChartNode extends Node {
     const axesNode = new Node();
 
     // Y-axis at left edge using bamboo AxisLine
-    const yAxisLeftNode = new AxisLine(
-      this.chartTransform,
-      Orientation.VERTICAL,
-      {
-        stroke: QPPWColors.axisProperty,
-        lineWidth: 2,
-        value: this.kMinProperty.value,
-      },
-    );
+    const yAxisLeftNode = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
+      stroke: QPPWColors.axisProperty,
+      lineWidth: 2,
+      value: this.kMinProperty.value,
+    });
     yAxisLeftNode.x = this.chartMargins.left;
     yAxisLeftNode.y = this.chartMargins.top;
     axesNode.addChild(yAxisLeftNode);
@@ -300,49 +261,35 @@ export class WavenumberChartNode extends Node {
     axesNode.addChild(yAxisNode);
 
     // X-axis using bamboo AxisLine (at y=0)
-    const xAxisNode = new AxisLine(
-      this.chartTransform,
-      Orientation.HORIZONTAL,
-      {
-        stroke: QPPWColors.axisProperty,
-        lineWidth: 2,
-        value: 0,
-      },
-    );
+    const xAxisNode = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
+      stroke: QPPWColors.axisProperty,
+      lineWidth: 2,
+      value: 0,
+    });
     xAxisNode.x = this.chartMargins.left;
     xAxisNode.y = this.chartMargins.top;
     axesNode.addChild(xAxisNode);
 
     // X-axis tick marks
-    const xTickMarksNode = new TickMarkSet(
-      this.chartTransform,
-      Orientation.HORIZONTAL,
-      2,
-      {
-        edge: "max",
-        extent: 8,
-        stroke: QPPWColors.axisProperty,
-        lineWidth: 1,
-      },
-    );
+    const xTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
+      edge: "max",
+      extent: 8,
+      stroke: QPPWColors.axisProperty,
+      lineWidth: 1,
+    });
     xTickMarksNode.x = this.chartMargins.left;
     xTickMarksNode.y = this.chartMargins.top + this.plotHeight;
     axesNode.addChild(xTickMarksNode);
 
     // X-axis tick labels
-    const xTickLabelsNode = new TickLabelSet(
-      this.chartTransform,
-      Orientation.HORIZONTAL,
-      2,
-      {
-        edge: "max",
-        createLabel: (value: number) =>
-          new Text(value.toFixed(0), {
-            font: new PhetFont(12),
-            fill: QPPWColors.labelFillProperty,
-          }),
-      },
-    );
+    const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
+      edge: "max",
+      createLabel: (value: number) =>
+        new Text(value.toFixed(0), {
+          font: new PhetFont(12),
+          fill: QPPWColors.labelFillProperty,
+        }),
+    });
     xTickLabelsNode.x = this.chartMargins.left;
     xTickLabelsNode.y = this.chartMargins.top + this.plotHeight;
     axesNode.addChild(xTickLabelsNode);
@@ -427,15 +374,12 @@ export class WavenumberChartNode extends Node {
       }
 
       const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-      if (
-        selectedIndex < 0 ||
-        selectedIndex >= wavenumberResult.wavenumberWavefunctions.length
-      ) {
+      if (selectedIndex < 0 || selectedIndex >= wavenumberResult.wavenumberWavefunctions.length) {
         return;
       }
 
       const kGrid = wavenumberResult.kGrid;
-      const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex];
+      const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex]!;
 
       // Convert k from rad/m to nm^-1: k_nm = k_m / (2π * 10^9)
       const kGridNm = kGrid.map((k) => k / (2 * Math.PI * 1e9));
@@ -461,16 +405,14 @@ export class WavenumberChartNode extends Node {
 
       // Only show indicators if showRMSIndicatorProperty is true
       if (this.shouldShowRMSIndicators()) {
-        this.avgWavenumberLabel.string =
-          stringManager.averageWavenumberLabelStringProperty.value.replace(
-            "{{value}}",
-            avg.toFixed(2),
-          );
-        this.rmsWavenumberLabel.string =
-          stringManager.rmsWavenumberLabelStringProperty.value.replace(
-            "{{value}}",
-            rms.toFixed(2),
-          );
+        this.avgWavenumberLabel.string = stringManager.averageWavenumberLabelStringProperty.value.replace(
+          "{{value}}",
+          avg.toFixed(2),
+        );
+        this.rmsWavenumberLabel.string = stringManager.rmsWavenumberLabelStringProperty.value.replace(
+          "{{value}}",
+          rms.toFixed(2),
+        );
 
         // Update RMS indicator: horizontal double arrow from (avg - rms) to (avg + rms)
         const leftK = avg - rms;
@@ -499,21 +441,21 @@ export class WavenumberChartNode extends Node {
     const maxValue = Math.max(...phiKSquared);
     const threshold = maxValue * 0.01;
 
-    let minK = kGrid[0];
-    let maxK = kGrid[kGrid.length - 1];
+    let minK = kGrid[0]!;
+    let maxK = kGrid[kGrid.length - 1]!;
 
     // Find first significant point
     for (let i = 0; i < kGrid.length; i++) {
-      if (phiKSquared[i] > threshold) {
-        minK = kGrid[i];
+      if (phiKSquared[i]! > threshold) {
+        minK = kGrid[i]!;
         break;
       }
     }
 
     // Find last significant point
     for (let i = kGrid.length - 1; i >= 0; i--) {
-      if (phiKSquared[i] > threshold) {
-        maxK = kGrid[i];
+      if (phiKSquared[i]! > threshold) {
+        maxK = kGrid[i]!;
         break;
       }
     }
@@ -528,12 +470,8 @@ export class WavenumberChartNode extends Node {
     this.yMaxProperty.value = maxValue * 1.2; // 20% margin
 
     // Update ChartTransform
-    this.chartTransform.setModelXRange(
-      new Range(this.kMinProperty.value, this.kMaxProperty.value),
-    );
-    this.chartTransform.setModelYRange(
-      new Range(this.yMinProperty.value, this.yMaxProperty.value),
-    );
+    this.chartTransform.setModelXRange(new Range(this.kMinProperty.value, this.kMaxProperty.value));
+    this.chartTransform.setModelYRange(new Range(this.yMinProperty.value, this.yMaxProperty.value));
   }
 
   /**
@@ -550,32 +488,29 @@ export class WavenumberChartNode extends Node {
   /**
    * Plots the wavenumber distribution |φ(k)|² with smooth curves.
    */
-  private plotWavenumberDistribution(
-    kGrid: number[],
-    phiKSquared: number[],
-  ): void {
+  private plotWavenumberDistribution(kGrid: number[], phiKSquared: number[]): void {
     const shape = new Shape();
 
     // Start at zero on the left
-    const x0 = this.dataToViewX(kGrid[0]);
+    const x0 = this.dataToViewX(kGrid[0]!);
     const y0 = this.dataToViewY(0);
     shape.moveTo(x0, y0);
 
     // Build points array
     const points: { x: number; y: number }[] = [];
     for (let i = 0; i < kGrid.length; i++) {
-      const x = this.dataToViewX(kGrid[i]);
-      const y = this.dataToViewY(phiKSquared[i]);
+      const x = this.dataToViewX(kGrid[i]!);
+      const y = this.dataToViewY(phiKSquared[i]!);
       points.push({ x, y });
     }
 
     // Draw smooth curve using quadratic bezier curves
     if (points.length > 0) {
-      shape.lineTo(points[0].x, points[0].y);
+      shape.lineTo(points[0]!.x, points[0]!.y);
 
       for (let i = 0; i < points.length - 1; i++) {
-        const p0 = points[i];
-        const p1 = points[i + 1];
+        const p0 = points[i]!;
+        const p1 = points[i + 1]!;
 
         // Control point is midpoint for simple smoothing
         const cpX = (p0.x + p1.x) / 2;
@@ -586,7 +521,7 @@ export class WavenumberChartNode extends Node {
     }
 
     // Close at zero on the right
-    const xEnd = this.dataToViewX(kGrid[kGrid.length - 1]);
+    const xEnd = this.dataToViewX(kGrid[kGrid.length - 1]!);
     shape.lineTo(xEnd, y0);
     shape.close();
 

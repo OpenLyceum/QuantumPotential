@@ -3,9 +3,9 @@
  * V(x) = Dₑ[1 - exp(-a(x - xₑ))]²
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { MorsePotentialSolution } from "../analytical-solutions/morse-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class MorsePotential extends AnalyticalPotential {
   private dissociationEnergy: number;
@@ -19,18 +19,8 @@ export class MorsePotential extends AnalyticalPotential {
    * @param equilibriumPosition - Equilibrium position (xₑ) in meters
    * @param mass - Particle mass in kg
    */
-  constructor(
-    dissociationEnergy: number,
-    wellWidth: number,
-    equilibriumPosition: number,
-    mass: number,
-  ) {
-    const solution = new MorsePotentialSolution(
-      dissociationEnergy,
-      wellWidth,
-      equilibriumPosition,
-      mass,
-    );
+  constructor(dissociationEnergy: number, wellWidth: number, equilibriumPosition: number, mass: number) {
+    const solution = new MorsePotentialSolution(dissociationEnergy, wellWidth, equilibriumPosition, mass);
     super(solution, mass);
     this.dissociationEnergy = dissociationEnergy;
     this.wellWidth = wellWidth;

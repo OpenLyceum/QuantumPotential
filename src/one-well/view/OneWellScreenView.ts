@@ -3,15 +3,12 @@
  * It displays a single quantum potential well and its wave functions.
  */
 
-import {
-  BaseScreenView,
-  ScreenStringProperties,
-} from "../../common/view/BaseScreenView.js";
-import { OneWellModel } from "../model/OneWellModel.js";
-import { ScreenViewOptions } from "scenerystack/sim";
-import { TReadOnlyProperty } from "scenerystack/axon";
-import stringManager from "../../i18n/StringManager.js";
+import type { TReadOnlyProperty } from "scenerystack/axon";
+import type { ScreenViewOptions } from "scenerystack/sim";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
+import { BaseScreenView, type ScreenStringProperties } from "../../common/view/BaseScreenView.js";
+import stringManager from "../../i18n/StringManager.js";
+import type { OneWellModel } from "../model/OneWellModel.js";
 import { OneWellViewState } from "./OneWellViewState.js";
 
 export class OneWellScreenView extends BaseScreenView {
@@ -22,8 +19,7 @@ export class OneWellScreenView extends BaseScreenView {
       model,
       {
         screenName: "One Well",
-        screenDescription:
-          "One Well screen for exploring quantum bound states in various potential wells.",
+        screenDescription: "One Well screen for exploring quantum bound states in various potential wells.",
       },
       options,
     );
@@ -84,10 +80,8 @@ export class OneWellScreenView extends BaseScreenView {
       titleStringProperty: stringManager.oneWellStringProperty,
       descriptionStringProperty: stringManager.oneWellDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.oneWellKeyConceptsStringProperty,
-      interactionsStringProperty:
-        stringManager.oneWellInteractionsStringProperty,
-      educationalContentStringProperty:
-        stringManager.oneWellEducationalContentStringProperty,
+      interactionsStringProperty: stringManager.oneWellInteractionsStringProperty,
+      educationalContentStringProperty: stringManager.oneWellEducationalContentStringProperty,
     };
   }
 

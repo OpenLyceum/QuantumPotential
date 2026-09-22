@@ -3,9 +3,9 @@
  * V(x) = -V₀/cosh²(x/a)
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { PoschlTellerPotentialSolution } from "../analytical-solutions/poschl-teller-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class PoschlTellerPotential extends AnalyticalPotential {
   private potentialDepth: number;
@@ -18,11 +18,7 @@ export class PoschlTellerPotential extends AnalyticalPotential {
    * @param mass - Particle mass in kg
    */
   constructor(potentialDepth: number, wellWidth: number, mass: number) {
-    const solution = new PoschlTellerPotentialSolution(
-      potentialDepth,
-      wellWidth,
-      mass,
-    );
+    const solution = new PoschlTellerPotentialSolution(potentialDepth, wellWidth, mass);
     super(solution, mass);
     this.potentialDepth = potentialDepth;
     this.wellWidth = wellWidth;

@@ -15,11 +15,7 @@ import { Shape } from "scenerystack/kite";
  * @param y - Y-coordinate (height) of the arrow
  * @returns Shape object representing the double arrow
  */
-export function createDoubleArrowShape(
-  x1: number,
-  x2: number,
-  y: number,
-): Shape {
+export function createDoubleArrowShape(x1: number, x2: number, y: number): Shape {
   const shape = new Shape();
   const arrowHeadLength = 8;
   const arrowHeadWidth = 6;
@@ -56,24 +52,21 @@ export function createDoubleArrowShape(
  * @param density - Array of probability density values ρ(x)
  * @returns Object containing average and RMS values (standard deviation)
  */
-export function calculateRMSStatistics(
-  grid: number[],
-  density: number[],
-): { avg: number; rms: number } {
+export function calculateRMSStatistics(grid: number[], density: number[]): { avg: number; rms: number } {
   // Normalize the distribution first using trapezoidal integration
   let totalProbability = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1] - grid[i];
-    const avgDensity = (density[i] + density[i + 1]) / 2;
+    const dx = grid[i + 1]! - grid[i]!;
+    const avgDensity = (density[i]! + density[i + 1]!) / 2;
     totalProbability += avgDensity * dx;
   }
 
   // Calculate average: <x> = ∫ x * ρ(x) dx
   let avg = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1] - grid[i];
-    const avgDensity = (density[i] + density[i + 1]) / 2;
-    const avgX = (grid[i] + grid[i + 1]) / 2;
+    const dx = grid[i + 1]! - grid[i]!;
+    const avgDensity = (density[i]! + density[i + 1]!) / 2;
+    const avgX = (grid[i]! + grid[i + 1]!) / 2;
     avg += avgX * avgDensity * dx;
   }
   avg /= totalProbability;
@@ -81,9 +74,9 @@ export function calculateRMSStatistics(
   // Calculate RMS: sqrt(<x²> - <x>²) where <x²> = ∫ x² * ρ(x) dx
   let avgSquared = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1] - grid[i];
-    const avgDensity = (density[i] + density[i + 1]) / 2;
-    const avgX = (grid[i] + grid[i + 1]) / 2;
+    const dx = grid[i + 1]! - grid[i]!;
+    const avgDensity = (density[i]! + density[i + 1]!) / 2;
+    const avgX = (grid[i]! + grid[i + 1]!) / 2;
     avgSquared += avgX * avgX * avgDensity * dx;
   }
   avgSquared /= totalProbability;

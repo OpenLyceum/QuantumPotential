@@ -3,10 +3,10 @@
  * These are points where the wavefunction crosses zero.
  */
 
-import { Node, Circle } from "scenerystack/scenery";
-import { BooleanProperty, Property, DerivedProperty } from "scenerystack/axon";
-import QuantumConstants from "../../model/QuantumConstants.js";
+import { BooleanProperty, DerivedProperty, Property } from "scenerystack/axon";
+import { Circle, Node } from "scenerystack/scenery";
 import QPPWColors from "../../../QPPWColors.js";
+import QuantumConstants from "../../model/QuantumConstants.js";
 
 export type ZerosVisualizationOptions = {
   dataToViewX: (x: number) => number;
@@ -37,20 +37,17 @@ export class ZerosVisualization extends Node {
       tagName: "div",
       ariaRole: "status",
       pdomAttributes: [{ attribute: "aria-live", value: "polite" }],
-      innerContent: new DerivedProperty(
-        [this.showProperty, this.zerosPositionsProperty],
-        (show, zeros) => {
-          if (!show || zeros.length === 0) {
-            return "";
-          }
-          const positions = zeros.map((z) => z.toFixed(2)).join(", ");
-          return (
-            `Wavefunction has ${zeros.length} node${zeros.length !== 1 ? "s" : ""} ` +
-            `(zero crossing${zeros.length !== 1 ? "s" : ""}) ` +
-            `at positions: ${positions} nanometers.`
-          );
-        },
-      ),
+      innerContent: new DerivedProperty([this.showProperty, this.zerosPositionsProperty], (show, zeros) => {
+        if (!show || zeros.length === 0) {
+          return "";
+        }
+        const positions = zeros.map((z) => z.toFixed(2)).join(", ");
+        return (
+          `Wavefunction has ${zeros.length} node${zeros.length !== 1 ? "s" : ""} ` +
+          `(zero crossing${zeros.length !== 1 ? "s" : ""}) ` +
+          `at positions: ${positions} nanometers.`
+        );
+      }),
     });
     this.addChild(this.accessibleDescription);
 
@@ -115,14 +112,14 @@ export class ZerosVisualization extends Node {
     const zeros: number[] = [];
 
     for (let i = 0; i < wavefunction.length - 1; i++) {
-      const y1 = wavefunction[i];
-      const y2 = wavefunction[i + 1];
+      const y1 = wavefunction[i]!;
+      const y2 = wavefunction[i + 1]!;
 
       // Check for sign change (zero crossing)
       if (y1 * y2 < 0) {
         // Linear interpolation to find more accurate zero position
-        const x1 = xGrid[i];
-        const x2 = xGrid[i + 1];
+        const x1 = xGrid[i]!;
+        const x2 = xGrid[i + 1]!;
         const zeroX = x1 - (y1 * (x2 - x1)) / (y2 - y1);
         zeros.push(zeroX * QuantumConstants.M_TO_NM); // Convert to nm
       }

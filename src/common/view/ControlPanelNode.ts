@@ -3,43 +3,30 @@
  * This includes potential selection, display options, particle mass, and well parameters.
  */
 
-import {
-  Node,
-  Text,
-  VBox,
-  HBox,
-  HSeparator,
-  RichText,
-} from "scenerystack/scenery";
-import {
-  Panel,
-  Checkbox,
-  VerticalAquaRadioButtonGroup,
-  ComboBox,
-  HSlider,
-} from "scenerystack/sun";
 import { Dimension2 } from "scenerystack/dot";
-import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
+import { HBox, HSeparator, Node, RichText, Text, VBox } from "scenerystack/scenery";
+import { PhetFont } from "scenerystack/scenery-phet";
+import { Checkbox, ComboBox, HSlider, Panel, VerticalAquaRadioButtonGroup } from "scenerystack/sun";
+import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
+import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
+import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
+import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
+import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import {
-  isOneWellModel,
-  isManyWellsModel,
   hasBarrierHeight,
+  hasElectricField,
   hasPotentialOffset,
   hasWellSeparation,
-  hasElectricField,
+  isManyWellsModel,
+  isOneWellModel,
 } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
-import { SuperpositionDialog } from "./SuperpositionDialog.js";
-import QPPWColors from "../../QPPWColors.js";
-import { PhetFont } from "scenerystack/scenery-phet";
-import stringManager from "../../i18n/StringManager.js";
-import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
-import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
-import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
 type ComboBoxItem<T> = {
   value: T;
@@ -60,8 +47,7 @@ type ResolvedControlPanelNodeOptions = {
 
 export class ControlPanelNode extends Node {
   private readonly model: OneWellModel | TwoWellsModel | ManyWellsModel;
-  private readonly viewState:
-    OneWellViewState | TwoWellsViewState | ManyWellsViewState;
+  private readonly viewState: OneWellViewState | TwoWellsViewState | ManyWellsViewState;
   private readonly options: ResolvedControlPanelNodeOptions;
 
   public constructor(
@@ -85,9 +71,7 @@ export class ControlPanelNode extends Node {
     // Create all control groups
     const energyChartGroup = this.createEnergyChartGroup(listBoxParent);
     const bottomChartGroup = this.createBottomChartGroup();
-    const particleMassGroup = this.options.showParticleMass
-      ? this.createParticleMassGroup()
-      : null;
+    const particleMassGroup = this.options.showParticleMass ? this.createParticleMassGroup() : null;
     const wellConfigGroup = this.createWellConfigurationGroup();
 
     // Arrange groups vertically (only include particle mass if enabled)
@@ -148,9 +132,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Infinite Square Well",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.INFINITE_WELL,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.INFINITE_WELL),
       },
       {
         value: PotentialType.FINITE_WELL,
@@ -160,9 +142,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Finite Square Well",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.FINITE_WELL,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.FINITE_WELL),
       },
       {
         value: PotentialType.HARMONIC_OSCILLATOR,
@@ -172,9 +152,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Harmonic Oscillator",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.HARMONIC_OSCILLATOR,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.HARMONIC_OSCILLATOR),
       },
       {
         value: PotentialType.MORSE,
@@ -184,9 +162,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Morse Potential",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.MORSE,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.MORSE),
       },
       {
         value: PotentialType.POSCHL_TELLER,
@@ -196,9 +172,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Pöschl-Teller Potential",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.POSCHL_TELLER,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.POSCHL_TELLER),
       },
       {
         value: PotentialType.ROSEN_MORSE,
@@ -208,9 +182,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Rosen-Morse Potential",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.ROSEN_MORSE,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.ROSEN_MORSE),
       },
       {
         value: PotentialType.ECKART,
@@ -220,9 +192,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Eckart Potential",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.ECKART,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.ECKART),
       },
       {
         value: PotentialType.ASYMMETRIC_TRIANGLE,
@@ -232,9 +202,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Asymmetric Triangle",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.ASYMMETRIC_TRIANGLE,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.ASYMMETRIC_TRIANGLE),
       },
       {
         value: PotentialType.TRIANGULAR,
@@ -244,9 +212,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Triangular Potential",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.TRIANGULAR,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.TRIANGULAR),
       },
       {
         value: PotentialType.COULOMB_1D,
@@ -256,9 +222,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Coulomb 1D",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.COULOMB_1D,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.COULOMB_1D),
       },
       {
         value: PotentialType.COULOMB_3D,
@@ -268,9 +232,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Coulomb 3D",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.COULOMB_3D,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.COULOMB_3D),
       },
       {
         value: PotentialType.DOUBLE_SQUARE_WELL,
@@ -280,9 +242,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Double Square Well",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.DOUBLE_SQUARE_WELL,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.DOUBLE_SQUARE_WELL),
       },
       {
         value: PotentialType.MULTI_SQUARE_WELL,
@@ -292,9 +252,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Multi-Square Well",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.MULTI_SQUARE_WELL,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.MULTI_SQUARE_WELL),
       },
       {
         value: PotentialType.MULTI_COULOMB_1D,
@@ -304,50 +262,38 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Multi-Coulomb 1D",
-        a11yDescription: QPPWDescriber.getPotentialTypeDescription(
-          PotentialType.MULTI_COULOMB_1D,
-        ),
+        a11yDescription: QPPWDescriber.getPotentialTypeDescription(PotentialType.MULTI_COULOMB_1D),
       },
     ];
 
     // Filter potential types if specified in options
     const potentialItems = this.options.allowedPotentialTypes
-      ? allPotentialItems.filter((item) =>
-          this.options.allowedPotentialTypes!.includes(item.value),
-        )
+      ? allPotentialItems.filter((item) => this.options.allowedPotentialTypes!.includes(item.value))
       : allPotentialItems;
 
-    const potentialComboBox = new ComboBox(
-      this.model.potentialTypeProperty,
-      potentialItems,
-      listBoxParent,
-      {
-        xMargin: 8,
-        yMargin: 6,
-        cornerRadius: 4,
-        buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
-        buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
-        listFill: QPPWColors.controlPanelBackgroundColorProperty,
-        listStroke: QPPWColors.controlPanelStrokeColorProperty,
-        highlightFill: QPPWColors.controlPanelStrokeColorProperty,
+    const potentialComboBox = new ComboBox(this.model.potentialTypeProperty, potentialItems, listBoxParent, {
+      xMargin: 8,
+      yMargin: 6,
+      cornerRadius: 4,
+      buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
+      buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
+      listFill: QPPWColors.controlPanelBackgroundColorProperty,
+      listStroke: QPPWColors.controlPanelStrokeColorProperty,
+      highlightFill: QPPWColors.controlPanelStrokeColorProperty,
 
-        // PDOM - make potential type selector keyboard accessible
-        accessibleName: "Potential Type",
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Select quantum potential well type. " +
-        //   "Press Enter to open menu, use arrow keys to navigate options, " +
-        //   "Enter to select, Escape to close.",
-      },
-    );
+      // PDOM - make potential type selector keyboard accessible
+      accessibleName: "Potential Type",
+      // TODO: Add helpText when PhET accessibility is fully configured
+      // helpText:
+      //   "Select quantum potential well type. " +
+      //   "Press Enter to open menu, use arrow keys to navigate options, " +
+      //   "Enter to select, Escape to close.",
+    });
 
-    const potentialLabelText = new Text(
-      stringManager.potentialWellStringProperty,
-      {
-        font: new PhetFont(14),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    const potentialLabelText = new Text(stringManager.potentialWellStringProperty, {
+      font: new PhetFont(14),
+      fill: QPPWColors.textFillProperty,
+    });
 
     const potentialRowNode = new HBox({
       spacing: 10,
@@ -369,9 +315,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Two-state superposition",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.PSI_I_PSI_J,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.PSI_I_PSI_J),
       },
       {
         value: SuperpositionType.SINGLE,
@@ -381,9 +325,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Single eigenstate",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.SINGLE,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.SINGLE),
       },
       {
         value: SuperpositionType.LOCALIZED_NARROW,
@@ -393,9 +335,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Narrow Gaussian wavepacket",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.LOCALIZED_NARROW,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.LOCALIZED_NARROW),
       },
       {
         value: SuperpositionType.LOCALIZED_WIDE,
@@ -405,9 +345,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Wide Gaussian wavepacket",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.LOCALIZED_WIDE,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.LOCALIZED_WIDE),
       },
       {
         value: SuperpositionType.COHERENT,
@@ -417,9 +355,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Coherent state",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.COHERENT,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.COHERENT),
       },
       {
         value: SuperpositionType.CUSTOM,
@@ -429,9 +365,7 @@ export class ControlPanelNode extends Node {
             fill: QPPWColors.textFillProperty,
           }),
         a11yLabel: "Custom superposition",
-        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(
-          SuperpositionType.CUSTOM,
-        ),
+        a11yDescription: QPPWDescriber.getSuperpositionTypeDescription(SuperpositionType.CUSTOM),
       },
     ];
 
@@ -459,13 +393,10 @@ export class ControlPanelNode extends Node {
       },
     );
 
-    const superpositionLabelText = new Text(
-      stringManager.superpositionStringProperty,
-      {
-        font: new PhetFont(14),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    const superpositionLabelText = new Text(stringManager.superpositionStringProperty, {
+      font: new PhetFont(14),
+      fill: QPPWColors.textFillProperty,
+    });
 
     const superpositionRowNode = new HBox({
       spacing: 10,
@@ -523,8 +454,7 @@ export class ControlPanelNode extends Node {
     }
 
     // Track the previous superposition type to revert if dialog is cancelled
-    let previousSuperpositionType: SuperpositionType =
-      this.model.superpositionTypeProperty.value;
+    let previousSuperpositionType: SuperpositionType = this.model.superpositionTypeProperty.value;
     let isHandlingDialogResult = false;
 
     // Open dialog when "Custom..." is selected
@@ -547,8 +477,7 @@ export class ControlPanelNode extends Node {
           () => {
             // Cancel button pressed - revert to previous selection
             isHandlingDialogResult = true;
-            this.model.superpositionTypeProperty.value =
-              previousSuperpositionType;
+            this.model.superpositionTypeProperty.value = previousSuperpositionType;
             isHandlingDialogResult = false;
           },
         );
@@ -559,11 +488,7 @@ export class ControlPanelNode extends Node {
       }
     });
 
-    const children: Node[] = [
-      titleText,
-      potentialRowNode,
-      superpositionRowNode,
-    ];
+    const children: Node[] = [titleText, potentialRowNode, superpositionRowNode];
 
     if (displacementRowVBox) {
       children.push(displacementRowVBox);
@@ -592,8 +517,7 @@ export class ControlPanelNode extends Node {
 
         // PDOM
         labelContent: "Probability Density",
-        descriptionContent:
-          QPPWDescriber.getDisplayModeDescription("probabilityDensity"),
+        descriptionContent: QPPWDescriber.getDisplayModeDescription("probabilityDensity"),
       },
       {
         value: "waveFunction" as const,
@@ -605,8 +529,7 @@ export class ControlPanelNode extends Node {
 
         // PDOM
         labelContent: "Wave Function",
-        descriptionContent:
-          QPPWDescriber.getDisplayModeDescription("waveFunction"),
+        descriptionContent: QPPWDescriber.getDisplayModeDescription("waveFunction"),
       },
       {
         value: "phaseColor" as const,
@@ -618,8 +541,7 @@ export class ControlPanelNode extends Node {
 
         // PDOM
         labelContent: "Phase Color",
-        descriptionContent:
-          QPPWDescriber.getDisplayModeDescription("phaseColor"),
+        descriptionContent: QPPWDescriber.getDisplayModeDescription("phaseColor"),
       },
     ];
 
@@ -674,13 +596,10 @@ export class ControlPanelNode extends Node {
       : null;
 
     // Wave function views checkboxes
-    const waveFunctionViewsLabel = new Text(
-      stringManager.waveFunctionViewsStringProperty,
-      {
-        font: new PhetFont(14),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    const waveFunctionViewsLabel = new Text(stringManager.waveFunctionViewsStringProperty, {
+      font: new PhetFont(14),
+      fill: QPPWColors.textFillProperty,
+    });
 
     const realPartCheckbox = new Checkbox(
       this.viewState.showRealPartProperty,
@@ -753,12 +672,7 @@ export class ControlPanelNode extends Node {
     const waveFunctionCheckboxes = new VBox({
       spacing: 6,
       align: "left",
-      children: [
-        realPartCheckbox,
-        imaginaryPartCheckbox,
-        magnitudeCheckbox,
-        phaseCheckbox,
-      ],
+      children: [realPartCheckbox, imaginaryPartCheckbox, magnitudeCheckbox, phaseCheckbox],
       leftMargin: 20,
     });
 
@@ -772,8 +686,7 @@ export class ControlPanelNode extends Node {
 
       // Enable classical probability checkbox only in probability density mode
       if (classicalProbabilityCheckboxContent) {
-        classicalProbabilityCheckboxContent.enabled =
-          mode === "probabilityDensity";
+        classicalProbabilityCheckboxContent.enabled = mode === "probabilityDensity";
       }
     });
 
@@ -814,21 +727,17 @@ export class ControlPanelNode extends Node {
       massValueText.string = `${mass.toFixed(2)} mₑ`;
     });
 
-    const massSlider = new HSlider(
-      this.model.particleMassProperty,
-      this.model.particleMassProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const massSlider = new HSlider(this.model.particleMassProperty, this.model.particleMassProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Particle Mass",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "particle mass",
-          "Affects energy levels and wavefunction wavelength. Heavier particles have lower energies.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: "Particle Mass",
+      descriptionContent: QPPWDescriber.getSliderHelpText(
+        "particle mass",
+        "Affects energy levels and wavefunction wavelength. Heavier particles have lower energies.",
+      ),
+    });
 
     return new VBox({
       spacing: 8,
@@ -862,21 +771,17 @@ export class ControlPanelNode extends Node {
       widthValueText.string = `${width.toFixed(2)} nm`;
     });
 
-    const widthSlider = new HSlider(
-      this.model.wellWidthProperty,
-      this.model.wellWidthProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const widthSlider = new HSlider(this.model.wellWidthProperty, this.model.wellWidthProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Well Width",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "well width",
-          "Changes spatial extent of potential well. Wider wells have more closely spaced energy levels.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: "Well Width",
+      descriptionContent: QPPWDescriber.getSliderHelpText(
+        "well width",
+        "Changes spatial extent of potential well. Wider wells have more closely spaced energy levels.",
+      ),
+    });
 
     const widthRowVBox = new VBox({
       spacing: 4,
@@ -903,21 +808,17 @@ export class ControlPanelNode extends Node {
       depthValueText.string = `${depth.toFixed(2)} eV`;
     });
 
-    const depthSlider = new HSlider(
-      this.model.wellDepthProperty,
-      this.model.wellDepthProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const depthSlider = new HSlider(this.model.wellDepthProperty, this.model.wellDepthProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Well Depth",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "well depth",
-          "Changes potential energy at bottom of well. Deeper wells support more bound states.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: "Well Depth",
+      descriptionContent: QPPWDescriber.getSliderHelpText(
+        "well depth",
+        "Changes potential energy at bottom of well. Deeper wells support more bound states.",
+      ),
+    });
 
     const depthRowVBox = new VBox({
       spacing: 4,
@@ -990,21 +891,17 @@ export class ControlPanelNode extends Node {
         offsetValueText.string = `${offset.toFixed(2)} eV`;
       });
 
-      const offsetSlider = new HSlider(
-        this.model.potentialOffsetProperty,
-        this.model.potentialOffsetProperty.range!,
-        {
-          trackSize: new Dimension2(150, 4),
-          thumbSize: new Dimension2(15, 30),
+      const offsetSlider = new HSlider(this.model.potentialOffsetProperty, this.model.potentialOffsetProperty.range!, {
+        trackSize: new Dimension2(150, 4),
+        thumbSize: new Dimension2(15, 30),
 
-          // PDOM
-          accessibleName: "Potential Offset",
-          descriptionContent: QPPWDescriber.getSliderHelpText(
-            "potential offset",
-            "Shifts entire potential up or down. Changes absolute energy values of all states.",
-          ),
-        },
-      );
+        // PDOM
+        accessibleName: "Potential Offset",
+        descriptionContent: QPPWDescriber.getSliderHelpText(
+          "potential offset",
+          "Shifts entire potential up or down. Changes absolute energy values of all states.",
+        ),
+      });
 
       offsetRowVBox = new VBox({
         spacing: 4,
@@ -1116,8 +1013,7 @@ export class ControlPanelNode extends Node {
     // Enable/disable width slider based on potential type
     // Coulomb potentials have fixed spatial extent and don't use well width
     this.model.potentialTypeProperty.link((type: PotentialType) => {
-      const needsWidth =
-        type !== PotentialType.COULOMB_1D && type !== PotentialType.COULOMB_3D;
+      const needsWidth = type !== PotentialType.COULOMB_1D && type !== PotentialType.COULOMB_3D;
       widthRowVBox.visible = needsWidth;
     });
 
@@ -1140,8 +1036,7 @@ export class ControlPanelNode extends Node {
     // Enable/disable barrier height slider based on potential type (only for Rosen-Morse and Eckart)
     if (barrierHeightRowVBox) {
       this.model.potentialTypeProperty.link((type: PotentialType) => {
-        const needsBarrierHeight =
-          type === PotentialType.ROSEN_MORSE || type === PotentialType.ECKART;
+        const needsBarrierHeight = type === PotentialType.ROSEN_MORSE || type === PotentialType.ECKART;
         barrierHeightRowVBox!.visible = needsBarrierHeight;
       });
     }
@@ -1168,9 +1063,7 @@ export class ControlPanelNode extends Node {
     // Enable/disable number of wells slider based on potential type
     if (numberOfWellsRowVBox) {
       this.model.potentialTypeProperty.link((type: PotentialType) => {
-        const needsNumberOfWells =
-          type === PotentialType.MULTI_SQUARE_WELL ||
-          type === PotentialType.MULTI_COULOMB_1D;
+        const needsNumberOfWells = type === PotentialType.MULTI_SQUARE_WELL || type === PotentialType.MULTI_COULOMB_1D;
         numberOfWellsRowVBox!.visible = needsNumberOfWells;
       });
     }
@@ -1222,9 +1115,7 @@ export class ControlPanelNode extends Node {
     // Enable/disable electric field slider based on potential type
     if (electricFieldRowVBox) {
       this.model.potentialTypeProperty.link((type: PotentialType) => {
-        const needsElectricField =
-          type === PotentialType.MULTI_SQUARE_WELL ||
-          type === PotentialType.MULTI_COULOMB_1D;
+        const needsElectricField = type === PotentialType.MULTI_SQUARE_WELL || type === PotentialType.MULTI_COULOMB_1D;
         electricFieldRowVBox!.visible = needsElectricField;
       });
     }

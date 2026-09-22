@@ -3,8 +3,8 @@
  * Features a colorful periodic potential with energy band visualization.
  */
 
-import { Rectangle, Node, Path, LinearGradient } from "scenerystack/scenery";
 import { Shape } from "scenerystack/kite";
+import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
 import QPPWColors from "../../QPPWColors.js";
 
@@ -29,10 +29,7 @@ const NUM_BANDS = 4;
 const BAND_HEIGHT = 1.5;
 const BAND_TOP = ICON_HEIGHT * 0.3;
 const BAND_SPACING = (WELL_BOTTOM - BAND_TOP - BAND_HEIGHT) / (NUM_BANDS - 1);
-const BAND_Y_POSITIONS = Array.from(
-  { length: NUM_BANDS },
-  (_, i) => BAND_TOP + i * BAND_SPACING,
-);
+const BAND_Y_POSITIONS = Array.from({ length: NUM_BANDS }, (_, i) => BAND_TOP + i * BAND_SPACING);
 
 // Line widths
 const POTENTIAL_LINE_WIDTH = 2;
@@ -99,12 +96,7 @@ export class ManyWellsScreenIcon extends ScreenIcon {
     for (let i = 0; i < NUM_WELLS - 1; i++) {
       const barrierX = startX + (i + 1) * WELL_WIDTH + i * BARRIER_WIDTH;
 
-      const barrierGradient = new LinearGradient(
-        barrierX,
-        0,
-        barrierX + BARRIER_WIDTH,
-        0,
-      )
+      const barrierGradient = new LinearGradient(barrierX, 0, barrierX + BARRIER_WIDTH, 0)
         .addColorStop(0, QPPWColors.iconBarrierEdgeProperty.value)
         .addColorStop(0.5, QPPWColors.iconBarrierCenterProperty.value)
         .addColorStop(1, QPPWColors.iconBarrierEdgeProperty.value);
@@ -126,16 +118,10 @@ export class ManyWellsScreenIcon extends ScreenIcon {
       for (let i = 0; i < NUM_WELLS; i++) {
         const wellX = startX + i * (WELL_WIDTH + BARRIER_WIDTH);
         energyBands.push(
-          new Rectangle(
-            wellX + WELL_INNER_PADDING,
-            BAND_Y_POSITIONS[band],
-            bandInnerWidth,
-            BAND_HEIGHT,
-            {
-              fill: BAND_COLORS[band],
-              opacity: BASE_BAND_OPACITY - band * BAND_OPACITY_DECREMENT,
-            },
-          ),
+          new Rectangle(wellX + WELL_INNER_PADDING, BAND_Y_POSITIONS[band]!, bandInnerWidth, BAND_HEIGHT, {
+            fill: BAND_COLORS[band]!,
+            opacity: BASE_BAND_OPACITY - band * BAND_OPACITY_DECREMENT,
+          }),
         );
       }
     }
@@ -147,11 +133,7 @@ export class ManyWellsScreenIcon extends ScreenIcon {
     for (let i = 0; i < NUM_WELLS; i++) {
       const wellX = startX + i * (WELL_WIDTH + BARRIER_WIDTH);
 
-      for (
-        let x = wellX + WELL_INNER_PADDING;
-        x <= wellX + WELL_WIDTH - WELL_INNER_PADDING;
-        x += 0.5
-      ) {
+      for (let x = wellX + WELL_INNER_PADDING; x <= wellX + WELL_WIDTH - WELL_INNER_PADDING; x += 0.5) {
         const localX = (x - wellX) / WELL_WIDTH;
         const globalPhase = i * Math.PI;
         const amplitude = WAVE_AMPLITUDE * Math.sin(localX * Math.PI);

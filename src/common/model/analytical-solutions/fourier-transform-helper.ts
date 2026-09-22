@@ -22,13 +22,9 @@
  * ```
  */
 
-import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  FourierTransformResult,
-  WavenumberTransformResult,
-} from "../PotentialFunction.js";
 import { numericalFourierTransform } from "../LinearAlgebraUtils.js";
+import type { BoundStateResult, FourierTransformResult, WavenumberTransformResult } from "../PotentialFunction.js";
+import QuantumConstants from "../QuantumConstants.js";
 
 /**
  * Compute numerical Fourier transform for a bound state result.
@@ -66,16 +62,10 @@ export function computeNumericalFourierTransform(
   const momentumWavefunctions: number[][] = [];
 
   for (let stateIndex = 0; stateIndex < numStates; stateIndex++) {
-    const psi = boundStateResult.wavefunctions[stateIndex];
+    const psi = boundStateResult.wavefunctions[stateIndex]!;
     const xGrid = boundStateResult.xGrid;
 
-    const { pGrid: pGridState, phiP } = numericalFourierTransform(
-      psi,
-      xGrid,
-      mass,
-      nMomentum,
-      actualPMax,
-    );
+    const { pGrid: pGridState, phiP } = numericalFourierTransform(psi, xGrid, mass, nMomentum, actualPMax);
 
     if (stateIndex === 0) {
       // Use pGrid from first state
@@ -111,9 +101,7 @@ export function computeNumericalFourierTransform(
  * @param fourierResult - Fourier transform result in momentum space
  * @returns Fourier transform result in wavenumber space
  */
-export function convertToWavenumber(
-  fourierResult: FourierTransformResult,
-): WavenumberTransformResult {
+export function convertToWavenumber(fourierResult: FourierTransformResult): WavenumberTransformResult {
   const { HBAR } = QuantumConstants;
 
   // Convert momentum grid to wavenumber grid: k = p/ℏ
@@ -135,9 +123,7 @@ export function convertToWavenumber(
  * @param wavenumberResult - Fourier transform result in wavenumber space
  * @returns Fourier transform result in momentum space
  */
-export function convertToMomentum(
-  wavenumberResult: WavenumberTransformResult,
-): FourierTransformResult {
+export function convertToMomentum(wavenumberResult: WavenumberTransformResult): FourierTransformResult {
   const { HBAR } = QuantumConstants;
 
   // Convert wavenumber grid to momentum grid: p = ℏk

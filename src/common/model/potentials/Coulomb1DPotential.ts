@@ -3,9 +3,9 @@
  * V(x) = -α/|x|
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { Coulomb1DPotentialSolution } from "../analytical-solutions/coulomb-1d-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class Coulomb1DPotential extends AnalyticalPotential {
   private coulombStrength: number;

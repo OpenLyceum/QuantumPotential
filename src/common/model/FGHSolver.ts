@@ -12,26 +12,21 @@
  * Reference: Marston & Balint-Kurti, J. Chem. Phys. 91, 3571 (1989)
  */
 
-import QuantumConstants from "./QuantumConstants.js";
+import qppw from "../../QPPWNamespace.js";
 import {
-  BoundStateResult,
-  EnergyOnlyResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
-import {
+  type Complex,
+  cubicSplineInterpolation,
   DotMatrix,
   diagonalize,
-  normalizeWavefunction,
-  matrixToArray,
   fft,
-  ifft,
   fftFreq,
-  Complex,
-  cubicSplineInterpolation,
+  ifft,
+  matrixToArray,
+  normalizeWavefunction,
 } from "./LinearAlgebraUtils.js";
+import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 import { standardizeWavefunction } from "./WavefunctionStandardization.js";
-import qppw from "../../QPPWNamespace.js";
 
 /**
  * Solve the 1D Schrödinger equation using FGH method.
@@ -80,17 +75,15 @@ export function solveFGH(
 
   // Kinetic energy in momentum space: T_k = ℏ²k²/(2m)
   const { HBAR } = QuantumConstants;
-  const T_k = waveNumberGrid.map(
-    (waveNumber) => (HBAR * HBAR * waveNumber * waveNumber) / (2 * mass),
-  );
+  const TK = waveNumberGrid.map((waveNumber) => (HBAR * HBAR * waveNumber * waveNumber) / (2 * mass));
 
   // Potential energy in position space
-  const V_x = xGrid.map(potential);
+  const VX = xGrid.map(potential);
 
   // Build Hamiltonian matrix using FGH method
   // H_ij = ∫ φ_i*(x) H φ_j(x) dx
   // where φ_j(x) are plane waves
-  const H = buildFGHHamiltonian(N, T_k, V_x);
+  const H = buildFGHHamiltonian(N, TK, VX);
 
   // Convert to array for diagonalization
   const hamiltonianArray = matrixToArray(H);
@@ -108,14 +101,14 @@ export function solveFGH(
   const energies: number[] = [];
 
   // Calculate boundary potential once
-  const V_boundary = Math.max(potential(xMin), potential(xMax));
+  const VBoundary = Math.max(potential(xMin), potential(xMax));
 
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (energy < V at boundaries)
-    if (energy < V_boundary) {
+    if (energy < VBoundary) {
       energies.push(energy);
     }
   }
@@ -131,13 +124,13 @@ export function solveFGH(
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (energy < V at boundaries)
-    if (energy < V_boundary) {
+    if (energy < VBoundary) {
       // Normalize wavefunction
-      const wavefunction = eigen.eigenvectors[idx];
+      const wavefunction = eigen.eigenvectors[idx]!;
       const normalizedPsi = normalizeWavefunction(wavefunction, dx);
       // Standardize sign for consistency across solvers
       const standardizedPsi = standardizeWavefunction(normalizedPsi, xGrid);
@@ -156,19 +149,11 @@ export function solveFGH(
   }
 
   const upsampleFactor = 8;
-  const { fineXGrid } = cubicSplineInterpolation(
-    xGrid,
-    wavefunctions[0],
-    upsampleFactor,
-  );
+  const { fineXGrid } = cubicSplineInterpolation(xGrid, wavefunctions[0]!, upsampleFactor);
 
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
-    const { fineYValues } = cubicSplineInterpolation(
-      xGrid,
-      wavefunction,
-      upsampleFactor,
-    );
+    const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
     fineWavefunctions.push(fineYValues);
   }
 
@@ -190,45 +175,41 @@ export function solveFGH(
  * @param V_x - Potential energy in position space
  * @returns N×N Hamiltonian matrix
  */
-function buildFGHHamiltonian(
-  N: number,
-  T_k: number[],
-  V_x: number[],
-): DotMatrix {
+function buildFGHHamiltonian(N: number, Tk: number[], Vx: number[]): DotMatrix {
   const H = new DotMatrix(N, N);
 
   // Build kinetic energy matrix by applying T_k in momentum space
   // For each basis function (column j), apply kinetic energy operator
   for (let j = 0; j < N; j++) {
     // Create basis vector in position space (delta function at grid point j)
-    const psi_x: Complex[] = [];
+    const psiX: Complex[] = [];
     for (let i = 0; i < N; i++) {
-      psi_x.push({ real: i === j ? 1.0 : 0.0, imaginary: 0.0 });
+      psiX.push({ real: i === j ? 1.0 : 0.0, imaginary: 0.0 });
     }
 
     // Transform to momentum space
-    const psi_k = fft(psi_x);
+    const psiK = fft(psiX);
 
     // Apply kinetic energy in momentum space
     for (let i = 0; i < N; i++) {
-      psi_k[i] = {
-        real: psi_k[i].real * T_k[i],
-        imaginary: psi_k[i].imaginary * T_k[i],
+      psiK[i] = {
+        real: psiK[i]!.real * Tk[i]!,
+        imaginary: psiK[i]!.imaginary * Tk[i]!,
       };
     }
 
     // Transform back to position space
-    const T_psi_x = ifft(psi_k);
+    const TPsiX = ifft(psiK);
 
     // Store in kinetic energy contribution to H
     for (let i = 0; i < N; i++) {
-      H.set(i, j, T_psi_x[i].real);
+      H.set(i, j, TPsiX[i]!.real);
     }
   }
 
   // Add potential energy (diagonal)
   for (let i = 0; i < N; i++) {
-    H.set(i, i, H.get(i, i) + V_x[i]);
+    H.set(i, i, H.get(i, i) + Vx[i]!);
   }
 
   return H;

@@ -33,82 +33,50 @@
  *   where α = λ - n - 1/2 and P_n^(α,α) are Jacobi polynomials
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { jacobiPolynomial, factorial } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { factorial, jacobiPolynomial } from "./math-utilities.js";
 
 /**
  * Class-based implementation of Pöschl-Teller potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class PoschlTellerPotentialSolution extends AnalyticalSolution {
-  constructor(
-    private potentialDepth: number,
-    private wellWidth: number,
-    private mass: number,
-  ) {
+  private potentialDepth: number;
+  private wellWidth: number;
+  private mass: number;
+
+  constructor(potentialDepth: number, wellWidth: number, mass: number) {
     super();
+    this.potentialDepth = potentialDepth;
+    this.wellWidth = wellWidth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    return solvePoschlTellerPotential(
-      this.potentialDepth,
-      this.wellWidth,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    return solvePoschlTellerPotential(this.potentialDepth, this.wellWidth, this.mass, numStates, gridConfig);
   }
 
   createPotential(): PotentialFunction {
     return createPoschlTellerPotential(this.potentialDepth, this.wellWidth);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculatePoschlTellerClassicalProbability(
-      this.potentialDepth,
-      this.wellWidth,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculatePoschlTellerClassicalProbability(this.potentialDepth, this.wellWidth, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculatePoschlTellerWavefunctionZeros(
-      this.potentialDepth,
-      this.wellWidth,
-      this.mass,
-      stateIndex,
-    );
+    return calculatePoschlTellerWavefunctionZeros(this.potentialDepth, this.wellWidth, this.mass, stateIndex);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
-    const points = calculatePoschlTellerTurningPoints(
-      this.potentialDepth,
-      this.wellWidth,
-      energy,
-    );
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
+    const points = calculatePoschlTellerTurningPoints(this.potentialDepth, this.wellWidth, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculatePoschlTellerWavefunctionFirstDerivative(
       this.potentialDepth,
       this.wellWidth,
@@ -118,10 +86,7 @@ export class PoschlTellerPotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculatePoschlTellerWavefunctionSecondDerivative(
       this.potentialDepth,
       this.wellWidth,
@@ -174,13 +139,7 @@ export class PoschlTellerPotentialSolution extends AnalyticalSolution {
     numMomentumPoints?: number,
     pMax?: number,
   ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.potentialDepth,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.potentialDepth, numMomentumPoints, pMax);
   }
 }
 
@@ -217,9 +176,7 @@ export function solvePoschlTellerPotential(
   const actualNumStates = Math.min(numStates, nMax + 1);
 
   if (actualNumStates <= 0) {
-    throw new Error(
-      "Pöschl-Teller potential too shallow to support bound states",
-    );
+    throw new Error("Pöschl-Teller potential too shallow to support bound states");
   }
 
   // Calculate energies: E_n = -V_0 * [(λ - n - 1/2)/λ]²
@@ -255,7 +212,7 @@ export function solvePoschlTellerPotential(
 
       // Use Legendre polynomials for Jacobi with α=β
       const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-      const value = Math.pow(sechVal, alpha) * jacobiPoly;
+      const value = sechVal ** alpha * jacobiPoly;
 
       psiRaw.push(value);
     }
@@ -263,7 +220,7 @@ export function solvePoschlTellerPotential(
     // Normalize wavefunction numerically to ensure ∫|ψ|² dx = 1
     let normSq = 0;
     for (let i = 0; i < psiRaw.length; i++) {
-      normSq += psiRaw[i] * psiRaw[i] * dx;
+      normSq += psiRaw[i]! * psiRaw[i]! * dx;
     }
     const norm = 1 / Math.sqrt(normSq);
     const wavefunction = psiRaw.map((psi) => norm * psi);
@@ -287,10 +244,7 @@ export function solvePoschlTellerPotential(
  * @param wellWidth - Width parameter a in meters
  * @returns Potential function V(x) in Joules
  */
-export function createPoschlTellerPotential(
-  potentialDepth: number,
-  wellWidth: number,
-): (x: number) => number {
+export function createPoschlTellerPotential(potentialDepth: number, wellWidth: number): (x: number) => number {
   const V0 = potentialDepth;
   const a = wellWidth;
 
@@ -326,7 +280,7 @@ export function calculatePoschlTellerClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -338,7 +292,7 @@ export function calculatePoschlTellerClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -348,8 +302,8 @@ export function calculatePoschlTellerClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -357,7 +311,7 @@ export function calculatePoschlTellerClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -421,8 +375,7 @@ export function calculatePoschlTellerWavefunctionZeros(
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
   const alpha = lambda - n - 0.5;
-  const normalization =
-    Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
+  const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
 
   // Ground state has no zeros
   if (n === 0) {
@@ -437,14 +390,14 @@ export function calculatePoschlTellerWavefunctionZeros(
   const prevTanh = Math.tanh(prevX / a);
   const prevSech = 1.0 / Math.cosh(prevX / a);
   const prevJacobi = jacobiPolynomial(n, alpha, alpha, prevTanh);
-  let prevVal = normalization * Math.pow(prevSech, alpha) * prevJacobi;
+  let prevVal = normalization * prevSech ** alpha * prevJacobi;
 
   for (let i = 1; i <= numSamples; i++) {
     const x = -searchRange + i * dx;
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
     const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-    const val = normalization * Math.pow(sechVal, alpha) * jacobiPoly;
+    const val = normalization * sechVal ** alpha * jacobiPoly;
 
     // Sign change detected
     if (prevVal * val < 0) {
@@ -456,7 +409,7 @@ export function calculatePoschlTellerWavefunctionZeros(
         const midTanh = Math.tanh(mid / a);
         const midSech = 1.0 / Math.cosh(mid / a);
         const midJacobi = jacobiPolynomial(n, alpha, alpha, midTanh);
-        const valMid = normalization * Math.pow(midSech, alpha) * midJacobi;
+        const valMid = normalization * midSech ** alpha * midJacobi;
 
         if (Math.abs(valMid) < 1e-12) {
           zeros.push(mid);
@@ -532,7 +485,7 @@ function computePoschlTellerNormalization(
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
     const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-    const psiUnnorm = Math.pow(sechVal, alpha) * jacobiPoly;
+    const psiUnnorm = sechVal ** alpha * jacobiPoly;
     normSq += psiUnnorm * psiUnnorm * dx;
   }
 
@@ -555,22 +508,16 @@ export function calculatePoschlTellerWavefunctionFirstDerivative(
   const alpha = lambda - n - 0.5;
 
   // Use numerical normalization to match the wavefunction normalization
-  const xMin = xGrid[0];
-  const xMax = xGrid[xGrid.length - 1];
-  const normalization = computePoschlTellerNormalization(
-    a,
-    lambda,
-    n,
-    xMin,
-    xMax,
-  );
+  const xMin = xGrid[0]!;
+  const xMax = xGrid[xGrid.length - 1]!;
+  const normalization = computePoschlTellerNormalization(a, lambda, n, xMin, xMax);
 
   const firstDerivative: number[] = [];
 
   for (const x of xGrid) {
     const t = Math.tanh(x / a);
     const sech = 1.0 / Math.cosh(x / a);
-    const sechAlpha = Math.pow(sech, alpha);
+    const sechAlpha = sech ** alpha;
 
     // Calculate P_n^(α,α)(t)
     const Pn = jacobiPolynomial(n, alpha, alpha, t);
@@ -582,9 +529,9 @@ export function calculatePoschlTellerWavefunctionFirstDerivative(
     // For ground state (n=0), there is no P_{-1}, so this term is zero
     let term2 = 0;
     if (n > 0) {
-      const Pn_minus_1 = jacobiPolynomial(n - 1, alpha + 1, alpha + 1, t);
+      const PnMinus1 = jacobiPolynomial(n - 1, alpha + 1, alpha + 1, t);
       const derivCoeff = (n + 2 * alpha + 1) / 2;
-      term2 = (1 / a) * sech * sech * derivCoeff * Pn_minus_1;
+      term2 = (1 / a) * sech * sech * derivCoeff * PnMinus1;
     }
 
     // Combine terms: ψ'(x) = N_n · sech^α(x/a) · (term1 + term2)
@@ -630,15 +577,9 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
   const alpha = lambda - n - 0.5;
 
   // Use numerical normalization to match the wavefunction normalization
-  const xMin = xGrid[0];
-  const xMax = xGrid[xGrid.length - 1];
-  const normalization = computePoschlTellerNormalization(
-    a,
-    lambda,
-    n,
-    xMin,
-    xMax,
-  );
+  const xMin = xGrid[0]!;
+  const xMax = xGrid[xGrid.length - 1]!;
+  const normalization = computePoschlTellerNormalization(a, lambda, n, xMin, xMax);
 
   // Calculate energy for this state: E_n = -V_0 * [(λ - n - 1/2)/λ]²
   const term = lambda - n - 0.5;
@@ -650,7 +591,7 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
     // Calculate wavefunction value at x
     const t = Math.tanh(x / a);
     const sech = 1.0 / Math.cosh(x / a);
-    const sechAlpha = Math.pow(sech, alpha);
+    const sechAlpha = sech ** alpha;
     const Pn = jacobiPolynomial(n, alpha, alpha, t);
     const psi = normalization * sechAlpha * Pn;
 
@@ -696,8 +637,7 @@ export function calculatePoschlTellerWavefunctionMinMax(
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
   const alpha = lambda - n - 0.5;
-  const normalization =
-    Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
+  const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
 
   let min = Infinity;
   let max = -Infinity;
@@ -713,7 +653,7 @@ export function calculatePoschlTellerWavefunctionMinMax(
     const tanhVal = Math.tanh(x / a);
     const sechVal = 1.0 / Math.cosh(x / a);
     const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-    const psi = normalization * Math.pow(sechVal, alpha) * jacobiPoly;
+    const psi = normalization * sechVal ** alpha * jacobiPoly;
 
     // Calculate derivative using central difference for extrema detection
     let derivative = 0;
@@ -724,18 +664,22 @@ export function calculatePoschlTellerWavefunctionMinMax(
       const tanhMinus = Math.tanh(xMinus / a);
       const sechMinus = 1.0 / Math.cosh(xMinus / a);
       const jacobiMinus = jacobiPolynomial(n, alpha, alpha, tanhMinus);
-      const psiMinus = normalization * Math.pow(sechMinus, alpha) * jacobiMinus;
+      const psiMinus = normalization * sechMinus ** alpha * jacobiMinus;
 
       const tanhPlus = Math.tanh(xPlus / a);
       const sechPlus = 1.0 / Math.cosh(xPlus / a);
       const jacobiPlus = jacobiPolynomial(n, alpha, alpha, tanhPlus);
-      const psiPlus = normalization * Math.pow(sechPlus, alpha) * jacobiPlus;
+      const psiPlus = normalization * sechPlus ** alpha * jacobiPlus;
 
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -800,18 +744,16 @@ export function calculatePoschlTellerSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       // Calculate wavefunction value
       const alpha = lambda - n - 0.5;
-      const normalization =
-        Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) *
-        Math.sqrt(factorial(n));
+      const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
       const tanhVal = Math.tanh(x / a);
       const sechVal = 1.0 / Math.cosh(x / a);
       const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-      const psi = normalization * Math.pow(sechVal, alpha) * jacobiPoly;
+      const psi = normalization * sechVal ** alpha * jacobiPoly;
 
       // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
       const phase = (-energy * time) / HBAR;
@@ -823,8 +765,12 @@ export function calculatePoschlTellerSuperpositionMinMax(
       realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };
