@@ -7,13 +7,8 @@
  * multiple analytical solutions with STRICT tolerance requirements.
  *
  * TESTED METHODS:
- * 1. DVR (Discrete Variable Representation)
- * 2. Matrix Numerov
- * 3. FGH (Fourier Grid Hamiltonian)
- * 4. Spectral (Chebyshev)
- * 5. QuantumBound (Advanced Shooting)
- * 6. Numerov (Traditional Shooting)
- * 7. WavefunctionNumerov (Wavefunction Computation)
+ * 1. Numerov (node-count shooting, the sim's solver; via Schrodinger1DSolver)
+ * 2. FGH (Fourier Grid Hamiltonian, the ?numericalMethod=fgh cross-check)
  *
  * TESTED POTENTIALS:
  * 1. Harmonic Oscillator (exact analytical solution)
@@ -53,20 +48,15 @@ import { solveFiniteSquareWell } from "../../src/common/model/analytical-solutio
 import { solveHarmonicOscillator } from "../../src/common/model/analytical-solutions/harmonic-oscillator.js";
 import { solveMorsePotential } from "../../src/common/model/analytical-solutions/morse-potential.js";
 import { solvePoschlTellerPotential } from "../../src/common/model/analytical-solutions/poschl-teller-potential.js";
-import { solveDVR } from "../../src/common/model/DVRSolver.js";
 import { solveFGH } from "../../src/common/model/FGHSolver.js";
-import { solveMatrixNumerov } from "../../src/common/model/MatrixNumerovSolver.js";
-import { solveNumerov } from "../../src/common/model/NumerovSolver.js";
 import type {
   BoundStateResult,
   EnergyOnlyResult,
   GridConfig,
   PotentialFunction,
 } from "../../src/common/model/PotentialFunction.js";
-import { solveQuantumBound } from "../../src/common/model/QuantumBoundStateSolver.js";
 import QuantumConstants from "../../src/common/model/QuantumConstants.js";
-import { solveSpectral } from "../../src/common/model/SpectralSolver.js";
-import { computeWavefunctionsNumerov } from "../../src/common/model/WavefunctionNumerovSolver.js";
+import { Schrodinger1DSolver } from "../../src/common/model/Schrodinger1DSolver.js";
 
 // Physical constants
 const { HBAR, ELECTRON_MASS, EV_TO_JOULES } = QuantumConstants;
@@ -74,12 +64,12 @@ const { HBAR, ELECTRON_MASS, EV_TO_JOULES } = QuantumConstants;
 /** A solver that returns energies and wavefunctions. */
 type FullSolver = (pot: PotentialFunction, mass: number, numStates: number, grid: GridConfig) => BoundStateResult;
 
-// The matrix solvers are overloaded on `energiesOnly`; ask for the full result explicitly.
-const DVR: FullSolver = (pot, mass, n, grid) => solveDVR(pot, mass, n, grid, false);
-const MATRIX_NUMEROV: FullSolver = (pot, mass, n, grid) => solveMatrixNumerov(pot, mass, n, grid, false);
+// Numerov is a shooting method: it wants a fine, odd grid (x = 0 on the grid) and returns only bound states.
+const NUMEROV_GRID_POINTS = 2001;
+const NUMEROV: FullSolver = (pot, mass, n, grid) =>
+  new Schrodinger1DSolver().solveNumerical(pot, mass, n, { ...grid, numPoints: NUMEROV_GRID_POINTS });
+// FGH is overloaded on `energiesOnly`; ask for the full result explicitly.
 const FGH: FullSolver = (pot, mass, n, grid) => solveFGH(pot, mass, n, grid, false);
-const SPECTRAL: FullSolver = (pot, mass, n, grid) => solveSpectral(pot, mass, n, grid, false);
-const QUANTUM_BOUND: FullSolver = (pot, mass, n, grid) => solveQuantumBound(pot, mass, n, grid);
 
 // Test statistics
 let totalTests = 0;
@@ -92,7 +82,7 @@ const ENERGY_TOLERANCE_HARMONIC = 0.001; // 0.1% for harmonic oscillator (exact)
 // k·dx for the upper levels (≈ 0.7 % for the top level at 511 points)
 const ENERGY_TOLERANCE_FINITE_WELL = 0.01;
 // 5 % for Coulomb: the r → 0 cusp makes uniform-grid solvers converge only linearly in h
-// (DVR at h ≈ 0.1 a₀ gives −13.01 eV for the −13.61 eV ground state)
+// (a matrix method at h ≈ 0.1 a₀ gives −13.01 eV for the −13.61 eV ground state)
 const ENERGY_TOLERANCE_COULOMB = 0.05;
 const ENERGY_TOLERANCE_MORSE = 0.01; // 1% for Morse
 const ENERGY_TOLERANCE_POSCHL = 0.01; // 1% for Pöschl-Teller
@@ -103,7 +93,6 @@ const EDGE_DECAY_TOLERANCE = 0.005; // 0.5% for edge decay
 
 // Grid configurations for high accuracy
 const HIGH_RES_GRID = 256;
-const MEDIUM_RES_GRID = 128;
 
 /**
  * Test result structure
@@ -563,11 +552,8 @@ function testHarmonicOscillator(): void {
 
   // Test all methods
   const methods = [
-    { name: "DVR", solver: DVR },
-    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "Numerov", solver: NUMEROV },
     { name: "FGH", solver: FGH },
-    { name: "Spectral", solver: SPECTRAL },
-    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -617,13 +603,10 @@ function testFiniteSquareWell(): void {
 
   // Test all methods
   const methods: Array<{ name: string; solver: FullSolver; gridConfig?: GridConfig }> = [
-    { name: "DVR", solver: DVR },
-    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "Numerov", solver: NUMEROV },
     // FGH uses a periodic grid (dx = range/N, not range/(N − 1)); 510 points keep the well edges
     // midway between its samples, exactly like 511 points do for the other methods
     { name: "FGH", solver: FGH, gridConfig: { ...gridConfig, numPoints: 510 } },
-    // Spectral (Chebyshev) is omitted: it converges only algebraically for a discontinuous potential
-    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -676,13 +659,8 @@ function testCoulomb3D(): void {
   // Analytical solution (s-waves, L = 0)
   const analytical = solveCoulomb3DPotential(coulombStrength, mass, numStates, gridConfig);
 
-  // Matrix methods only: the QuantumBound shooter integrates inward from the grid edge and does not
-  // handle a 1/r singularity sitting at that edge (it is not used for Coulomb potentials in the sim,
-  // which solves those analytically)
-  const methods = [
-    { name: "DVR", solver: DVR },
-    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
-  ];
+  // Numerov only: FGH assumes a periodic domain, which a radial grid starting at r = h is not
+  const methods = [{ name: "Numerov", solver: NUMEROV }];
 
   for (const method of methods) {
     const result = testMethodComprehensive(
@@ -737,10 +715,8 @@ function testMorsePotential(): void {
 
   // Test methods
   const methods = [
-    { name: "DVR", solver: DVR },
-    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "Numerov", solver: NUMEROV },
     { name: "FGH", solver: FGH },
-    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -789,11 +765,8 @@ function testPoschlTellerPotential(): void {
 
   // Test methods
   const methods = [
-    { name: "DVR", solver: DVR },
-    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "Numerov", solver: NUMEROV },
     { name: "FGH", solver: FGH },
-    { name: "Spectral", solver: SPECTRAL },
-    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -809,186 +782,6 @@ function testPoschlTellerPotential(): void {
       ENERGY_TOLERANCE_POSCHL,
       true, // Test symmetry
     );
-    printTestResult(result);
-  }
-}
-
-/**
- * Test Numerov shooting method (energy search)
- */
-function testNumerovShootingMethod(): void {
-  console.log("\n" + "=".repeat(80));
-  console.log("NUMEROV SHOOTING METHOD TESTS");
-  console.log("=".repeat(80));
-
-  // Use harmonic oscillator as test case
-  const omega = 1.0e15;
-  const mass = ELECTRON_MASS;
-  const numStates = 5; // Limited states for shooting method
-  const springConstant = mass * omega * omega;
-
-  const x0 = Math.sqrt(HBAR / (mass * omega));
-  const gridConfig: GridConfig = {
-    xMin: -8 * x0,
-    xMax: 8 * x0,
-    numPoints: MEDIUM_RES_GRID,
-  };
-
-  const analytical = solveHarmonicOscillator(springConstant, mass, numStates, gridConfig);
-  const V = (x: number) => 0.5 * springConstant * x * x;
-
-  // Numerov returns energy-only result
-  const details: string[] = [];
-  details.push(`\n━━━ Numerov Shooting Method - Harmonic Oscillator ━━━`);
-
-  try {
-    const startTime = performance.now();
-    const numericalResult = solveNumerov(V, mass, numStates, gridConfig, 0, V(gridConfig.xMax));
-    const endTime = performance.now();
-
-    details.push(`Grid: ${gridConfig.numPoints} points`);
-    details.push(`Execution time: ${(endTime - startTime).toFixed(2)} ms`);
-
-    const energyTest = testEigenvalues(numericalResult.energies, analytical.energies, ENERGY_TOLERANCE_HARMONIC);
-
-    details.push(...energyTest.details);
-
-    const result: TestResult = {
-      testName: "Numerov Shooting",
-      method: "Numerov",
-      passed: energyTest.passed,
-      maxError: energyTest.maxError,
-      details,
-      validations: {
-        energy: energyTest.passed,
-        normalization: true,
-        orthogonality: true,
-        nodes: true,
-        parity: true,
-        edgeDecay: true,
-      },
-    };
-
-    printTestResult(result);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    details.push(`  ❌ ERROR: ${errorMessage}`);
-    const result: TestResult = {
-      testName: "Numerov Shooting",
-      method: "Numerov",
-      passed: false,
-      maxError: 100,
-      details,
-      validations: {
-        energy: false,
-        normalization: false,
-        orthogonality: false,
-        nodes: false,
-        parity: false,
-        edgeDecay: false,
-      },
-    };
-    printTestResult(result);
-  }
-}
-
-/**
- * Test WavefunctionNumerov method (wavefunction from known energies)
- */
-function testWavefunctionNumerovMethod(): void {
-  console.log("\n" + "=".repeat(80));
-  console.log("WAVEFUNCTION NUMEROV METHOD TESTS");
-  console.log("=".repeat(80));
-
-  // Use harmonic oscillator
-  const omega = 1.0e15;
-  const mass = ELECTRON_MASS;
-  const numStates = 8;
-  const springConstant = mass * omega * omega;
-
-  const x0 = Math.sqrt(HBAR / (mass * omega));
-  const gridConfig: GridConfig = {
-    xMin: -8 * x0,
-    xMax: 8 * x0,
-    numPoints: HIGH_RES_GRID,
-  };
-
-  const V = (x: number) => 0.5 * springConstant * x * x;
-
-  // First solve for energies using DVR (reference method)
-  const dvrResult = solveDVR(V, mass, numStates, gridConfig);
-
-  // Now use WavefunctionNumerov to compute wavefunctions from these energies
-  const details: string[] = [];
-  details.push(`\n━━━ WavefunctionNumerov - Harmonic Oscillator ━━━`);
-
-  try {
-    const startTime = performance.now();
-    const result = computeWavefunctionsNumerov(dvrResult.energies, V, mass, gridConfig);
-    const endTime = performance.now();
-
-    details.push(`Grid: ${gridConfig.numPoints} points`);
-    details.push(`Execution time: ${(endTime - startTime).toFixed(2)} ms`);
-
-    const dx = (gridConfig.xMax - gridConfig.xMin) / (gridConfig.numPoints - 1);
-
-    // Test normalization
-    const normTest = testNormalization(result.wavefunctions, dx);
-    details.push(...normTest.details);
-
-    // Test orthogonality
-    const orthoTest = testOrthogonality(result.wavefunctions, dx);
-    details.push(...orthoTest.details);
-
-    // Test node counting
-    const nodeTest = testNodeCounting(result.wavefunctions);
-    details.push(...nodeTest.details);
-
-    // Test parity
-    const parityTest = testParityAlternation(result.wavefunctions, result.xGrid);
-    details.push(...parityTest.details);
-
-    // Test edge decay
-    const edgeTest = testEdgeDecay(result.wavefunctions);
-    details.push(...edgeTest.details);
-
-    const allPassed = normTest.passed && orthoTest.passed && nodeTest.passed && parityTest.passed && edgeTest.passed;
-
-    const testResult: TestResult = {
-      testName: "WavefunctionNumerov",
-      method: "WavefunctionNumerov",
-      passed: allPassed,
-      maxError: Math.max(normTest.maxError, orthoTest.maxError),
-      details,
-      validations: {
-        energy: true, // Uses known energies
-        normalization: normTest.passed,
-        orthogonality: orthoTest.passed,
-        nodes: nodeTest.passed,
-        parity: parityTest.passed,
-        edgeDecay: edgeTest.passed,
-      },
-    };
-
-    printTestResult(testResult);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    details.push(`  ❌ ERROR: ${errorMessage}`);
-    const result: TestResult = {
-      testName: "WavefunctionNumerov",
-      method: "WavefunctionNumerov",
-      passed: false,
-      maxError: 100,
-      details,
-      validations: {
-        energy: false,
-        normalization: false,
-        orthogonality: false,
-        nodes: false,
-        parity: false,
-        edgeDecay: false,
-      },
-    };
     printTestResult(result);
   }
 }
@@ -1012,8 +805,6 @@ function runAllTests(): void {
   testCoulomb3D();
   testMorsePotential();
   testPoschlTellerPotential();
-  testNumerovShootingMethod();
-  testWavefunctionNumerovMethod();
 
   const endTime = performance.now();
   const totalTime = ((endTime - startTime) / 1000).toFixed(2);

@@ -72,6 +72,17 @@ const QPPWColors = {
     projector: new Color(0, 150, 100), // Darker green for projector
   }),
 
+  // Drag handles on the potential curve (energy chart)
+  potentialHandleFillProperty: new ProfileColorProperty(qppw, "potentialHandleFill", {
+    default: new Color(255, 120, 200), // Magenta, distinct from the levels and the curve
+    projector: new Color(200, 40, 140),
+  }),
+
+  potentialHandleStrokeProperty: new ProfileColorProperty(qppw, "potentialHandleStroke", {
+    default: new Color(40, 10, 40),
+    projector: new Color(60, 0, 40),
+  }),
+
   energyLevelSelectedProperty: new ProfileColorProperty(qppw, "energyLevelSelected", {
     default: new Color(255, 255, 100), // Bright yellow
     projector: new Color(200, 200, 0), // Darker yellow for projector

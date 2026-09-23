@@ -22,7 +22,7 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
 
@@ -243,18 +243,6 @@ export class OneWellModel extends BaseModel {
 
     this.barrierHeightProperty.lazyLink(invalidateCache);
     this.potentialOffsetProperty.lazyLink(invalidateCache);
-  }
-
-  /**
-   * Called when the solver method or grid points changes.
-   * For OneWellModel, solver method changes don't matter since we always use analytical solutions,
-   * but grid points changes do matter because they affect the wavefunction grid.
-   * @param _method - The new numerical method (unused)
-   */
-  protected override onSolverMethodChanged(_method: NumericalMethod): void {
-    // Invalidate the cached bound state result so wavefunctions are recalculated
-    // with the new grid configuration
-    this.boundStateResult = null;
   }
 
   /**
@@ -683,7 +671,7 @@ export class OneWellModel extends BaseModel {
     }
 
     // Fallback: numerical calculation using potential function
-    const potential = this.calculatePotentialEnergy(xGrid);
+    const potential = this.getPotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
     const result = this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
@@ -705,7 +693,7 @@ export class OneWellModel extends BaseModel {
    * @param xGrid - Array of x positions in meters
    * @returns Array of potential energy values in Joules
    */
-  private calculatePotentialEnergy(xGrid: number[]): number[] {
+  protected override calculatePotentialEnergy(xGrid: readonly number[]): number[] {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
 

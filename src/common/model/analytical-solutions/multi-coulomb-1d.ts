@@ -21,6 +21,7 @@
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import type Schrodinger1DSolver from "../Schrodinger1DSolver.js";
+import { withElectricField } from "./multi-square-well.js";
 
 /**
  * Create a multi-Coulomb 1D potential function.
@@ -78,10 +79,10 @@ function createMultiCoulomb1DPotential(
 }
 
 /**
- * Solve multi-Coulomb 1D potential using numerical methods.
+ * Solve multi-Coulomb 1D potential numerically.
  *
- * The multi-center Coulomb problem doesn't have a simple analytical solution,
- * so we use numerical solvers (DVR, FGH, or Matrix Numerov) to find bound states.
+ * The multi-center Coulomb problem doesn't have a simple analytical solution, so the bound states
+ * come from the solver's numerical method.
  *
  * @param numberOfCenters - Number of Coulomb centers (1 to 10)
  * @param centerSpacing - Spacing between centers in meters
@@ -90,6 +91,7 @@ function createMultiCoulomb1DPotential(
  * @param numStates - Number of energy levels to calculate
  * @param gridConfig - Grid configuration for wavefunction evaluation
  * @param solver - Reference to the numerical solver to use
+ * @param electricField - Uniform electric field in V/m (0 for no tilt)
  * @returns Bound state results with energies and wavefunctions
  */
 export function solveMultiCoulomb1D(
@@ -100,18 +102,15 @@ export function solveMultiCoulomb1D(
   numStates: number,
   gridConfig: GridConfig,
   solver: Schrodinger1DSolver, // Numerical solver instance
+  electricField = 0,
 ): BoundStateResult {
-  // Create the potential function
-  const potential = createMultiCoulomb1DPotential(numberOfCenters, centerSpacing, coulombStrength);
+  const potential = withElectricField(
+    createMultiCoulomb1DPotential(numberOfCenters, centerSpacing, coulombStrength),
+    electricField,
+  );
 
-  // Use numerical solver to find bound states
   try {
-    const result = solver.solveNumerical(potential, mass, numStates, gridConfig);
-
-    return {
-      ...result,
-      method: "analytical" as const, // Mark as analytical (exact potential definition)
-    };
+    return solver.solveNumerical(potential, mass, numStates, gridConfig);
   } catch (error) {
     Logger.error("Error solving multi-Coulomb 1D:", error);
 
@@ -126,7 +125,7 @@ export function solveMultiCoulomb1D(
       energies: [],
       wavefunctions: [],
       xGrid,
-      method: "analytical",
+      method: "numerov",
     };
   }
 }

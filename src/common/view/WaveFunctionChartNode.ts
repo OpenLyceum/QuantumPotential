@@ -14,7 +14,6 @@ import { Line, Node, Path, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
 import QPPWColors from "../../QPPWColors.js";
 import { hasSuperpositionConfig, hasWellOffset, hasWellSeparation } from "../model/ModelTypeGuards.js";
 import type { BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
@@ -563,12 +562,19 @@ export class WaveFunctionChartNode extends Node {
       this.model.wellSeparationProperty.lazyLink(() => this.update());
     }
 
-    // Update when grid points preference changes (affects wavefunction resolution)
-    QPPWPreferences.gridPointsProperty.lazyLink(() => {
-      // Force model to invalidate its cache by notifying it of the change
-      // The BaseModel listener will handle cache invalidation
-      this.update();
-    });
+    // Every other parameter that reshapes the potential
+    if ("barrierHeightProperty" in this.model) {
+      this.model.barrierHeightProperty.lazyLink(() => this.update());
+    }
+    if ("potentialOffsetProperty" in this.model) {
+      this.model.potentialOffsetProperty.lazyLink(() => this.update());
+    }
+    if ("numberOfWellsProperty" in this.model) {
+      this.model.numberOfWellsProperty.lazyLink(() => this.update());
+    }
+    if ("electricFieldProperty" in this.model) {
+      this.model.electricFieldProperty.lazyLink(() => this.update());
+    }
 
     this.model.selectedEnergyLevelIndexProperty.lazyLink(() => {
       this.updateStateLabel();

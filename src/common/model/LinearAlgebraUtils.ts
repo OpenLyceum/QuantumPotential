@@ -333,32 +333,6 @@ export function matrixToArray(matrix: CustomDotMatrix): number[][] {
 }
 
 /**
- * Symmetrize a matrix by computing (M + M^T)/2.
- * This ensures the matrix is exactly symmetric, which is required for
- * eigenvalue problems involving self-adjoint operators.
- *
- * @param M - Matrix to symmetrize
- * @returns Symmetric matrix
- */
-export function symmetrizeMatrix(M: CustomDotMatrix): CustomDotMatrix {
-  const transposed = M.transpose();
-  const sum = M.plus(transposed);
-  return sum.timesEquals(0.5);
-}
-
-/**
- * Extract interior matrix (remove first and last rows/columns)
- * for implementing Dirichlet boundary conditions.
- *
- * @param H - Full matrix
- * @returns Interior matrix with boundary rows/columns removed
- */
-export function extractInteriorMatrix(H: CustomDotMatrix): CustomDotMatrix {
-  const N = H.getRowDimension();
-  return H.getMatrix(1, N - 2, 1, N - 2);
-}
-
-/**
  * Diagonalize a symmetric matrix using Jacobi eigenvalue algorithm.
  * Returns eigenvalues and eigenvectors.
  *
@@ -532,41 +506,6 @@ export function normalizeOnGrid(psi: number[], xGrid: number[]): number[] {
   }
   const normalization = Math.sqrt(integral);
   return normalization < 1e-30 ? psi : psi.map((val) => val / normalization);
-}
-
-/**
- * Normalize a wavefunction using Clenshaw-Curtis quadrature.
- * Used for Chebyshev spectral methods where the grid is non-uniform.
- *
- * @param psi - Wavefunction at Chebyshev points
- * @param xMin - Minimum value of physical domain
- * @param xMax - Maximum value of physical domain
- * @returns Normalized wavefunction
- */
-export function normalizeWavefunctionChebyshev(psi: number[], xMin: number, xMax: number): number[] {
-  const N = psi.length;
-
-  // Clenshaw-Curtis quadrature weights for ξ ∈ [-1,1]
-  const weights: number[] = [];
-  for (let j = 0; j < N; j++) {
-    if (j === 0 || j === N - 1) {
-      weights.push(Math.PI / (2 * (N - 1)));
-    } else {
-      weights.push(Math.PI / (N - 1));
-    }
-  }
-
-  // Jacobian for coordinate transformation: dx = (xMax - xMin)/2 * dξ
-  const jacobian = (xMax - xMin) / 2;
-
-  // Compute ∫|ψ|² dx
-  let integral = 0;
-  for (let i = 0; i < N; i++) {
-    integral += weights[i]! * psi[i]! * psi[i]! * jacobian;
-  }
-
-  const normalization = Math.sqrt(integral);
-  return psi.map((val) => val / normalization);
 }
 
 /**
@@ -914,11 +853,8 @@ export function cubicSplineInterpolation(
 
 qppw.register("LinearAlgebraUtils", {
   matrixToArray,
-  symmetrizeMatrix,
-  extractInteriorMatrix,
   diagonalize,
   normalizeWavefunction,
-  normalizeWavefunctionChebyshev,
   cubicSplineInterpolation,
   fft,
   ifft,

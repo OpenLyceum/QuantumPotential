@@ -10,7 +10,9 @@ import { Checkbox, ComboBox, type ComboBoxItem, HSlider } from "scenerystack/sun
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import { PANEL_CHECKBOX_OPTIONS, PANEL_SLIDER_OPTIONS } from "../../common/QPPWControlOptions.js";
 import { QPPWPanel } from "../../common/QPPWPanel.js";
+import isDevMode from "../../common/utils/isDevMode.js";
 import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
+import { QPPWNumberControl } from "../../common/view/QPPWNumberControl.js";
 import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
@@ -288,41 +290,19 @@ export class IntroControlPanelNode extends Node {
       fill: QPPWColors.textFillProperty,
     });
 
-    // Particle Mass slider
-    const massValueText = new Text("", {
-      font: new PhetFont(12),
-      fill: QPPWColors.textFillProperty,
-    });
+    // Particle mass has no handle on the potential, so it keeps a ◀ value ▶ control
+    const massControl = new QPPWNumberControl(
+      stringManager.particleMassStringProperty,
+      this.model.particleMassProperty,
+      {
+        deltaValue: 0.05,
+        decimalPlaces: 2,
+        valuePattern: stringManager.valueWithElectronMassStringProperty,
+        accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
+      },
+    );
 
-    this.model.particleMassProperty.link((mass: number) => {
-      massValueText.string = StringUtils.fillIn(stringManager.valueWithElectronMassStringProperty, {
-        value: mass.toFixed(2),
-      });
-    });
-
-    const massSlider = new HSlider(this.model.particleMassProperty, this.model.particleMassProperty.range!, {
-      ...PANEL_SLIDER_OPTIONS,
-
-      // PDOM
-      accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
-      descriptionContent: QPPWDescriber.getSliderHelpText("particleMass"),
-    });
-
-    const massRowVBox = new VBox({
-      spacing: 4,
-      align: "left",
-      children: [
-        new Text(stringManager.particleMassStringProperty, {
-          font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
-        }),
-        new HBox({
-          spacing: 10,
-          children: [massSlider, massValueText],
-        }),
-      ],
-    });
-
+    // The geometric parameters are dragged with the handles on the energy chart; these sliders are for ?dev only
     // Well Width slider
     const widthValueText = new Text("", {
       font: new PhetFont(12),
@@ -488,10 +468,10 @@ export class IntroControlPanelNode extends Node {
       offsetRowVBox.visible = showOffset;
     });
 
-    return new VBox({
-      spacing: 8,
-      align: "left",
-      children: [titleText, massRowVBox, widthRowVBox, depthRowVBox, barrierHeightRowVBox, offsetRowVBox],
-    });
+    const children: Node[] = [titleText, massControl];
+    if (isDevMode()) {
+      children.push(widthRowVBox, depthRowVBox, barrierHeightRowVBox, offsetRowVBox);
+    }
+    return new VBox({ spacing: 8, align: "left", children: children });
   }
 }

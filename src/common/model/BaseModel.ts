@@ -6,7 +6,7 @@
 import { TimeSpeed } from "scenerystack";
 import { EnumerationProperty, NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
-import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
+import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
 import { type BoundStateResult, PotentialType, type WavenumberTransformResult } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
@@ -146,10 +146,6 @@ export abstract class BaseModel {
   // Guard flag to prevent reentry in step method
   private isStepping: boolean = false;
 
-  // Listeners on the global preferences, kept so dispose() can unlink them
-  private readonly numericalMethodListener: (method: NumericalMethod) => void;
-  private readonly gridPointsListener: () => void;
-
   protected constructor(options?: BaseModelOptions) {
     // Initialize simulation state
     this.isPlayingProperty = new Property<boolean>(false);
@@ -190,22 +186,8 @@ export abstract class BaseModel {
       },
     );
 
-    // Initialize solver with user's preferred method
-    this.solver = new Schrodinger1DSolver();
-
-    // Update solver method when preference changes
-    this.numericalMethodListener = (method: NumericalMethod) => {
-      this.solver.setNumericalMethod(method);
-      this.onSolverMethodChanged(method);
-    };
-    QPPWPreferences.numericalMethodProperty.link(this.numericalMethodListener);
-
-    // Invalidate caches when grid points preference changes
-    // Use lazyLink to avoid triggering during initialization
-    this.gridPointsListener = () => {
-      this.onSolverMethodChanged(this.solver.getNumericalMethod());
-    };
-    QPPWPreferences.gridPointsProperty.lazyLink(this.gridPointsListener);
+    // Numerov by default; ?numericalMethod=fgh selects the FGH cross-check
+    this.solver = new Schrodinger1DSolver(qppwQueryParameters.numericalMethod as NumericalMethod);
 
     // Note: setupCacheInvalidation() must be called by subclasses
     // after all their properties are initialized
@@ -228,23 +210,11 @@ export abstract class BaseModel {
   }
 
   /**
-   * Called when the solver method changes.
-   * Subclasses should override this to invalidate caches or recalculate results.
-   * @param method - The new numerical method
-   */
-  protected abstract onSolverMethodChanged(method: NumericalMethod): void;
-
-  /**
-   * Releases the listeners this model registered on the global preferences, so a disposed
-   * model can be garbage collected. Safe to call more than once.
+   * Releases any listeners this model registered on global Properties, so a disposed model can be
+   * garbage collected. The model currently links to no global Property; keep this in sync if one is added.
    */
   public dispose(): void {
-    if (QPPWPreferences.numericalMethodProperty.hasListener(this.numericalMethodListener)) {
-      QPPWPreferences.numericalMethodProperty.unlink(this.numericalMethodListener);
-    }
-    if (QPPWPreferences.gridPointsProperty.hasListener(this.gridPointsListener)) {
-      QPPWPreferences.gridPointsProperty.unlink(this.gridPointsListener);
-    }
+    // Nothing to unlink.
   }
 
   /**
@@ -389,6 +359,29 @@ export abstract class BaseModel {
    * Subclasses must implement this method to perform the actual bound state calculations.
    */
   protected abstract calculateBoundStates(): void;
+
+  /**
+   * Potential energy (J) at the given positions (m): exactly the potential the solver used. For closed-form
+   * potentials that is the analytical solution's own V(x); otherwise the screen model's potential. Views draw
+   * this and tools use it, so nothing re-derives a potential that could drift from the one being solved.
+   */
+  public getPotentialEnergy(xGrid: readonly number[]): number[] {
+    if (!this.boundStateResult) {
+      this.calculateBoundStates();
+    }
+    const analyticalSolution = this.solver.getAnalyticalSolution();
+    if (analyticalSolution) {
+      const potential = analyticalSolution.createPotential();
+      return xGrid.map((x) => potential(x));
+    }
+    return this.calculatePotentialEnergy(xGrid);
+  }
+
+  /**
+   * The screen model's potential energy (J) at the given positions (m), for potentials without a closed-form
+   * solution class (double and multi-well). Use getPotentialEnergy, which prefers the solver's own potential.
+   */
+  protected abstract calculatePotentialEnergy(xGrid: readonly number[]): number[];
 
   /**
    * Get all bound state energies and wavefunctions for the current well.

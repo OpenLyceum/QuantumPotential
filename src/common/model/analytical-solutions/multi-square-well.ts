@@ -1,5 +1,6 @@
 /**
- * Multi-square well potential - generalization of double square well to N wells.
+ * Multi-square well potential - generalization of double square well to N wells, optionally tilted by a
+ * uniform electric field. Solved numerically (Numerov) by Schrodinger1DSolver.
  *
  * Energy reference convention:
  * - Wells: V = 0
@@ -19,6 +20,7 @@
 
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
+import QuantumConstants from "../QuantumConstants.js";
 import type Schrodinger1DSolver from "../Schrodinger1DSolver.js";
 
 /**
@@ -71,10 +73,10 @@ export function createMultiSquareWellPotential(
 }
 
 /**
- * Solve multi-square well potential using numerical methods.
+ * Solve multi-square well potential numerically.
  *
- * Since the transcendental equations for N > 2 wells become extremely complex,
- * we use numerical solvers (DVR, FGH, or Matrix Numerov) to find bound states.
+ * The transcendental equations for N > 2 wells (and any tilted well) have no convenient closed form,
+ * so the bound states come from the solver's numerical method.
  *
  * @param numberOfWells - Number of wells (1 to 10)
  * @param wellWidth - Width of each well in meters
@@ -84,6 +86,7 @@ export function createMultiSquareWellPotential(
  * @param numStates - Number of energy levels to calculate
  * @param gridConfig - Grid configuration for wavefunction evaluation
  * @param solver - Reference to the numerical solver to use
+ * @param electricField - Uniform electric field in V/m (0 for no tilt)
  * @returns Bound state results with energies and wavefunctions
  */
 export function solveMultiSquareWell(
@@ -95,22 +98,15 @@ export function solveMultiSquareWell(
   numStates: number,
   gridConfig: GridConfig,
   solver: Schrodinger1DSolver, // Numerical solver instance
+  electricField = 0,
 ): BoundStateResult {
-  // Create the potential function
-  const potential = createMultiSquareWellPotential(numberOfWells, wellWidth, wellDepth, wellSeparation);
-
-  // Use numerical solver to find bound states
-  // The solver will be passed in from Schrodinger1DSolver
-  // and will use the currently selected method (DVR, FGH, Matrix Numerov, etc.)
+  const potential = withElectricField(
+    createMultiSquareWellPotential(numberOfWells, wellWidth, wellDepth, wellSeparation),
+    electricField,
+  );
 
   try {
-    const result = solver.solveNumerical(potential, mass, numStates, gridConfig);
-
-    return {
-      ...result,
-      method: "analytical" as const, // Mark as analytical even though we use numerical
-      // (since we have an exact potential definition)
-    };
+    return solver.solveNumerical(potential, mass, numStates, gridConfig);
   } catch (error) {
     Logger.error("Error solving multi-square well:", error);
 
@@ -125,9 +121,24 @@ export function solveMultiSquareWell(
       energies: [],
       wavefunctions: [],
       xGrid,
-      method: "analytical",
+      method: "numerov",
     };
   }
+}
+
+/**
+ * Adds the potential energy of an electron (charge −e) in a uniform electric field ℰ along +x: the
+ * force is −eℰ, so V(x) = +eℰx. A zero field returns the potential unchanged.
+ *
+ * @param potential - Potential function V(x) in Joules (x in meters)
+ * @param electricField - Electric field in V/m
+ */
+export function withElectricField(potential: (x: number) => number, electricField: number): (x: number) => number {
+  if (electricField === 0) {
+    return potential;
+  }
+  const slope = QuantumConstants.ELEMENTARY_CHARGE * electricField; // J/m
+  return (x: number) => potential(x) + slope * x;
 }
 
 /**

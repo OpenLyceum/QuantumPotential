@@ -57,6 +57,8 @@ export type WellParameters = {
   energyOffset?: number;
   /** Number of wells for multi-square well and multi-Coulomb 1D (1-10) */
   numberOfWells?: number;
+  /** Uniform electric field for multi-well potentials (V/m); adds the tilt V = eℰx */
+  electricField?: number;
 };
 
 /**
@@ -81,7 +83,7 @@ export type GridConfig = {
 /**
  * Valid solver method identifiers
  */
-export type SolverMethod = "analytical" | "numerov" | "matrix_numerov" | "dvr" | "fgh" | "spectral" | "quantum_bound";
+export type SolverMethod = "analytical" | "numerov" | "fgh";
 
 /**
  * Result from solving the Schrödinger equation

@@ -10,10 +10,10 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
-import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
+import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 
 export class ManyWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -65,19 +65,19 @@ export class ManyWellsModel extends BaseModel {
   private static readonly WELL_SEPARATION_MAX = 0.7;
 
   /**
-   * Default electric field in eV/nm.
+   * Default electric field in V/nm.
    * No field applied by default.
    */
   private static readonly DEFAULT_ELECTRIC_FIELD = 0.0;
 
   /**
-   * Minimum electric field in eV/nm.
+   * Minimum electric field in V/nm.
    * Corresponds to -5 eV tilt over 8 nm chart range.
    */
   private static readonly ELECTRIC_FIELD_MIN = -0.625;
 
   /**
-   * Maximum electric field in eV/nm.
+   * Maximum electric field in V/nm.
    * Corresponds to +5 eV tilt over 8 nm chart range.
    */
   private static readonly ELECTRIC_FIELD_MAX = 0.625;
@@ -98,6 +98,11 @@ export class ManyWellsModel extends BaseModel {
    * Chart display range in nanometers (extends from -RANGE to +RANGE).
    */
   private static readonly CHART_DISPLAY_RANGE_NM = 4;
+
+  /**
+   * Extra room (nm) on each side of the well array in the solver domain, for the evanescent tails.
+   */
+  private static readonly DOMAIN_MARGIN_NM = 1.5;
 
   /**
    * Coulomb's constant in N·m²/C².
@@ -125,7 +130,7 @@ export class ManyWellsModel extends BaseModel {
   // Model-specific well parameters
   public readonly wellSeparationProperty: NumberProperty;
 
-  // Electric field (eV/nm) - creates a linear tilt in the potential
+  // Electric field (V/nm) - tilts the potential energy by eℰx (eV, with x in nm)
   public readonly electricFieldProperty: NumberProperty;
 
   public constructor() {
@@ -177,15 +182,6 @@ export class ManyWellsModel extends BaseModel {
   }
 
   /**
-   * Called when the solver method changes.
-   * Invalidates the cached bound state results.
-   * @param _method - The new numerical method (unused but required by interface)
-   */
-  protected override onSolverMethodChanged(_method: NumericalMethod): void {
-    this.boundStateResult = null; // Invalidate cache
-  }
-
-  /**
    * Resets all properties to their initial state.
    * Override from BaseModel to reset model-specific properties.
    */
@@ -218,19 +214,20 @@ export class ManyWellsModel extends BaseModel {
     // Calculate number of states based on potential type
     const numStates = ManyWellsModel.NUM_STATES; // Default for multi-well potentials
 
-    // Grid configuration
-    const method = this.solver.getNumericalMethod();
-    let numGridPoints = QPPWPreferences.gridPointsProperty.value;
-
-    if (method === "fgh") {
-      // FGH: round to nearest power of 2 for FFT efficiency
-      numGridPoints = ManyWellsModel.HALF_DIVISOR ** Math.round(Math.log2(numGridPoints));
-    }
-
+    // The solver domain covers the whole structure plus a margin for the evanescent tails, and is never
+    // narrower than the chart. A wide array extends past the chart edges (which clip it) rather than being
+    // truncated by the box walls. The point count scales with the domain to keep the spacing fixed.
+    const halfSpanNm = Math.max(
+      ManyWellsModel.CHART_DISPLAY_RANGE_NM,
+      this.getStructureWidthNm() / ManyWellsModel.HALF_DIVISOR + ManyWellsModel.DOMAIN_MARGIN_NM,
+    );
+    const scaledPoints = Math.round(
+      (qppwQueryParameters.numberOfPoints * halfSpanNm) / ManyWellsModel.CHART_DISPLAY_RANGE_NM,
+    );
     const gridConfig = {
-      xMin: -ManyWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
-      xMax: ManyWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
-      numPoints: numGridPoints,
+      xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
+      xMax: halfSpanNm * QuantumConstants.NM_TO_M,
+      numPoints: scaledPoints % 2 === 1 ? scaledPoints : scaledPoints + 1,
     };
 
     try {
@@ -239,6 +236,7 @@ export class ManyWellsModel extends BaseModel {
         type: this.potentialTypeProperty.value,
         numberOfWells: this.numberOfWellsProperty.value,
         wellWidth: wellWidth,
+        electricField: this.electricFieldProperty.value / QuantumConstants.NM_TO_M, // V/nm → V/m
       };
 
       // Add type-specific parameters
@@ -272,6 +270,18 @@ export class ManyWellsModel extends BaseModel {
   }
 
   /**
+   * Total width (nm) of the well array: N wells and N − 1 barriers for square wells, or the span between the
+   * outermost centers for Coulomb wells.
+   */
+  private getStructureWidthNm(): number {
+    const numberOfWells = this.numberOfWellsProperty.value;
+    const separation = this.wellSeparationProperty.value;
+    return this.potentialTypeProperty.value === PotentialType.MULTI_COULOMB_1D
+      ? (numberOfWells - 1) * separation
+      : numberOfWells * this.wellWidthProperty.value + (numberOfWells - 1) * separation;
+  }
+
+  /**
    * Calculate the classical probability density for a given energy level.
    * Override from BaseModel to provide potential-specific implementations.
    * The classical probability density is inversely proportional to the velocity:
@@ -294,18 +304,23 @@ export class ManyWellsModel extends BaseModel {
     const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate potential at each grid point
-    const potential = this.calculatePotentialEnergy(xGrid);
+    const potential = this.getPotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
     return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
   }
 
   /**
-   * Calculate the potential energy at given positions.
+   * Calculate the potential energy at given positions, including the electric-field tilt V = eℰx.
+   * This is the potential the solver uses, so views should draw it rather than re-deriving it.
    * @param xGrid - Array of x positions in meters
    * @returns Array of potential energy values in Joules
    */
-  private calculatePotentialEnergy(xGrid: number[]): number[] {
+  protected override calculatePotentialEnergy(xGrid: readonly number[]): number[] {
+    // Field in V/nm → tilt slope in J/m for an electron
+    const fieldSlope =
+      (this.electricFieldProperty.value / QuantumConstants.NM_TO_M) * QuantumConstants.ELEMENTARY_CHARGE;
+
     const numberOfWells = this.numberOfWellsProperty.value;
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
@@ -375,7 +390,7 @@ export class ManyWellsModel extends BaseModel {
           break;
       }
 
-      potential.push(V);
+      potential.push(V + fieldSlope * x);
     }
 
     return potential;

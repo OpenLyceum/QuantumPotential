@@ -45,22 +45,6 @@
   "autoPauseWhenTabHidden": "Auto-pause when tab is hidden",
   "autoPauseDescription": "Automatically pause the simulation when the browser tab is not visible",
   "preferences": "Preferences",
-  "numericalMethod": "Numerical Method",
-  "numericalMethodDescription": "Choose the numerical method for solving the Schrödinger equation.",
-  "numerov": "Numerov Method",
-  "numerovDescription": "Traditional shooting method - accurate and stable for most potentials",
-  "matrixNumerov": "Matrix Numerov",
-  "matrixNumerovDescription": "Matrix diagonalization using Numerov formula - combines O(h⁴) accuracy with robustness",
-  "dvr": "DVR (Discrete Variable Representation)",
-  "dvrDescription": "Matrix diagonalization method - faster and more robust for complex potentials",
-  "fgh": "FGH (Fourier Grid Hamiltonian)",
-  "fghDescription": "Plane wave basis method - natural for periodic systems with spectral accuracy",
-  "spectral": "Spectral (Chebyshev)",
-  "spectralDescription": "Chebyshev polynomial method - exponential convergence for smooth functions",
-  "quantumBound": "Quantum Bound State",
-  "quantumBoundDescription": "Advanced shooting method with adaptive energy bracketing and secant refinement",
-  "gridPoints": "Grid Points",
-  "gridPointsDescription": "Number of grid points for numerical solvers. Higher values give more accurate results but slower computation.",
   "simulationPaused": "Simulation paused",
   "simulationPlaying": "Simulation playing",
   "simulationReset": "Simulation reset",
@@ -158,7 +142,6 @@
   "rmsPositionLabel": "Δx_RMS = {{value}} nm",
   "stateLabelProbability": "|{{label}}|²",
   "stateLabelWavefunction": "|{{label}}|",
-  "valueWithPoints": "{{value}} points",
   "valueWithNanometers": "{{value}} nm",
   "valueWithElectronVolts": "{{value}} eV",
   "valueWithElectronMass": "{{value}} mₑ",
@@ -365,6 +348,9 @@
       "zerosHeading": "Wavefunction Zeros",
       "zerosOnePattern": "Wavefunction has 1 node (zero crossing) at position: {{positions}} nanometers.",
       "zerosPattern": "Wavefunction has {{count}} nodes (zero crossings) at positions: {{positions}} nanometers."
+    },
+    "handles": {
+      "roleDescription": "potential handle"
     }
   }
 }

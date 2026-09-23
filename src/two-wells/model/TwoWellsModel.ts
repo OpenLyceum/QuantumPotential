@@ -9,10 +9,10 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { type GridConfig, PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
-import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
+import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 
 export class TwoWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -199,15 +199,6 @@ export class TwoWellsModel extends BaseModel {
   }
 
   /**
-   * Called when the solver method changes.
-   * Invalidates the cached bound state results.
-   * @param _method - The new numerical method (unused but required by interface)
-   */
-  protected override onSolverMethodChanged(_method: NumericalMethod): void {
-    this.boundStateResult = null; // Invalidate cache
-  }
-
-  /**
    * Resets all properties to their initial state.
    * Override from BaseModel to reset model-specific properties.
    */
@@ -304,18 +295,10 @@ export class TwoWellsModel extends BaseModel {
         numPoints: TwoWellsModel.DOUBLE_WELL_GRID_POINTS,
       };
     } else {
-      const method = this.solver.getNumericalMethod();
-      let numGridPoints = QPPWPreferences.gridPointsProperty.value;
-
-      if (method === "fgh") {
-        // FGH: round to nearest power of 2 for FFT efficiency
-        numGridPoints = TwoWellsModel.HALF_DIVISOR ** Math.round(Math.log2(numGridPoints));
-      }
-
       gridConfig = {
         xMin: -TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
         xMax: TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
-        numPoints: numGridPoints,
+        numPoints: qppwQueryParameters.numberOfPoints,
       };
     }
 
@@ -385,7 +368,7 @@ export class TwoWellsModel extends BaseModel {
     const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate potential at each grid point
-    const potential = this.calculatePotentialEnergy(xGrid);
+    const potential = this.getPotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
     return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
@@ -396,7 +379,7 @@ export class TwoWellsModel extends BaseModel {
    * @param xGrid - Array of x positions in meters
    * @returns Array of potential energy values in Joules
    */
-  private calculatePotentialEnergy(xGrid: number[]): number[] {
+  protected override calculatePotentialEnergy(xGrid: readonly number[]): number[] {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
     const wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
@@ -414,19 +397,12 @@ export class TwoWellsModel extends BaseModel {
           break;
 
         case PotentialType.DOUBLE_SQUARE_WELL: {
-          // Double square well: two wells separated by a barrier
-          const halfWellWidth = wellWidth / TwoWellsModel.HALF_DIVISOR;
+          // Double square well: two wells of width w with a barrier of width d (edge to edge) between them,
+          // the convention of solveDoubleSquareWellAnalytical: wells on d/2 ≤ |x| ≤ d/2 + w
           const halfSeparation = wellSeparation / TwoWellsModel.HALF_DIVISOR;
+          const distanceFromCenter = Math.abs(x);
 
-          // Left well: centered at -halfSeparation
-          const leftWellStart = -halfSeparation - halfWellWidth;
-          const leftWellEnd = -halfSeparation + halfWellWidth;
-
-          // Right well: centered at +halfSeparation
-          const rightWellStart = halfSeparation - halfWellWidth;
-          const rightWellEnd = halfSeparation + halfWellWidth;
-
-          if ((x >= leftWellStart && x <= leftWellEnd) || (x >= rightWellStart && x <= rightWellEnd)) {
+          if (distanceFromCenter >= halfSeparation && distanceFromCenter <= halfSeparation + wellWidth) {
             V = 0; // Inside wells
           } else {
             V = wellDepth; // Outside wells (barrier or exterior)

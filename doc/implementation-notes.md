@@ -51,12 +51,9 @@ QPPW/
 │   │   │   ├── PotentialFunction.ts     # Potential type definitions and interfaces
 │   │   │   ├── QuantumConstants.ts      # Physical constants (ℏ, m_e, eV, etc.)
 │   │   │   ├── SuperpositionType.ts     # Superposition state definitions
-│   │   │   ├── DVRSolver.ts             # Discrete Variable Representation solver
 │   │   │   ├── FGHSolver.ts             # Fourier Grid Hamiltonian solver
-│   │   │   ├── MatrixNumerovSolver.ts   # Matrix Numerov solver
 │   │   │   ├── NumerovSolver.ts         # Shooting Numerov solver
-│   │   │   ├── SpectralSolver.ts        # Chebyshev spectral solver
-│   │   │   ├── QuantumBoundSolver.ts    # Advanced bound state solver
+│   │   │   ├── numerov/                 # Numerov shooting solver (ported from Quantum Bound States)
 │   │   │   ├── analytical-solutions/    # Exact solutions for specific potentials
 │   │   │   │   ├── infinite-square-well.ts
 │   │   │   │   ├── finite-square-well.ts
@@ -78,7 +75,8 @@ QPPW/
 │   │       ├── WaveFunctionChartNode.ts # Wave function display
 │   │       ├── EnergyChartNode.ts       # Energy level diagram
 │   │       ├── WavenumberChartNode.ts   # Momentum space representation
-│   │       ├── ControlPanelNode.ts      # Common control panel components
+│   │       ├── ControlPanelNode.ts      # Energy panel + graph panel (One/Two/Many Wells)
+│   │       ├── handles/                 # Drag handles on the potential curve
 │   │       ├── SimulationControlBar.ts  # Play/pause/step controls
 │   │       └── SuperpositionDialog.ts   # Superposition state selection
 │   ├── intro/                           # Intro screen (simplified interface)
@@ -301,56 +299,17 @@ The `BaseModel` class manages:
 
 #### Solver Architecture
 
-The `Schrodinger1DSolver` class acts as a dispatcher:
+`Schrodinger1DSolver` is a facade. Screen models call `solveAnalyticalIfPossible`, which uses the
+closed-form solution for every single- and double-well potential, and the numerical path only for the
+Many Wells potentials:
 
-```typescript
-public solve(
-  potential: PotentialFunction,
-  width: number,
-  numPoints: number,
-  method: NumericalMethod
-): BoundStateResult {
+- **Analytical solutions** (12 potentials): exact energies from closed-form or transcendental equations,
+  with wave functions evaluated on the model's grid.
+- **Numerical solution** (multi-square well and multi-Coulomb 1D, 1–10 wells, optional electric-field
+  tilt): Numerov shooting with node-count bracketing, parity mirroring for symmetric potentials, and
+  inverse-iteration clean-up. `?numericalMethod=fgh` switches to a Fourier Grid Hamiltonian cross-check.
 
-  // First, try analytical solution if available
-  if (potential.hasAnalyticalSolution) {
-    return this.solveAnalytical(potential, width, numPoints);
-  }
-
-  // Otherwise, use numerical method
-  switch (method) {
-    case NumericalMethod.DVR:
-      return DVRSolver.solve(potential, width, numPoints);
-    case NumericalMethod.FGH:
-      return FGHSolver.solve(potential, width, numPoints);
-    case NumericalMethod.MATRIX_NUMEROV:
-      return MatrixNumerovSolver.solve(potential, width, numPoints);
-    // ... other methods ...
-  }
-}
-```
-
-**Analytical Solutions** (12 potentials):
-
-- Evaluated at high resolution (1000 grid points by default)
-- Exact energy eigenvalues from closed-form formulas
-- Wave functions computed from analytical expressions
-- Used when available for maximum accuracy
-
-**Numerical Solutions** (6 methods):
-
-- DVR (Discrete Variable Representation) - Default method, good balance
-- FGH (Fourier Grid Hamiltonian) - Fast for smooth potentials
-- Matrix Numerov - High accuracy, good for all potentials
-- Shooting Numerov - Classical shooting method
-- Spectral (Chebyshev) - Excellent for smooth potentials
-- QuantumBound - Advanced logarithmic derivative method
-
-**Multi-Well Solutions** (numerical only):
-
-- Multi-square well (1-10 wells)
-- Multi-Coulomb 1D (1-10 centers)
-- No analytical solutions available for N > 2
-- Uses DVR/FGH by default for efficiency
+See [SOLVER_DOCUMENTATION.md](SOLVER_DOCUMENTATION.md) for the details.
 
 ### Superposition States
 
@@ -415,22 +374,29 @@ export class WaveFunctionChartNode extends BaseChartNode {
 - Scaling and translation
 - Inverted y-axis (screen coordinates vs. Cartesian)
 
-#### Interactive Controls
+#### Layout and Interactive Controls
 
-Users can manipulate potentials directly:
+The One, Two and Many Wells screens use the layout of PhET's *Quantum Bound States*
+(`BaseScreenView.createStandardLayout`):
 
-**Click-and-Drag on Charts**:
+- The energy chart sits on top, with its legend in a row above it. It has no position labels of its own:
+  the wave-function chart directly below it carries the shared x axis. Both charts keep numeric y axes
+  with units.
+- Two panels sit in a column on the right, 250 px wide:
+  - the energy panel, beside the energy chart: potential, superposition, and ◀ ▶ spinners for particle
+    mass, number of wells and electric field;
+  - the graph panel, beside the wave-function chart: display mode and the parts of ψ to draw.
+- The time controls sit under the charts, and the reset button in the corner.
 
-- Potential well: Drag to change width, depth, position
-- Energy levels: Click to select different states
-- Wave function display: Hover for numerical values
+**Direct manipulation on the energy chart**:
 
-**Control Panel**:
-
-- Potential type selection (radio buttons)
-- Parameter sliders (width, depth, offset)
-- Superposition dialog (button opens modal)
-- Visualization options (checkboxes for phase, nodes, etc.)
+- **Potential handles** (`src/common/view/handles/`) are double-headed arrows on the curve. Dragging one
+  changes width, depth, barrier height, offset or separation. Each handle is declared by its anchor (its
+  point on the curve as a function of its parameter); the drag inverts the anchor. Handles are
+  accessible sliders for the keyboard.
+- **Energy levels**: the level nearest the pointer is highlighted, and a click selects it. "Eₙ = … eV"
+  readouts show the selected and hovered levels. Arrow keys, Home and End also move the selection.
+- The panel sliders for the geometric parameters appear only with `?dev`.
 
 **Simulation Controls**:
 
@@ -592,9 +558,7 @@ private updateQuantumPhases(): void {
 **Profiling Results** (see PERFORMANCE_MONITORING.md):
 
 - Analytical solutions: ~1-5 ms
-- DVR solver (128 points): ~10-20 ms
-- FGH solver (128 points): ~8-15 ms
-- Multi-well (5 wells): ~30-50 ms
+- Numerov, multi-well (1001 points): ~15 ms for 3 wells, ~60 ms for 10; scales with states × points
 
 ### 5. Memory Management
 
@@ -655,8 +619,7 @@ npm run test:multi-square-well # Test multi-well systems
 **Test Coverage**:
 
 - All 12 analytical potentials
-- All 6 numerical methods
-- Multiple grid sizes (32, 64, 128 points)
+- The Numerov solver (invariants, closed-form spectra, tilted wells, FGH cross-check)
 - Accuracy tolerances: 0.1% - 1.0% depending on potential
 - Double well stringent tests: 23 tests including orthogonality, continuity, tunneling
 
@@ -744,58 +707,15 @@ npm run test:multi-square-well # Test multi-well systems
 
 6. **Add tests** in `tests/`:
    - Verify analytical solution (if applicable)
-   - Compare numerical methods
+   - Compare against the numerical solver
    - Check physical constraints
 
-### Adding a New Numerical Method
+### Changing the Numerical Solver
 
-1. **Implement solver** in `src/common/model/`:
-
-   ```typescript
-   export class NewMethodSolver {
-     public static solve(
-       potential: PotentialFunction,
-       width: number,
-       numPoints: number,
-     ): BoundStateResult {
-       // Implement numerical method
-     }
-   }
-   ```
-
-2. **Add to NumericalMethod enum**:
-
-   ```typescript
-   export enum NumericalMethod {
-     // ... existing methods ...
-     NEW_METHOD = "newMethod",
-   }
-   ```
-
-3. **Register in solver dispatcher**:
-
-   ```typescript
-   case NumericalMethod.NEW_METHOD:
-     return NewMethodSolver.solve(potential, width, numPoints);
-   ```
-
-4. **Add preferences UI** in `main.ts`:
-
-   ```typescript
-   {
-     value: NumericalMethod.NEW_METHOD,
-     labelStringProperty: new DerivedProperty(
-       [stringManager.numericalMethodNames],
-       names => names.newMethod
-     ),
-     // ... description ...
-   }
-   ```
-
-5. **Add accuracy tests**:
-   - Compare to analytical solutions
-   - Verify convergence properties
-   - Benchmark performance
+The numerical path lives in `Schrodinger1DSolver.solveNumerical`. It dispatches on `NumericalMethod`
+(`NUMEROV`, or `FGH` for cross-checks) and converts SI to the Numerov solver's nm/eV/mₑ units. A new
+method should return a `BoundStateResult` in SI units. Check it against
+`tests/common/model/numerov-solver.test.ts` and `npm run test:accuracy`.
 
 ### Adding a New Visualization
 

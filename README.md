@@ -16,9 +16,13 @@ PhET *Quantum Bound States* simulation.
   oscillator, Morse, Pöschl–Teller, Rosen–Morse, Eckart, triangular, asymmetric triangle, 1D and
   3D Coulomb, and the double square well — plus numerically solved multi-square and
   multi-Coulomb wells with 1–10 wells.
-- **Six numerical solvers** to compare against the exact answers: DVR, Fourier Grid Hamiltonian,
-  spectral (Chebyshev), matrix Numerov, shooting Numerov and an adaptive bound-state shooter,
-  selectable in *Preferences → Simulation* along with the grid size.
+- **A robust numerical solver** for the multi-well potentials: Numerov shooting with node-count
+  bracketing (ported from PhET's *Quantum Bound States*), which resolves dense energy bands and
+  electric-field-tilted wells.
+- **Direct manipulation.** Reshape the well by dragging handles on the potential itself (width, depth,
+  barrier, offset, separation), then hover or click energy levels to read and select them. The layout
+  follows PhET's *Quantum Bound States*: the energy diagram sits above the wave-function graph on a
+  shared position axis.
 - **Rich views of ψ.** Real and imaginary parts, magnitude, probability density, phase-coloured
   display, node positions, the classically forbidden region, ⟨x⟩ and Δx, and a momentum-space
   (wavenumber) chart.
@@ -39,8 +43,8 @@ npm run icons     # generate PWA icons on a fresh clone
 npm start         # → http://localhost:5173
 ```
 
-Useful query parameters: `?numericalMethod=dvr` (one of `numerov`, `matrix_numerov`, `dvr`,
-`fgh`, `spectral`, `quantum_bound`) and `?gridPoints=256` (32, 64, 128, 256 or 512).
+Developer query parameters: `?numericalMethod=fgh` (cross-check the Numerov solver with a Fourier
+Grid Hamiltonian) and `?numberOfPoints=3001` (odd grid size for the numerical solver).
 
 ## Scripts
 

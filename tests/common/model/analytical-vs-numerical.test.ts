@@ -1,5 +1,5 @@
 /**
- * Closed-form spectra checked against an independent fine-grid DVR diagonalization of the same
+ * Closed-form spectra checked against an independent fine-grid Numerov solution of the same
  * potential. This is what caught the Pöschl-Teller solver using the deep-well approximation
  * s ≈ λ − ½ instead of the exact index s(s + 1) = λ², and the Rosen-Morse and Eckart solvers using
  * spectra that were not those of their potentials.
@@ -15,12 +15,18 @@ import {
   createRosenMorsePotential,
   solveRosenMorsePotential,
 } from "../../../src/common/model/analytical-solutions/rosen-morse-potential.js";
-import { solveDVR } from "../../../src/common/model/DVRSolver.js";
-import type { GridConfig } from "../../../src/common/model/PotentialFunction.js";
+import type { GridConfig, PotentialFunction } from "../../../src/common/model/PotentialFunction.js";
 import QuantumConstants from "../../../src/common/model/QuantumConstants.js";
+import { Schrodinger1DSolver } from "../../../src/common/model/Schrodinger1DSolver.js";
 
 const { ELECTRON_MASS, EV_TO_JOULES } = QuantumConstants;
 const NM = 1e-9;
+
+/** Numerov solution on an odd, fine grid (the solver needs x = 0 on the grid only for symmetric grids). */
+function solveNumerov(potential: PotentialFunction, numStates: number, grid: GridConfig) {
+  const fineGrid = { ...grid, numPoints: 4001 };
+  return new Schrodinger1DSolver().solveNumerical(potential, ELECTRON_MASS, numStates, fineGrid);
+}
 
 function expectSameSpectrum(analytical: number[], numerical: number[], relativeTolerance: number): void {
   expect(numerical.length).toBeGreaterThanOrEqual(analytical.length);
@@ -29,14 +35,14 @@ function expectSameSpectrum(analytical: number[], numerical: number[], relativeT
   });
 }
 
-describe("analytical spectra agree with a fine-grid DVR solution", () => {
+describe("analytical spectra agree with a fine-grid Numerov solution", () => {
   it("Pöschl-Teller, shallow well (few bound states)", () => {
     const depth = 0.5 * EV_TO_JOULES;
     const width = 0.5 * NM;
     const grid: GridConfig = { xMin: -6 * NM, xMax: 6 * NM, numPoints: 600 };
 
     const analytical = solvePoschlTellerPotential(depth, width, ELECTRON_MASS, 10, grid);
-    const numerical = solveDVR((x) => -depth / Math.cosh(x / width) ** 2, ELECTRON_MASS, 10, grid, false);
+    const numerical = solveNumerov((x) => -depth / Math.cosh(x / width) ** 2, 10, grid);
 
     expectSameSpectrum(analytical.energies, numerical.energies, 5e-3);
   });
@@ -53,7 +59,7 @@ describe("analytical spectra agree with a fine-grid DVR solution", () => {
 
     const analytical = solveRosenMorsePotential(depth, tilt, width, ELECTRON_MASS, 6, grid);
     const potential = createRosenMorsePotential(depth, tilt, width);
-    const numerical = solveDVR(potential, ELECTRON_MASS, 12, grid, false);
+    const numerical = solveNumerov(potential, 12, grid);
 
     // Only states below both asymptotes (±V₁) are bound in the infinite system
     expectSameSpectrum(analytical.energies, numerical.energies, 5e-3);
@@ -70,7 +76,7 @@ describe("analytical spectra agree with a fine-grid DVR solution", () => {
 
     const analytical = solveEckartPotential(depth, barrier, width, ELECTRON_MASS, 6, grid);
     const potential = createEckartPotential(depth, barrier, width);
-    const numerical = solveDVR(potential, ELECTRON_MASS, 12, grid, false);
+    const numerical = solveNumerov(potential, 12, grid);
 
     expectSameSpectrum(analytical.energies, numerical.energies, 5e-3);
     // Bound states sit above the bottom of the well and below both asymptotes (V₀ − V₁ and 0)

@@ -18,14 +18,16 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 | Area | Location |
 |---|---|
 | Screen models | `src/{intro,one-well,two-wells,many-wells}/model/*Model.ts`, all extending `src/common/model/BaseModel.ts` |
-| Solver facade | `src/common/model/Schrodinger1DSolver.ts` — picks analytical vs numerical, dispatches on `NumericalMethod` |
-| Numerical solvers | `DVRSolver`, `FGHSolver`, `SpectralSolver`, `MatrixNumerovSolver`, `NumerovSolver`, `QuantumBoundStateSolver` in `src/common/model/` |
+| Solver facade | `src/common/model/Schrodinger1DSolver.ts` — analytical when possible, else Numerov (`?numericalMethod=fgh` for the FGH cross-check); converts SI ↔ the solver's nm/eV/mₑ |
+| Numerical solver | `src/common/model/numerov/` (Numerov shooting, ported from PhET *Quantum Bound States*); `FGHSolver.ts` kept as a cross-check |
 | Closed-form solutions | `src/common/model/analytical-solutions/` (one file per potential) + `potentials/` class wrappers, built by `PotentialFactory` |
 | Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/` |
-| Control panels | `src/common/view/ControlPanelNode.ts` (One/Two/Many Wells), `src/intro/view/IntroControlPanelNode.ts` (Intro) |
+| Layout | `BaseScreenView.createStandardLayout` (One/Two/Many Wells): QBS-style energy chart over the wave-function chart (shared x axis), energy panel + graph panel on the right, time controls below |
+| Control panels | `src/common/view/ControlPanelNode.ts` builds `energyPanel` + `graphPanel`; `src/intro/view/IntroControlPanelNode.ts` (Intro); `QPPWNumberControl` (◀ value ▶ spinner) |
+| Potential handles | `src/common/view/handles/` — `PotentialHandleNode` (drag + accessible slider), `PotentialHandlesLayer` (per-potential anchors) |
 | Shared UI styling | `src/common/QPPWPanel.ts`, `QPPWButtonOptions.ts`, `QPPWControlOptions.ts` |
 | A11y | `src/common/view/accessibility/` (`QPPWDescriber`, `QPPWAlerter`); screen summary in `BaseScreenView`, `src/common/view/QPPWKeyboardHelpContent.ts` |
-| Preferences | `src/preferences/` — `QPPWPreferencesModel` (numerical method, grid points, …), `QPPWPreferencesNode`, `qppwQueryParameters` |
+| Preferences | `src/preferences/` — `QPPWPreferencesModel` (auto-pause), `QPPWPreferencesNode`, `qppwQueryParameters` (`numericalMethod`, `numberOfPoints`) |
 | Colors / namespace | `src/QPPWColors.ts`, `src/QPPWNamespace.ts` |
 | Logging | `src/common/utils/Logger.ts` — the **only** place in `src/` allowed to use `console` |
 
@@ -36,11 +38,20 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
   `getProbabilityInRegion`, `getWavefunctionAtPosition`, …) and never do physics themselves.
 - **SI inside, display units at the edge.** Solvers work in metres/joules/kg; conversion to nm/eV
   happens when handing data to views.
-- **Default numerical method is FGH, 64 grid points** — both seeded from query parameters
-  (`?numericalMethod=`, `?gridPoints=`) and editable in Preferences → Simulation.
-- **`BaseModel.dispose()`** unlinks the model's listeners on the global `QPPWPreferences`
-  properties. Any new link to a global/preferences Property must be unlinked there, or
-  `tests/memory-leak.test.ts` fails.
+- **One numerical solver: Numerov shooting**, used only by Many Wells (every other potential is
+  analytical). It brackets states by node count, mirrors symmetric potentials, matches log-derivatives
+  for tilted ones, and cleans up with inverse iteration. The grid is odd (`?numberOfPoints`, default
+  1001), and the spacing is refined to ≤ 8 pm. `?numericalMethod=fgh` is a developer cross-check.
+  There is no solver choice in Preferences.
+- **Many Wells' solver domain grows with the structure** (±max(4 nm, half-width + 1.5 nm)). The chart
+  stays at ±4 nm and clips. The electric field (V/nm) enters the physics as V = eℰx.
+- **Views draw the model's potential** (`BaseModel.getPotentialEnergy`), never a re-derived one. This
+  is the analytical solution's own `createPotential()` when there is one, and the model's
+  `calculatePotentialEnergy` otherwise. The per-type drawing code it replaced was wrong in several places:
+  Many Wells barriers were 10× too wide, the Two Wells wells overlapped, Morse was unshifted, and the
+  asymmetric triangle had no wall.
+- **`BaseModel.dispose()`** must unlink any link a model makes to a global or preferences Property.
+  There are none today; add the unlink there if you add a link, or `tests/memory-leak.test.ts` fails.
 - **Per-screen defaults go through the `BaseModel` constructor** (`BaseModelOptions`: potential type,
   well width + range, superposition config) so every Property's `reset()` returns to the screen's own
   default. Don't assign defaults after `super()`.
@@ -50,9 +61,11 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 - **"No bound states" is not an error.** Analytical solvers throw `NoBoundStatesError`; models log it
   at debug level and show no levels.
 - **Numerical solvers see cell-averaged potentials** (`Schrodinger1DSolver.solveNumerical`), so square
-  wells converge smoothly with grid size; all matrix solvers re-normalize after spline upsampling.
-- **Energy tolerances are relative.** Energies are ~1e-19 J: an absolute tolerance such as `1e-12` stops
-  a bisection before it starts (this bug existed in Numerov, QuantumBound and the double well).
+  wells converge smoothly with grid size.
+- **Energy tolerances are relative.** Energies are ~1e-19 J, so an absolute tolerance such as `1e-12`
+  stops a bisection before it starts. The double well and the old solvers had this bug.
+- **Bare 1D Coulomb collapses.** Multi-Coulomb's deepest states are grid-limited. The facade drops any
+  Numerov state that cannot be normalized.
 
 ### Hard-won gotchas
 
@@ -65,6 +78,21 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
   classical density is unusable for the same reason.
 - **Normalize numerically.** For Pöschl–Teller and 3D Coulomb the analytic Gamma-function
   normalizations were off by 2–5× / 10²⁰; trapezoidal ∫|ψ|² dx is the reliable path.
+
+## Parameter controls
+
+- **Geometric parameters are dragged on the potential.** Width, depth, barrier height, offset and
+  separation each have a double-headed arrow handle on the energy chart's curve (`handles/`). A handle is
+  declared by its *anchor*, its point (nm, eV) on the curve as a function of the parameter.
+  `PotentialHandleNode.getValueForPoint` inverts that to follow the pointer, so a new potential only
+  needs anchors. `tests/potential-handles.test.ts` checks that every anchor is on the solved curve and
+  that the mapping inverts. Handles pause time while dragged. Keyboard access is an `AccessibleSlider`,
+  and handles come first in the chart's focus order.
+- **Non-geometric parameters use ◀ ▶ spinners** (`QPPWNumberControl`, a sun `NumberSpinner`): particle
+  mass, number of wells, electric field.
+- **Sliders are `?dev` only** (`src/common/utils/isDevMode.ts`), for checking the handles.
+- **Energy levels**: a transparent picker over the plot hovers and selects the level nearest the
+  pointer. In-plot readouts show "Eₙ = … eV" for the selected and hovered levels.
 
 ## Accessibility
 
@@ -89,7 +117,7 @@ deferred fleet-wide). Full convention:
   (same carve-out as OscillationsAndChaos).
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
   by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
-  `exactOptionalPropertyTypes`. All pass except `test:multi-coulomb-1d`, whose lowest state is
+  `exactOptionalPropertyTypes`. All pass except `test:multi-coulomb-1d`, whose deepest states are
   grid-limited because a bare 1D Coulomb potential has no finite ground state (see
   `tests/accuracy/README.md`).
 
@@ -108,8 +136,9 @@ Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expo
 | `tests/screen-models.test.ts` | Screen defaults, `reset()`, deferred selection clamp |
 | `tests/solver-robustness.test.ts` | Random settings × potentials × methods give finite, normalized states |
 | `tests/common/model/analytical-solutions.test.ts` | Closed-form energies/normalization vs textbook formulas |
-| `tests/common/model/analytical-vs-numerical.test.ts` | Pöschl–Teller, Rosen–Morse, Eckart spectra vs fine-grid DVR |
-| `tests/common/model/{numerov-shooting,wavefunction-derivatives,uncertainty,fft}.test.ts` | Solver regressions |
+| `tests/common/model/analytical-vs-numerical.test.ts` | Pöschl–Teller, Rosen–Morse, Eckart spectra vs fine-grid Numerov |
+| `tests/common/model/numerov-solver.test.ts` | Numerov invariants, closed-form spectra, tilted wells, FGH cross-check |
+| `tests/common/model/{wavefunction-derivatives,uncertainty,fft}.test.ts` | Solver regressions |
 | `tests/accuracy/` | Hand-run accuracy scripts (see carve-outs) |
 
 ## Commands

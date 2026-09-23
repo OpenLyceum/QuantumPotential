@@ -7,16 +7,15 @@
  *   const result = solver.solve(potential, mass, numStates, gridConfig);
  */
 
-import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
 import qppw from "../../QPPWNamespace.js";
+import Logger from "../utils/Logger.js";
 import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
 import { solveMultiCoulomb1D } from "./analytical-solutions/multi-coulomb-1d.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
-import { solveDVR } from "./DVRSolver.js";
 import { solveFGH } from "./FGHSolver.js";
-import { solveMatrixNumerov } from "./MatrixNumerovSolver.js";
 import { NumericalMethod } from "./NumericalMethod.js";
-import { solveNumerov } from "./NumerovSolver.js";
+import NumerovSolver from "./numerov/NumerovSolver.js";
+import XGrid from "./numerov/XGrid.js";
 import { PotentialFactory } from "./PotentialFactory.js";
 import {
   type BoundStateResult,
@@ -26,10 +25,7 @@ import {
   type WellParameters,
 } from "./PotentialFunction.js";
 import type { AnalyticalPotential, BasePotential } from "./potentials/index.js";
-import { solveQuantumBound } from "./QuantumBoundStateSolver.js";
 import QuantumConstants from "./QuantumConstants.js";
-import { solveSpectral } from "./SpectralSolver.js";
-import { computeWavefunctionsNumerov } from "./WavefunctionNumerovSolver.js";
 
 // Re-export potential classes for external use
 export {
@@ -44,6 +40,21 @@ export { NumericalMethod };
 
 /** Samples per cell for cellAveragedPotential (midpoint rule). */
 const CELL_AVERAGE_SAMPLES = 16;
+
+/** Grid size for the FGH cross-check: dense diagonalization is O(N³), so it cannot use the Numerov grid. */
+const FGH_GRID_POINTS = 256;
+
+/** Largest grid spacing (nm) the Numerov solver is run with. */
+const NUMEROV_MAX_SPACING_NM = 0.008;
+
+/**
+ * Relative tolerance for deciding that a sampled potential is mirror-symmetric about x = 0, which lets the
+ * Numerov solver construct states of definite parity.
+ */
+const SYMMETRY_RELATIVE_TOLERANCE = 1e-9;
+
+/** Converts a wave function from nm^(-1/2) to m^(-1/2), preserving ∫|ψ|² dx = 1. */
+const NM_TO_M_WAVEFUNCTION_SCALE = Math.sqrt(1 / QuantumConstants.NM_TO_M);
 
 /**
  * The potential averaged over a cell of the given width centred on x (midpoint rule). Used for the
@@ -68,17 +79,9 @@ export class Schrodinger1DSolver {
 
   /**
    * Create a new solver instance.
-   * @param method - Numerical method to use (default: DVR)
+   * @param method - Numerical method to use (default: Numerov)
    */
-  constructor(method: NumericalMethod = NumericalMethod.DVR) {
-    this.numericalMethod = method;
-  }
-
-  /**
-   * Set the numerical method to use for calculations.
-   * @param method - Numerov or DVR method
-   */
-  public setNumericalMethod(method: NumericalMethod): void {
+  constructor(method: NumericalMethod = NumericalMethod.NUMEROV) {
     this.numericalMethod = method;
   }
 
@@ -194,6 +197,7 @@ export class Schrodinger1DSolver {
             numStates,
             gridConfig,
             this, // Pass solver instance for numerical methods
+            wellParams.electricField ?? 0,
           );
         }
         break;
@@ -212,6 +216,7 @@ export class Schrodinger1DSolver {
             numStates,
             gridConfig,
             this, // Pass solver instance for numerical methods
+            wellParams.electricField ?? 0,
           );
         }
         break;
@@ -223,15 +228,15 @@ export class Schrodinger1DSolver {
   /**
    * Solve the Schrödinger equation numerically for an arbitrary potential.
    *
-   * Uses a two-step approach:
-   * 1. Find energies with selected solver on coarse grid (from preferences)
-   * 2. Compute wavefunctions on finer grid (1000 points) using Numerov method
+   * Numerov (the default) finds every bound state in the energy window by node counting, so it resolves
+   * the closely spaced minibands of the multi-well potentials. FGH is a dense-matrix cross-check.
    *
-   * @param potential - Function V(x) returning potential energy in Joules
+   * @param pointPotential - Function V(x) returning potential energy in Joules (x in meters)
    * @param mass - Particle mass in kg
-   * @param numStates - Number of bound states to calculate
-   * @param gridConfig - Grid configuration for spatial discretization
-   * @param energyRange - Optional energy range for Numerov method [min, max] in Joules
+   * @param numStates - Maximum number of bound states to return
+   * @param gridConfig - Grid configuration for spatial discretization (meters)
+   * @param energyRange - Optional energy window [min, max] in Joules. Defaults to [min V, lower of the two
+   *   boundary values of V], i.e. states bound below the asymptotic potential on both sides.
    * @returns Bound state results with energies and wavefunctions
    */
   public solveNumerical(
@@ -241,95 +246,100 @@ export class Schrodinger1DSolver {
     gridConfig: GridConfig,
     energyRange?: [number, number],
   ): BoundStateResult {
-    // Configuration constants
-    const ENERGIES_ONLY = false;
-    const FINE_GRID_POINTS = 1000;
+    return this.numericalMethod === NumericalMethod.FGH
+      ? this.solveFGH(pointPotential, mass, numStates, gridConfig)
+      : this.solveNumerov(pointPotential, mass, numStates, gridConfig, energyRange);
+  }
 
-    const { xMin, xMax, numPoints } = gridConfig;
+  private solveNumerov(
+    pointPotential: PotentialFunction,
+    mass: number,
+    numStates: number,
+    gridConfig: GridConfig,
+    energyRange?: [number, number],
+  ): BoundStateResult {
+    // The Numerov solver works in nm, eV and electron masses (see NumerovConstants). Shooting needs a fine
+    // grid (h²k²/12 ≪ 1 even in deep wells), so a coarser request is refined; the count is odd so that
+    // x = 0 is a grid point.
+    const rangeNm = (gridConfig.xMax - gridConfig.xMin) / QuantumConstants.NM_TO_M;
+    const requestedPoints = Math.max(gridConfig.numPoints, Math.ceil(rangeNm / NUMEROV_MAX_SPACING_NM) + 1);
+    const numberOfPoints = requestedPoints % 2 === 1 ? requestedPoints : requestedPoints + 1;
+    const xGrid = new XGrid(
+      gridConfig.xMin / QuantumConstants.NM_TO_M,
+      gridConfig.xMax / QuantumConstants.NM_TO_M,
+      numberOfPoints,
+    );
+    const cellAveraged = cellAveragedPotential(pointPotential, xGrid.dx * QuantumConstants.NM_TO_M);
+    const potentialEv = (xNm: number) => cellAveraged(xNm * QuantumConstants.NM_TO_M) * QuantumConstants.JOULES_TO_EV;
 
-    // Step 1: Find energies (and optionally wavefunctions) using selected solver
-    // Use the requested grid size from gridConfig, or fall back to preferences
-    const coarseNumPoints = numPoints || QPPWPreferences.gridPointsProperty.value;
-    const coarseGridConfig: GridConfig = {
-      xMin,
-      xMax,
-      numPoints: coarseNumPoints,
+    const values = xGrid.xCoordinates.map(potentialEv);
+    const [energyMinEv, energyMaxEv] = energyRange
+      ? [energyRange[0] * QuantumConstants.JOULES_TO_EV, energyRange[1] * QuantumConstants.JOULES_TO_EV]
+      : [Math.min(...values), Math.min(values[0]!, values[values.length - 1]!)];
+
+    const empty: BoundStateResult = {
+      energies: [],
+      wavefunctions: [],
+      xGrid: xGrid.xCoordinates.map((x) => x * QuantumConstants.NM_TO_M),
+      method: "numerov",
     };
+    if (!(energyMaxEv > energyMinEv)) {
+      return empty;
+    }
 
-    // Evaluate the potential as its average over each grid cell rather than at the grid point. For a
-    // step potential (square wells) point sampling makes the effective well and barrier widths depend on
-    // where the edges fall between samples, so levels jumped by several % as the grid size changed;
-    // the cell average weights each edge exactly. For smooth potentials it differs from point sampling
-    // only at O(dx²).
-    const cellWidth = (xMax - xMin) / Math.max(1, coarseNumPoints - 1);
-    const potential = cellAveragedPotential(pointPotential, cellWidth);
+    const solution = NumerovSolver.solve(
+      potentialEv,
+      Math.abs(xGrid.xMin + xGrid.xMax) < 1e-9 * xGrid.dx && Schrodinger1DSolver.isSymmetric(values),
+      xGrid,
+      mass / QuantumConstants.ELECTRON_MASS,
+      energyMinEv,
+      energyMaxEv,
+    );
 
-    let result: BoundStateResult;
-
-    if (this.numericalMethod === NumericalMethod.NUMEROV) {
-      // Numerov method requires energy range for shooting method
-      let range = energyRange;
-      if (!range) {
-        // Estimate energy range based on potential at grid points
-        const dx = (xMax - xMin) / (coarseNumPoints - 1);
-        let Vmin = Infinity;
-        let Vmax = -Infinity;
-
-        for (let i = 0; i < coarseNumPoints; i++) {
-          const x = xMin + i * dx;
-          const V = potential(x);
-          if (V < Vmin) {
-            Vmin = V;
-          }
-          if (V < 1e100 && V > Vmax) {
-            Vmax = V; // Ignore infinite barriers
-          }
-        }
-
-        // Search for bound states between Vmin and Vmax
-        range = [Vmin, Vmax];
+    // Drop any state whose wave function could not be normalized. This only happens for the grid-limited
+    // states that collapse onto a bare 1D Coulomb singularity (see tests/accuracy/README.md).
+    const energies: number[] = [];
+    const wavefunctions: number[][] = [];
+    solution.eigenvalues.forEach((energyEv, n) => {
+      const psi = solution.waveFunctionSolutions[n]!;
+      if (energies.length < numStates && psi.every(Number.isFinite) && psi.some((value) => value !== 0)) {
+        energies.push(energyEv * QuantumConstants.EV_TO_JOULES);
+        wavefunctions.push(psi.map((value) => value * NM_TO_M_WAVEFUNCTION_SCALE));
+      } else if (energies.length < numStates) {
+        Logger.debug(`Numerov: dropped unnormalizable state at ${energyEv.toFixed(3)} eV`);
       }
+    });
+    return { ...empty, energies, wavefunctions };
+  }
 
-      // Numerov always returns full result with wavefunctions
-      result = solveNumerov(potential, mass, numStates, coarseGridConfig, range[0], range[1]);
-    } else if (this.numericalMethod === NumericalMethod.MATRIX_NUMEROV) {
-      // Matrix Numerov method
-      result = solveMatrixNumerov(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
-    } else if (this.numericalMethod === NumericalMethod.DVR) {
-      // DVR method
-      result = solveDVR(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
-    } else if (this.numericalMethod === NumericalMethod.FGH) {
-      // Fourier Grid Hamiltonian method
-      result = solveFGH(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
-    } else if (this.numericalMethod === NumericalMethod.QUANTUM_BOUND) {
-      // Advanced shooting method with adaptive bracketing
-      result = solveQuantumBound(potential, mass, numStates, coarseGridConfig);
-    } else {
-      // Spectral (Chebyshev) method
-      result = solveSpectral(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
+  private solveFGH(
+    pointPotential: PotentialFunction,
+    mass: number,
+    numStates: number,
+    gridConfig: GridConfig,
+  ): BoundStateResult {
+    const fghGridConfig: GridConfig = { xMin: gridConfig.xMin, xMax: gridConfig.xMax, numPoints: FGH_GRID_POINTS };
+
+    // Evaluate the potential as its average over each grid cell rather than at the grid point, so the
+    // effective width of a step potential does not depend on where its edges fall between samples.
+    const cellWidth = (gridConfig.xMax - gridConfig.xMin) / (FGH_GRID_POINTS - 1);
+    return solveFGH(cellAveragedPotential(pointPotential, cellWidth), mass, numStates, fghGridConfig, false);
+  }
+
+  /**
+   * Whether sampled potential values on a grid symmetric about x = 0 satisfy V(-x) = V(x).
+   */
+  private static isSymmetric(values: readonly number[]): boolean {
+    const scale = Math.max(...values.map((v) => (Number.isFinite(v) ? Math.abs(v) : 0)), 1e-12);
+    const n = values.length;
+    for (let i = 0; i < n / 2; i++) {
+      const left = values[i]!;
+      const right = values[n - 1 - i]!;
+      if (left !== right && !(Math.abs(left - right) <= SYMMETRY_RELATIVE_TOLERANCE * scale)) {
+        return false;
+      }
     }
-
-    // Step 2: If ENERGIES_ONLY was true, compute wavefunctions on finer grid using Numerov
-    // Otherwise, return the result directly from the solver
-    if (ENERGIES_ONLY) {
-      const fineGridConfig: GridConfig = {
-        xMin,
-        xMax,
-        numPoints: FINE_GRID_POINTS,
-      };
-
-      const wavefunctionResult = computeWavefunctionsNumerov(result.energies, potential, mass, fineGridConfig);
-
-      return {
-        energies: result.energies,
-        wavefunctions: wavefunctionResult.wavefunctions,
-        xGrid: wavefunctionResult.xGrid,
-        method: result.method,
-      };
-    } else {
-      // Use wavefunctions directly from the solver
-      return result;
-    }
+    return true;
   }
 
   /**

@@ -1,10 +1,10 @@
 /**
- * SimulationControlBar provides playback controls and time display.
- * This is displayed at the bottom of quantum physics screens.
+ * SimulationControlBar provides playback controls and time display, placed under the charts of the
+ * One, Two and Many Wells screens.
  */
 
 import { DerivedProperty } from "scenerystack/axon";
-import { HBox, Node, Rectangle, Text, VBox } from "scenerystack/scenery";
+import { HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, TimeControlNode } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
@@ -16,21 +16,11 @@ const a11y = stringManager.getA11yStrings();
 export class SimulationControlBar extends Node {
   private readonly model: BaseModel;
   private readonly timeText: Text;
-  private readonly barWidth: number;
 
-  public constructor(model: BaseModel, options?: { width?: number }) {
+  public constructor(model: BaseModel) {
     super();
 
     this.model = model;
-    this.barWidth = options?.width ?? 800;
-
-    // Create background bar
-    const backgroundRectangle = new Rectangle(0, 0, this.barWidth, 80, {
-      fill: QPPWColors.panelFillProperty,
-      stroke: null, // Remove border to avoid line appearing below chart
-      lineWidth: 0,
-    });
-    this.addChild(backgroundRectangle);
 
     // Time display
     const timeLabel = new Text(stringManager.timeStringProperty, {
@@ -130,8 +120,6 @@ export class SimulationControlBar extends Node {
       spacing: 40,
       align: "center",
       children: [timeDisplayVBox, playbackSectionVBox],
-      centerX: this.barWidth / 2,
-      centerY: 40,
     });
 
     this.addChild(contentHBox);

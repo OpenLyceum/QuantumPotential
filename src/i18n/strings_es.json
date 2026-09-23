@@ -45,22 +45,6 @@
   "autoPauseWhenTabHidden": "Pausar automáticamente cuando la pestaña está oculta",
   "autoPauseDescription": "Pausa automáticamente la simulación cuando la pestaña del navegador no está visible",
   "preferences": "Preferencias",
-  "numericalMethod": "Método numérico",
-  "numericalMethodDescription": "Elija el método numérico para resolver la ecuación de Schrödinger.",
-  "numerov": "Método de Numerov",
-  "numerovDescription": "Método de disparo tradicional: preciso y estable para la mayoría de los potenciales",
-  "matrixNumerov": "Numerov matricial",
-  "matrixNumerovDescription": "Diagonalización matricial con la fórmula de Numerov: combina precisión O(h⁴) con robustez",
-  "dvr": "DVR (representación de variable discreta)",
-  "dvrDescription": "Método de diagonalización matricial: más rápido y robusto para potenciales complejos",
-  "fgh": "FGH (hamiltoniano en malla de Fourier)",
-  "fghDescription": "Método de base de ondas planas: natural para sistemas periódicos, con precisión espectral",
-  "spectral": "Espectral (Chebyshev)",
-  "spectralDescription": "Método de polinomios de Chebyshev: convergencia exponencial para funciones suaves",
-  "quantumBound": "Estado ligado cuántico",
-  "quantumBoundDescription": "Método de disparo avanzado con acotación adaptativa de la energía y refinamiento por secante",
-  "gridPoints": "Puntos de la malla",
-  "gridPointsDescription": "Número de puntos de la malla para los métodos numéricos. Más puntos dan resultados más precisos pero un cálculo más lento.",
   "simulationPaused": "Simulación en pausa",
   "simulationPlaying": "Simulación en marcha",
   "simulationReset": "Simulación reiniciada",
@@ -158,7 +142,6 @@
   "rmsPositionLabel": "Δx_RMS = {{value}} nm",
   "stateLabelProbability": "|{{label}}|²",
   "stateLabelWavefunction": "|{{label}}|",
-  "valueWithPoints": "{{value}} puntos",
   "valueWithNanometers": "{{value}} nm",
   "valueWithElectronVolts": "{{value}} eV",
   "valueWithElectronMass": "{{value}} mₑ",
@@ -365,6 +348,9 @@
       "zerosHeading": "Ceros de la función de onda",
       "zerosOnePattern": "La función de onda tiene 1 nodo (cruce por cero) en la posición: {{positions}} nanómetros.",
       "zerosPattern": "La función de onda tiene {{count}} nodos (cruces por cero) en las posiciones: {{positions}} nanómetros."
+    },
+    "handles": {
+      "roleDescription": "tirador del potencial"
     }
   }
 }

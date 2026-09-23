@@ -45,22 +45,6 @@
   "autoPauseWhenTabHidden": "Pause automatique lorsque l'onglet est caché",
   "autoPauseDescription": "Met automatiquement la simulation en pause lorsque l'onglet du navigateur n'est pas visible",
   "preferences": "Préférences",
-  "numericalMethod": "Méthode numérique",
-  "numericalMethodDescription": "Choisissez la méthode numérique pour résoudre l'équation de Schrödinger.",
-  "numerov": "Méthode de Numerov",
-  "numerovDescription": "Méthode de tir traditionnelle - précise et stable pour la plupart des potentiels",
-  "matrixNumerov": "Numerov Matriciel",
-  "matrixNumerovDescription": "Diagonalisation matricielle utilisant la formule de Numerov - combine précision O(h⁴) et robustesse",
-  "dvr": "DVR (Représentation de Variable Discrète)",
-  "dvrDescription": "Méthode de diagonalisation matricielle - plus rapide et robuste pour les potentiels complexes",
-  "fgh": "FGH (Hamiltonien sur Grille de Fourier)",
-  "fghDescription": "Méthode base d'ondes planes - naturelle pour les systèmes périodiques avec précision spectrale",
-  "spectral": "Spectral (Chebyshev)",
-  "spectralDescription": "Méthode par polynômes de Chebyshev - convergence exponentielle pour fonctions lisses",
-  "quantumBound": "État lié quantique",
-  "quantumBoundDescription": "Méthode avancée avec encadrement d'énergie adaptatif et raffinements par sécante",
-  "gridPoints": "Points de grille",
-  "gridPointsDescription": "Nombre de points de grille pour les solveurs numériques. Des valeurs plus élevées donnent plus de précision mais un calcul plus lent.",
   "simulationPaused": "Simulation en pause",
   "simulationPlaying": "Simulation en cours",
   "simulationReset": "Simulation réinitialisée",
@@ -158,7 +142,6 @@
   "rmsPositionLabel": "Δx_RMS = {{value}} nm",
   "stateLabelProbability": "|{{label}}|²",
   "stateLabelWavefunction": "|{{label}}|",
-  "valueWithPoints": "{{value}} points",
   "valueWithNanometers": "{{value}} nm",
   "valueWithElectronVolts": "{{value}} eV",
   "valueWithElectronMass": "{{value}} mₑ",
@@ -365,6 +348,9 @@
       "zerosHeading": "Zéros de la fonction d'onde",
       "zerosOnePattern": "La fonction d'onde a 1 nœud (passage par zéro) à la position : {{positions}} nanomètres.",
       "zerosPattern": "La fonction d'onde a {{count}} nœuds (passages par zéro) aux positions : {{positions}} nanomètres."
+    },
+    "handles": {
+      "roleDescription": "poignée du potentiel"
     }
   }
 }

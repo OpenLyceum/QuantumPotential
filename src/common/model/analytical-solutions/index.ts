@@ -18,7 +18,6 @@ export {
   createAsymmetricTrianglePotential,
   solveAsymmetricTrianglePotential,
 } from "./asymmetric-triangle-potential.js";
-export { solveCoulomb1DNumerical } from "./coulomb-1d-numerical-wrapper.js";
 export {
   Coulomb1DPotentialSolution,
   calculateCoulomb1DClassicalProbability,

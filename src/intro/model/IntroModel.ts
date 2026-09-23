@@ -9,7 +9,7 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import Logger from "../../common/utils/Logger.js";
 
 export class IntroModel extends BaseModel {
@@ -150,13 +150,6 @@ export class IntroModel extends BaseModel {
 
     this.barrierHeightProperty.lazyLink(invalidateCache);
     this.potentialOffsetProperty.lazyLink(invalidateCache);
-  }
-
-  /**
-   * Called when the solver method or grid points changes.
-   */
-  protected override onSolverMethodChanged(_method: NumericalMethod): void {
-    this.boundStateResult = null;
   }
 
   /**
@@ -320,7 +313,7 @@ export class IntroModel extends BaseModel {
     }
 
     // Fallback: numerical calculation using potential function
-    const potential = this.calculatePotentialEnergy(xGrid);
+    const potential = this.getPotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
     return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
@@ -466,7 +459,7 @@ export class IntroModel extends BaseModel {
   /**
    * Calculate the potential energy at given positions.
    */
-  private calculatePotentialEnergy(xGrid: number[]): number[] {
+  protected override calculatePotentialEnergy(xGrid: readonly number[]): number[] {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
 
@@ -567,7 +560,7 @@ export class IntroModel extends BaseModel {
    */
   private getPotentialAtPosition(xNm: number): number {
     const x = xNm * QuantumConstants.NM_TO_M;
-    const potential = this.calculatePotentialEnergy([x]);
+    const potential = this.getPotentialEnergy([x]);
     return potential[0]! * QuantumConstants.JOULES_TO_EV;
   }
 }

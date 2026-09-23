@@ -25,336 +25,101 @@ For well-known potentials, the solver provides exact analytical solutions for **
 
 ### Multi-Well Potentials (Numerical Solutions)
 
-For complex multi-well systems, the solver uses numerical methods:
+The Many Wells screen's potentials have no convenient closed form and are solved numerically:
 
-- **Multi-Square Well**: Array of 1-10 finite square wells solved using DVR/FGH/Matrix Numerov
-  - Demonstrates band structure formation
-  - Shows quantum tunneling between multiple wells
-  - Transcendental equations become intractable for N > 2
-- **Multi-Coulomb 1D**: Array of 1-10 Coulomb centers solved numerically
-  - Models multi-atom quantum systems in 1D
-  - No closed-form analytical solution exists for N > 1
-  - Complex interference patterns between centers
+- **Multi-Square Well**: 1–10 finite square wells (band formation, tunnelling between wells)
+- **Multi-Coulomb 1D**: 1–10 Coulomb centres
 
-### Numerical Solutions
+Both can be tilted by a uniform electric field ℰ, which adds V = eℰx.
 
-For arbitrary potentials, six numerical methods are available:
+## Numerical solver
 
-#### 1. Numerov Method (Shooting)
+`Schrodinger1DSolver.solveNumerical` uses **Numerov shooting**, ported from PhET's *Quantum Bound States*
+(`src/common/model/numerov/`). Only the Many Wells screen reaches it; every other potential is analytical.
 
-- Higher-order finite-difference method with $O(h^6)$ error
-- Uses shooting method to find bound states
-- Iterative formula:
-  $$\psi_{j+1} = \frac{(2 - 10f_j)\psi_j - (1+f_{j-1})\psi_{j-1}}{1+f_{j+1}}$$
-  where $f_j = \frac{h^2}{12}k^2(x_j)$ and $k^2(x) = \frac{2m(E-V(x))}{\hbar^2}$
+- **Units.** The solver works internally in nm, eV and electron masses, which are the units its tolerances
+  were tuned for. The facade converts at its boundary: SI in, SI out. Wave functions are converted by
+  multiplying by √(10⁹), so ∫|ψ|² dx = 1 is preserved.
+- **Grid.** The grid is odd, so x = 0 is a grid point. Its size comes from `?numberOfPoints` (default 1001).
+  It is refined whenever the spacing would exceed 8 pm. The potential is cell-averaged, so a square
+  well's effective width does not depend on where its edges fall between samples.
+- **Energy window.** The window runs from min V to the lower of the two boundary values of V, so the
+  solver returns every state bound on both sides, up to `numStates`.
+- **Bracketing by node count.** By Sturm–Liouville, the number of interior nodes of the forward
+  solution at energy E equals the number of eigenvalues below E. Bisecting on that integer isolates each
+  state by its index, even inside dense multi-well minibands.
+- **Refinement.** Illinois false position (`EnergyRefiner`) solves the matching condition.
+  - *Symmetric V:* the solver detects symmetry by comparing V(x) with V(−x). It imposes ψ′(0) = 0 for
+    even states and ψ(0) = 0 for odd states, then mirrors the half solution.
+  - *Otherwise:* it matches log-derivatives at each state's main lobe. This is needed for the tilted
+    (ℰ ≠ 0) wells.
+- **Clean-up.** Two steps of inverse iteration on the tridiagonal Numerov problem Hψ = EBψ separate
+  near-degenerate states and remove the kink at the stitching point. The states are then normalized
+  by the trapezoidal rule.
+- **Unnormalizable states are dropped.** This happens only for the grid-limited states that collapse
+  onto a bare 1D Coulomb centre (see `tests/accuracy/README.md`).
 
-#### 2. Matrix Numerov Method
+**FGH (Fourier Grid Hamiltonian)** is kept as a developer cross-check: `?numericalMethod=fgh`. It builds
+the Hamiltonian on a 256-point periodic grid, with the kinetic energy diagonal in k-space, and
+diagonalizes it densely.
 
-- Matrix formulation of the Numerov algorithm
-- Converts the Schrödinger equation into an eigenvalue problem
-- Higher accuracy than shooting Numerov for most cases
-
-#### 3. Discrete Variable Representation (DVR) Method
-
-- Matrix diagonalization approach
-- Constructs Hamiltonian $H = T + V$
-- Potential energy: Diagonal matrix with $V_{ii} = V(x_i)$
-- Kinetic energy: Colbert-Miller formula
-  $$T_{ij} = \frac{\hbar^2}{2m\Delta x^2} \begin{cases} \frac{\pi^2}{3} & \text{for } i=j \\ \frac{2(-1)^{i-j}}{(i-j)^2} & \text{for } i \neq j \end{cases}$$
-
-#### 4. Fourier Grid Hamiltonian (FGH) Method
-
-- Uses FFT for kinetic energy evaluation
-- Efficient for periodic or smooth potentials
-- Scales as O(N log N) for kinetic energy
-
-#### 5. Spectral (Chebyshev) Method
-
-- Expands wavefunction in Chebyshev polynomials
-- High accuracy for smooth potentials
-- Well-suited for non-uniform grid spacing
-
-#### 6. QuantumBound Method (Experimental)
-
-- Alternative bound state solver implementation
-- Currently under development and testing
-- May provide improved accuracy for specific potential types
+The earlier DVR, spectral, matrix-Numerov, shooting and "QuantumBound" solvers, and the Preferences
+controls that chose between them, have been removed.
 
 ## File Structure
 
 ```
 src/common/model/
-├── QuantumConstants.ts          # Physical constants (ℏ, m_e, etc.)
-├── PotentialFunction.ts         # Type definitions and interfaces
-├── NumerovSolver.ts             # Shooting Numerov method implementation
-├── MatrixNumerovSolver.ts       # Matrix Numerov method implementation
-├── DVRSolver.ts                 # DVR method implementation
-├── FGHSolver.ts                 # Fourier Grid Hamiltonian method
-├── SpectralSolver.ts            # Chebyshev spectral method
-├── DoubleWellNumerovSolver.ts   # Specialized double well solver
-├── Schrodinger1DSolver.ts       # Main solver class
-├── BaseModel.ts                 # Base model class
-└── SuperpositionType.ts         # Superposition type definitions
-
-src/common/model/analytical-solutions/  # Analytical solvers for specific potentials
-  ├── infinite-square-well.ts
-  ├── finite-square-well.ts
-  ├── harmonic-oscillator.ts
-  ├── morse-potential.ts
-  ├── poschl-teller-potential.ts
-  ├── rosen-morse-potential.ts
-  ├── eckart-potential.ts
-  ├── asymmetric-triangle-potential.ts
-  ├── triangular-potential.ts
-  ├── coulomb-1d-potential.ts
-  ├── coulomb-1d-numerical-wrapper.ts   # Numerical wrapper with odd-parity filtering
-  ├── coulomb-3d-potential.ts
-  ├── double-square-well.ts
-  ├── multi-square-well.ts              # Multi-well potentials (uses numerical solvers)
-  ├── multi-coulomb-1d.ts               # Multi-Coulomb centers (uses numerical solvers)
-  ├── airy-utilities.ts                 # Airy functions (Ai, Bi)
-  ├── math-utilities.ts                 # Special functions and polynomials
-  └── index.ts                          # Exports all solutions
+├── Schrodinger1DSolver.ts          # Facade: analytical if possible, else Numerov (or FGH)
+├── NumericalMethod.ts              # NUMEROV | FGH
+├── numerov/                        # Ported from Quantum Bound States
+│   ├── NumerovSolver.ts            # Node-count bracketing, matching, inverse iteration
+│   ├── NumerovIntegrator.ts        # Forward/backward Numerov recurrence with overflow rescaling
+│   ├── EnergyRefiner.ts            # Illinois false position
+│   ├── WaveFunctionNormalizer.ts   # Trapezoidal normalization
+│   ├── XGrid.ts                    # Uniform odd grid (nm)
+│   └── NumerovConstants.ts         # ħ in √(eV·mₑ)·nm
+├── FGHSolver.ts                    # Cross-check
+├── LinearAlgebraUtils.ts           # Matrix diagonalization + FFT (FGH, momentum space)
+├── PotentialFactory.ts             # Builds analytical solutions
+└── analytical-solutions/           # One file per closed-form potential, plus the multi-well wrappers
 ```
-
-**Note**: While `multi-square-well.ts` and `multi-coulomb-1d.ts` are located in the `analytical-solutions` directory for organizational convenience, they create potential functions that are solved using numerical methods (DVR, FGH, Matrix Numerov), not analytical formulas.
 
 ## Usage
 
-### Basic Usage
-
 ```typescript
-import Schrodinger1DSolver, {
-  NumericalMethod,
-} from "./common/model/Schrodinger1DSolver.js";
-import { PotentialType } from "./common/model/PotentialFunction.js";
-import QuantumConstants from "./common/model/QuantumConstants.js";
-
-// Create solver instance
-const solver = new Schrodinger1DSolver(NumericalMethod.DVR);
-
-// Define grid
-const gridConfig = {
-  xMin: 0,
-  xMax: 1e-9, // 1 nm
-  numPoints: 200,
-};
-
-// Solve for infinite well (analytical)
-const result = solver.solveAnalyticalIfPossible(
-  {
-    type: PotentialType.INFINITE_WELL,
-    wellWidth: 1e-9,
-  },
-  QuantumConstants.ELECTRON_MASS,
-  5, // Number of states
-  gridConfig,
-);
-
-// Access results
-result.energies.forEach((E, n) => {
-  const E_eV = Schrodinger1DSolver.joulesToEV(E);
-  console.log(`E_${n + 1} = ${E_eV.toFixed(4)} eV`);
-});
-```
-
-### Custom Potentials
-
-```typescript
-// Define custom potential function
-const potential = (x: number) => {
-  // Finite square well
-  if (x >= 0 && x <= 1e-9) {
-    return -Schrodinger1DSolver.eVToJoules(5); // -5 eV
-  }
-  return 0;
-};
-
-// Solve numerically
+const solver = new Schrodinger1DSolver(); // Numerov
 const result = solver.solveNumerical(
-  potential,
+  (x) => (Math.abs(x) < 0.5e-9 ? 0 : 5 * QuantumConstants.EV_TO_JOULES), // V(x) in J, x in m
   QuantumConstants.ELECTRON_MASS,
-  5,
-  gridConfig,
+  10, // at most 10 states
+  { xMin: -4e-9, xMax: 4e-9, numPoints: 1001 },
 );
+// result.energies (J), result.wavefunctions (m^-1/2), result.xGrid (m), result.method === "numerov"
 ```
 
-### Helper Functions
+Screen models call `solveAnalyticalIfPossible(wellParams, mass, numStates, gridConfig)`, which uses the
+closed-form solution for the potential type, or the numerical path for `MULTI_SQUARE_WELL` and
+`MULTI_COULOMB_1D` (with `wellParams.electricField` in V/m).
 
-The `Schrodinger1DSolver` class provides static helper methods:
+## Query parameters
 
-```typescript
-// Create common potential functions
-const infiniteWell = Schrodinger1DSolver.createInfiniteWellPotential(1e-9);
-const finiteWell = Schrodinger1DSolver.createFiniteWellPotential(1e-9, 5e-19);
-
-// Unit conversions
-const energyJoules = Schrodinger1DSolver.eVToJoules(1.0);
-const energyEV = Schrodinger1DSolver.joulesToEV(1.602e-19);
-```
-
-## User Preferences
-
-Users can select the numerical method through the preferences system:
-
-```typescript
-import QPPWPreferences from "./QPPWPreferences.js";
-import { NumericalMethod } from "./common/model/Schrodinger1DSolver.js";
-
-// Get current method
-const method = QPPWPreferences.numericalMethodProperty.value;
-
-// Set method
-QPPWPreferences.numericalMethodProperty.value = NumericalMethod.NUMEROV;
-```
-
-## Integration with Models
-
-The solver is integrated into the `OneWellModel` class:
-
-```typescript
-// Get energy for quantum number n
-const energy = oneWellModel.getEnergyLevel(3); // E_3 in eV
-
-// Get wavefunction
-const wavefunction = oneWellModel.getWavefunction(3); // ψ_3(x)
-
-// Get spatial grid
-const xGrid = oneWellModel.getXGrid(); // x values in nm
-
-// Get all bound states
-const boundStates = oneWellModel.getBoundStates();
-```
-
-## Performance Considerations
-
-### Grid Resolution
-
-- More grid points → higher accuracy, slower computation
-- Typical range: 100-500 points
-- DVR method scales as O(N³) due to matrix diagonalization
-- Numerov method scales as O(N) per energy search
-
-### Method Selection
-
-- **DVR**: Better for general potentials, finds all states simultaneously
-- **Numerov**: Better for deep wells, requires energy range specification
-
-### Caching
-
-The `OneWellModel` caches results and recalculates only when parameters change.
+| Parameter | Default | Meaning |
+|---|---|---|
+| `?numericalMethod` | `numerov` | `numerov` or `fgh` (cross-check) |
+| `?numberOfPoints` | `1001` | Odd grid size for the numerical solver (501–10001) |
 
 ## Mathematical Background
 
-### Time-Independent Schrödinger Equation
+The time-independent Schrödinger equation is −ħ²/(2m) ψ″ + V(x)ψ = Eψ. In the Numerov scheme
+ψ_(j+1) = [(2 − 10f_j)ψ_j − (1 + f_(j−1))ψ_(j−1)] / (1 + f_(j+1)), with f_j = (h²/12)·2m(E − V_j)/ħ².
+Its local error is O(h⁶), which makes it O(h⁴) globally.
 
-$$-\frac{\hbar^2}{2m}\frac{d^2\psi}{dx^2} + V(x)\psi = E\psi$$
+## Testing
 
-### Bound State Conditions
-
-1. $\psi(x) \to 0$ as $x \to \pm\infty$
-2. $\psi$ and $d\psi/dx$ continuous
-3. $\int|\psi|^2 dx = 1$ (normalization)
-
-### DVR Basis
-
-The DVR method uses a basis of delta functions on grid points, making the potential matrix diagonal while using the Colbert-Miller formula for exact kinetic energy in the DVR basis.
-
-## References
-
-The solver implementations are based on well-established numerical methods for solving the time-independent Schrödinger equation, including the Numerov method (1924), Discrete Variable Representation (DVR), and various spectral methods.
-
-### Freely Available References
-
-1. **Numerov Method**:
-   - Pillai, M., et al. (2014). "Numerov numerical method applied to the Schrödinger equation." arXiv:1403.7092. https://arxiv.org/abs/1403.7092
-   - Santoso, A. B., & Zuhdi, M. (2015). "Numerical Solution of the 1D-Schrödinger Equation with Pseudo-Delta Barrier Using Numerov Method." arXiv:1507.03708. https://arxiv.org/abs/1507.03708
-
-2. **DVR Method**:
-   - Pliś, S., & Zak, E. (2025). "Quantum Discrete Variable Representations." arXiv:2504.15841. https://arxiv.org/abs/2504.15841
-   - Kievsky, A., et al. (2020). "Discrete Variable Representation method in the study of few-body quantum systems with non-zero angular momentum." arXiv:2008.12936. https://arxiv.org/abs/2008.12936
-
-3. **Additional Resources**:
-   - Abramowitz, M., & Stegun, I. A. (1964). "Handbook of Mathematical Functions." National Bureau of Standards. Available online at https://personal.math.ubc.ca/~cbm/aands/
-
-## Visualization Features
-
-The solver is integrated with comprehensive visualization tools:
-
-### Energy Chart
-
-- Displays potential energy curves for all potential types
-- Shows discrete energy levels as horizontal lines
-- Interactive selection of energy levels
-- Hover to display energy values
-- Color-coded visualization with phase-dependent coloring
-
-### Wavefunction Chart
-
-The simulation provides three visualization modes:
-
-1. **Probability Density** (`|ψ|²`): Shows the probability distribution
-2. **Wavefunction Components**: Real part, imaginary part, and magnitude
-3. **Phase Color**: Rainbow-colored visualization where hue represents quantum phase
-
-### Chart Specifications
-
-- **Energy Chart**: 600×300 pixels with margins (left: 60, right: 20, top: 40, bottom: 50)
-- **Wavefunction Chart**: 600×140 pixels with margins (left: 60, right: 20, top: 10, bottom: 40)
-- Both charts share synchronized x-axis (Position in nm: -4 to +4 nm)
-- Y-axis ranges automatically adjust based on potential type and selected state
-
-## Recent Enhancements (2024-2025)
-
-The solver has recently been enhanced with several new features:
-
-### Multi-Well Support
-
-- **Multi-Square Well**: Supports 1-10 finite square wells arranged periodically
-  - Demonstrates band structure formation
-  - Shows quantum tunneling between multiple wells
-  - Energy levels form bands as well count increases
-  - Available in the "Many Wells" screen
-
-- **Multi-Coulomb 1D**: Supports 1-10 Coulomb centers arranged periodically
-  - Models multi-atom quantum systems in 1D
-  - Shows complex interference patterns
-  - Demonstrates molecular orbital formation
-  - Available in the "Many Wells" screen
-
-### Coulomb 1D Improvements
-
-- **Odd-Parity Enforcement**: The 1D Coulomb potential now correctly enforces odd-parity wavefunctions
-  - All wavefunctions satisfy ψ(-x) = -ψ(x)
-  - Linear behavior at x=0 (ψ(x) ∝ x as x→0)
-  - Energy formula corrected: $E_n = -\frac{m\alpha^2}{2\hbar^2(n+1/2)^2}$
-  - Numerical wrapper available for validation
-
-### Enhanced Double Well Solver
-
-- **Improved Eigenvalue Detection**: Uses node-counting diagnostics for robust eigenvalue recovery
-- **Active Eigenvalue Recovery**: Adaptively searches for missing energy levels
-- **23 Comprehensive Tests**: Stringent validation suite ensures physical correctness
-  - Orthogonality testing
-  - Probability localization
-  - Energy splitting consistency
-  - Wavefunction continuity at boundaries
-
-### Test Infrastructure
-
-New test suites added:
-
-- `npm run test:multi-square-well` - Multi-well square potential validation
-- `npm run test:multi-coulomb-1d` - Multi-Coulomb 1D validation
-- `npm run test:double-well` - Comprehensive 23-test suite for double wells
-- `npm run test:coulomb` - Coulomb potential verification with near-zero behavior checks
-
-## Future Enhancements
-
-Potential improvements to consider:
-
-- Support for 2D/3D potentials
-- Time-dependent Schrödinger equation solver (partial implementation exists for phase evolution)
-- More analytical solutions for exotic potentials
-- Adaptive grid refinement
-- GPU acceleration for large grids
+- `tests/common/model/numerov-solver.test.ts`: checks the invariants (finite values, ordering,
+  normalization, orthogonality, node count). It also checks the harmonic-oscillator and Pöschl–Teller
+  spectra, tilted multi-wells, agreement with FGH, and speed on the densest band.
+- `tests/common/model/analytical-vs-numerical.test.ts`: compares the closed-form spectra with a
+  fine-grid Numerov solution.
+- `tests/accuracy/`: hand-run, exhaustive comparisons (see its README).

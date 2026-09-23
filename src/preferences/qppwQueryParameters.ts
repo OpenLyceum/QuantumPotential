@@ -5,10 +5,7 @@
  * query parameter is declared and documented. Public-facing parameters (intended for end users /
  * sharing links) set `public: true`.
  *
- * Each parameter seeds the initial value of the matching Property in QPPWPreferencesModel, which
- * remains user-editable at runtime in Preferences → Simulation.
- *
- * Usage: append e.g. `?numericalMethod=dvr&gridPoints=256` to the sim URL.
+ * Usage: append e.g. `?numericalMethod=fgh` or `?numberOfPoints=3001` to the sim URL.
  */
 
 import { logGlobal } from "scenerystack/phet-core";
@@ -16,28 +13,25 @@ import { QueryStringMachine } from "scenerystack/query-string-machine";
 import { NumericalMethod } from "../common/model/NumericalMethod.js";
 import qppw from "../QPPWNamespace.js";
 
-/** Grid sizes offered by the Preferences slider: powers of two from 2^5 to 2^9. */
-export const GRID_POINTS_VALUES = [32, 64, 128, 256, 512] as const;
-
 const qppwQueryParameters = QueryStringMachine.getAll({
   /**
-   * Initial numerical method for the Schrödinger solver.
+   * Numerical method for the potentials without a closed-form solution (the Many Wells screen).
+   * Numerov is the sim's solver; FGH is a developer cross-check.
    */
   numericalMethod: {
     type: "string",
-    defaultValue: NumericalMethod.FGH,
+    defaultValue: NumericalMethod.NUMEROV,
     validValues: Object.values(NumericalMethod),
-    public: true,
   },
 
   /**
-   * Initial number of grid points used by the numerical solvers.
+   * Number of points in the spatial grid used for numerical solutions. Must be odd so that x = 0 is a
+   * grid point (the Numerov solver mirrors symmetric potentials about it).
    */
-  gridPoints: {
+  numberOfPoints: {
     type: "number",
-    defaultValue: 64,
-    validValues: [...GRID_POINTS_VALUES],
-    public: true,
+    defaultValue: 1001,
+    isValidValue: (value: number) => Number.isInteger(value) && value % 2 === 1 && value >= 501 && value <= 10001,
   },
 });
 

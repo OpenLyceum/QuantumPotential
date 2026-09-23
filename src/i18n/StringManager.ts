@@ -78,40 +78,8 @@ export class StringManager {
   public getPreferencesLabels() {
     return {
       preferencesStringProperty: this.stringProperties.preferencesStringProperty,
-      numericalMethodStringProperty: this.stringProperties.numericalMethodStringProperty,
-      numericalMethodDescriptionStringProperty: this.stringProperties.numericalMethodDescriptionStringProperty,
       autoPauseWhenTabHiddenStringProperty: this.stringProperties.autoPauseWhenTabHiddenStringProperty,
       autoPauseDescriptionStringProperty: this.stringProperties.autoPauseDescriptionStringProperty,
-      gridPointsStringProperty: this.stringProperties.gridPointsStringProperty,
-      gridPointsDescriptionStringProperty: this.stringProperties.gridPointsDescriptionStringProperty,
-    };
-  }
-
-  /**
-   * Gets an object containing the numerical method name properties.
-   */
-  public getNumericalMethodNames() {
-    return {
-      numerovStringProperty: this.stringProperties.numerovStringProperty,
-      matrixNumerovStringProperty: this.stringProperties.matrixNumerovStringProperty,
-      dvrStringProperty: this.stringProperties.dvrStringProperty,
-      fghStringProperty: this.stringProperties.fghStringProperty,
-      spectralStringProperty: this.stringProperties.spectralStringProperty,
-      quantumBoundStringProperty: this.stringProperties.quantumBoundStringProperty,
-    };
-  }
-
-  /**
-   * Gets an object containing the numerical method description properties.
-   */
-  public getNumericalMethodDescriptions() {
-    return {
-      numerovStringProperty: this.stringProperties.numerovDescriptionStringProperty,
-      matrixNumerovStringProperty: this.stringProperties.matrixNumerovDescriptionStringProperty,
-      dvrStringProperty: this.stringProperties.dvrDescriptionStringProperty,
-      fghStringProperty: this.stringProperties.fghDescriptionStringProperty,
-      spectralStringProperty: this.stringProperties.spectralDescriptionStringProperty,
-      quantumBoundStringProperty: this.stringProperties.quantumBoundDescriptionStringProperty,
     };
   }
 
@@ -254,76 +222,12 @@ export class StringManager {
     return this.stringProperties.preferencesStringProperty;
   }
 
-  get numericalMethodStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.numericalMethodStringProperty;
-  }
-
-  get numericalMethodDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.numericalMethodDescriptionStringProperty;
-  }
-
-  get numerovStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.numerovStringProperty;
-  }
-
-  get numerovDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.numerovDescriptionStringProperty;
-  }
-
-  get matrixNumerovStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.matrixNumerovStringProperty;
-  }
-
-  get matrixNumerovDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.matrixNumerovDescriptionStringProperty;
-  }
-
-  get dvrStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.dvrStringProperty;
-  }
-
-  get dvrDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.dvrDescriptionStringProperty;
-  }
-
-  get fghStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.fghStringProperty;
-  }
-
-  get fghDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.fghDescriptionStringProperty;
-  }
-
-  get spectralStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.spectralStringProperty;
-  }
-
-  get spectralDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.spectralDescriptionStringProperty;
-  }
-
-  get quantumBoundStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.quantumBoundStringProperty;
-  }
-
-  get quantumBoundDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.quantumBoundDescriptionStringProperty;
-  }
-
   get autoPauseWhenTabHiddenStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.autoPauseWhenTabHiddenStringProperty;
   }
 
   get autoPauseDescriptionStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.autoPauseDescriptionStringProperty;
-  }
-
-  get gridPointsStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.gridPointsStringProperty;
-  }
-
-  get gridPointsDescriptionStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.gridPointsDescriptionStringProperty;
   }
 
   get energyChartStringProperty(): ReadOnlyProperty<string> {
@@ -664,10 +568,6 @@ export class StringManager {
 
   get stateLabelWavefunctionStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.stateLabelWavefunctionStringProperty;
-  }
-
-  get valueWithPointsStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.valueWithPointsStringProperty;
   }
 
   get valueWithNanometersStringProperty(): ReadOnlyProperty<string> {

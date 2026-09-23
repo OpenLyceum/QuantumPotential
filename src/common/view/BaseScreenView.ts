@@ -20,7 +20,7 @@ import type { BaseModel } from "../model/BaseModel.js";
 import { FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
-import { ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
+import { CONTROL_PANEL_WIDTH, ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
 import { EnergyChartNode } from "./EnergyChartNode.js";
 import { SimulationControlBar } from "./SimulationControlBar.js";
 import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
@@ -51,7 +51,8 @@ export abstract class BaseScreenView extends ScreenView {
   // Common components (may be undefined for screens that don't use them)
   protected energyChart?: EnergyChartNode;
   protected waveFunctionChart?: WaveFunctionChartNode;
-  protected controlPanel?: ControlPanelNode;
+  protected energyPanel?: Node;
+  protected graphPanel?: Node;
   protected simulationControlBar?: SimulationControlBar;
   protected chartsContainer?: Node;
   protected listBoxParent?: Node;
@@ -102,47 +103,53 @@ export abstract class BaseScreenView extends ScreenView {
   }
 
   /**
-   * Creates the standard quantum well layout with charts, control panel, and simulation controls.
-   * This should be called by subclasses that use the standard layout.
+   * Creates the standard layout of the One, Two and Many Wells screens, after PhET's Quantum Bound States:
+   *
+   *   ┌ legend ──────────────────────────┐ ┌ energy panel ┐
+   *   │ energy chart (no x labels)        │ │              │
+   *   ├───────────────────────────────────┤ └──────────────┘
+   *   │ wave-function chart (x axis, nm)  │ ┌ graph panel ─┐
+   *   └───────────────────────────────────┘ └──────────────┘
+   *              time controls                     [reset]
+   *
+   * The two charts share one position axis. Their y axes keep numeric ticks with units.
+   *
    * @param model - The OneWellModel, TwoWellsModel, or ManyWellsModel instance
    * @param viewState - The view state for display properties
-   * @param controlPanelOptions - Optional configuration for the control panel (e.g., hiding mass slider, filtering potential types)
+   * @param controlPanelOptions - Optional configuration for the control panels (mass control, potential types)
    */
   protected createStandardLayout(
     model: OneWellModel | TwoWellsModel | ManyWellsModel,
     viewState: OneWellViewState | TwoWellsViewState | ManyWellsViewState,
     controlPanelOptions?: ControlPanelNodeOptions,
   ): void {
-    // Calculate layout dimensions
-    const screenWidth = this.layoutBounds.width;
-    const screenHeight = this.layoutBounds.height;
-    const margin = 20;
+    const margin = 10;
+    const panelSpacing = 10;
+    const chartsWidth = this.layoutBounds.width - 2 * margin - panelSpacing - CONTROL_PANEL_WIDTH;
+    const energyChartHeight = 290;
+    const waveFunctionChartHeight = 220;
 
-    // Fixed chart dimensions (both charts share the same width and have fixed height)
-    const chartsWidth = 600; // Fixed width for consistency
-    const energyChartHeight = 300; // Fixed height for energy chart
-    const waveFunctionChartHeight = 180; // Fixed height for wavefunction chart (reduced by 40%)
-
-    // Create the energy chart (top plot)
+    // Energy chart on top; it draws no position labels because the chart below supplies them
     this.energyChart = new EnergyChartNode(model, viewState, {
       width: chartsWidth,
       height: energyChartHeight,
+      sharedXAxis: true,
     });
+    // Charts are placed by their nominal size: their bounds vary with labels and clipped content
+    const chartsTop = margin / 2;
+    this.energyChart.x = margin;
+    this.energyChart.y = chartsTop;
 
-    // Create the wave function chart (bottom plot)
+    // Wave-function chart directly below, with the same left and right margins so the x axes line up
     this.waveFunctionChart = new WaveFunctionChartNode(model, viewState, {
       width: chartsWidth,
       height: waveFunctionChartHeight,
     });
+    const waveFunctionChartTop = chartsTop + energyChartHeight;
+    const chartsBottom = waveFunctionChartTop + waveFunctionChartHeight;
+    this.waveFunctionChart.x = margin;
+    this.waveFunctionChart.y = waveFunctionChartTop;
 
-    // Position charts with fixed layout, ensuring x-axes align horizontally
-    this.energyChart.left = margin;
-    this.energyChart.top = 10; // Reduced from margin to move energy chart upward and avoid overlap
-
-    this.waveFunctionChart.left = margin; // Same left position to align x-axes
-    this.waveFunctionChart.top = margin + energyChartHeight; // Reduced spacing between charts
-
-    // Create container for charts
     this.chartsContainer = new Node({
       children: [this.energyChart, this.waveFunctionChart],
     });
@@ -152,23 +159,32 @@ export abstract class BaseScreenView extends ScreenView {
       this.listBoxParent = new Node();
     }
 
-    // Create control panel with optional configuration
-    this.controlPanel = new ControlPanelNode(model, viewState, this.listBoxParent, controlPanelOptions);
-    this.controlPanel.left = chartsWidth + margin * 2;
-    this.controlPanel.top = margin;
+    // One panel beside each chart, top-aligned with it
+    const controlPanel = new ControlPanelNode(model, viewState, this.listBoxParent, controlPanelOptions);
+    this.energyPanel = controlPanel.energyPanel;
+    this.graphPanel = controlPanel.graphPanel;
+    const panelLeft = margin + chartsWidth + panelSpacing;
+    this.energyPanel.left = panelLeft;
+    this.energyPanel.top = margin;
+    this.graphPanel.left = panelLeft;
+    this.graphPanel.top = Math.max(waveFunctionChartTop, this.energyPanel.bottom + panelSpacing);
 
-    // Create simulation control bar (footer)
-    this.simulationControlBar = new SimulationControlBar(model, {
-      width: screenWidth,
-    });
-    this.simulationControlBar.left = 0;
-    this.simulationControlBar.bottom = screenHeight;
+    // Time controls centered under the charts, reset button in the corner
+    this.simulationControlBar = new SimulationControlBar(model);
+    this.simulationControlBar.centerX = margin + chartsWidth / 2;
+    this.simulationControlBar.centerY = (chartsBottom + this.layoutBounds.maxY) / 2;
 
-    // Add all components to the view
     this.addChild(this.chartsContainer);
-    this.addChild(this.controlPanel);
+    this.addChild(this.energyPanel);
+    this.addChild(this.graphPanel);
     this.addChild(this.simulationControlBar);
     this.addChild(this.listBoxParent); // ListBox parent must be added last for proper z-ordering
+
+    // Keyboard and screen-reader order follows the layout: each chart, then the panel that controls it
+    this.setupPDOMStructure(
+      [this.energyChart, this.energyPanel, this.waveFunctionChart, this.graphPanel],
+      [this.simulationControlBar, this.resetButton],
+    );
   }
 
   /**

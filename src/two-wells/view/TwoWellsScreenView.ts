@@ -33,30 +33,6 @@ export class TwoWellsScreenView extends BaseScreenView {
       showParticleMass: false,
       allowedPotentialTypes: [PotentialType.COULOMB_1D, PotentialType.DOUBLE_SQUARE_WELL],
     });
-
-    // Set up PDOM (Parallel DOM) structure for accessibility
-    this.setupAccessibility(model);
-  }
-
-  /**
-   * Sets up the PDOM structure for accessibility.
-   */
-  private setupAccessibility(_model: TwoWellsModel): void {
-    // Set PDOM navigation order for play area and control area
-    const playAreaChildren = [];
-    if (this.chartsContainer) {
-      playAreaChildren.push(this.chartsContainer);
-    }
-
-    const controlAreaChildren = [];
-    if (this.controlPanel) {
-      controlAreaChildren.push(this.controlPanel);
-    }
-    if (this.simulationControlBar) {
-      controlAreaChildren.push(this.simulationControlBar);
-    }
-
-    this.setupPDOMStructure(playAreaChildren, controlAreaChildren);
   }
 
   /**

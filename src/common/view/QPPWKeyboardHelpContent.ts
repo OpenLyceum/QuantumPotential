@@ -1,8 +1,9 @@
 /**
  * QPPWKeyboardHelpContent — content for the standard keyboard-help dialog (the "?" button joist adds
  * to the navigation bar), shared by every screen. It mirrors the keys actually wired up in the views:
- * energy-level selection on the energy chart (EnergyChartNode), the parameter sliders and combo boxes
- * in the control panel, and the keyboard-draggable chart tools (area, derivative, curvature).
+ * energy-level selection on the energy chart (EnergyChartNode), the potential handles on that chart
+ * (accessible sliders, so the slider section covers them), the combo boxes and ◀ ▶ spinners in the
+ * control panels, and the keyboard-draggable chart tools (area, derivative, curvature).
  */
 
 import {

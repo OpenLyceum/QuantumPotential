@@ -5,12 +5,12 @@
 
 import { DerivedProperty } from "scenerystack/axon";
 import { AxisLine, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
-import { Range } from "scenerystack/dot";
+import { Range, Vector2 } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Line, Node, Path, Rectangle, type SceneryEvent, Text, VBox } from "scenerystack/scenery";
+import { HBox, Line, Node, Path, Rectangle, type SceneryEvent, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
@@ -22,7 +22,6 @@ import {
   hasPotentialOffset,
   hasWellSeparation,
   isManyWellsModel,
-  isTwoWellsModel,
 } from "../model/ModelTypeGuards.js";
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
@@ -30,6 +29,7 @@ import type { ScreenModel } from "../model/ScreenModels.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
+import { PotentialHandlesLayer } from "./handles/PotentialHandlesLayer.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
 
 // Chart axis range constants
@@ -86,15 +86,31 @@ function getEnergyAxisRange(potentialType: PotentialType): {
 
 const a11y = stringManager.getA11yStrings();
 
+/** Samples used to draw the potential; enough that step potentials have near-vertical walls. */
+const POTENTIAL_CURVE_SAMPLES = 1200;
+
+/** Farthest (view px) the pointer can be from a level and still hover or select it. */
+const LEVEL_PICK_DISTANCE = 12;
+
 export class EnergyChartNode extends BaseChartNode {
   // Visual elements specific to energy chart
   private readonly potentialPath: Path;
   private readonly energyLevelNodes: Map<number, Line>;
-  private readonly energyLabelNodes: Map<number, Text>;
+  // "Eₙ = … eV" readouts for the selected and the hovered level, drawn inside the plot above their lines
+  private readonly selectedLevelLabel: Text;
+  private readonly hoveredLevelLabel: Text;
+
+  // Transparent layer over the plot that picks the level nearest the pointer (as in Quantum Bound States),
+  // so closely spaced levels in a band can still be hovered and selected one by one
+  private readonly levelPickerRectangle: Rectangle;
+
+  // View y of each drawn level, for picking
+  private levelViewYs: number[] = [];
   // Selectable hit areas over each level, with the aria-checked listener each one links to the model
   private readonly energyLevelHitAreas: Array<{ hitArea: Rectangle; listener: () => void }> = [];
   private readonly totalEnergyLine: Line;
   private readonly legendNode: Node;
+  public readonly potentialHandlesLayer: PotentialHandlesLayer;
 
   // Classical turning point lines
   private readonly leftTurningPointLine: Line;
@@ -103,21 +119,30 @@ export class EnergyChartNode extends BaseChartNode {
   // Hover state
   private hoveredEnergyLevelIndex: number | null = null;
 
-  public constructor(model: ScreenModel, viewState: ScreenViewState, options?: { width?: number; height?: number }) {
+  // Whether the chart below supplies the position axis (QBS-style layout): no x labels here, legend on top
+  private readonly sharedXAxis: boolean;
+
+  public constructor(
+    model: ScreenModel,
+    viewState: ScreenViewState,
+    options?: { width?: number; height?: number; sharedXAxis?: boolean },
+  ) {
     // Initialize view range with values based on initial potential type
     const initialEnergyRange = getEnergyAxisRange(model.potentialTypeProperty.value);
+    const sharedXAxis = options?.sharedXAxis ?? false;
 
     // Call super constructor with chart options
     const chartOptions: ChartOptions = {
       width: options?.width ?? 600,
       height: options?.height ?? 300,
-      margins: { left: 60, right: 20, top: 40, bottom: 50 },
+      margins: { left: 60, right: 20, top: sharedXAxis ? 30 : 40, bottom: sharedXAxis ? 6 : 50 },
       xRange: { min: -X_AXIS_RANGE_NM, max: X_AXIS_RANGE_NM },
       yRange: { min: initialEnergyRange.min, max: initialEnergyRange.max },
       showZeroLine: true,
     };
 
     super(model, viewState, chartOptions);
+    this.sharedXAxis = sharedXAxis;
 
     // PDOM - make energy chart accessible with dynamic description
     this.tagName = "div";
@@ -155,7 +180,28 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Create energy level lines and labels containers
     this.energyLevelNodes = new Map();
-    this.energyLabelNodes = new Map();
+    const levelLabelOptions = { font: new PhetFont({ size: 12, weight: "bold" }), maxWidth: 200 };
+    this.selectedLevelLabel = new Text("", { ...levelLabelOptions, fill: QPPWColors.energyLevelSelectedProperty });
+    this.hoveredLevelLabel = new Text("", { ...levelLabelOptions, fill: QPPWColors.labelFillProperty });
+
+    this.levelPickerRectangle = new Rectangle(
+      this.chartMargins.left,
+      this.chartMargins.top,
+      this.plotWidth,
+      this.plotHeight,
+      { fill: "transparent" },
+    );
+    this.levelPickerRectangle.addInputListener({
+      move: (event) => this.setHoveredLevel(this.getNearestLevelIndex(event)),
+      enter: (event) => this.setHoveredLevel(this.getNearestLevelIndex(event)),
+      exit: () => this.setHoveredLevel(null),
+      down: (event) => {
+        const index = this.getNearestLevelIndex(event);
+        if (index !== null) {
+          this.model.selectedEnergyLevelIndexProperty.value = index;
+        }
+      },
+    });
 
     // Create total energy line
     this.totalEnergyLine = new Line(0, 0, 0, 0, {
@@ -185,6 +231,24 @@ export class EnergyChartNode extends BaseChartNode {
     // Create legend (outside clipped area)
     this.legendNode = this.createLegend();
     this.addChild(this.legendNode);
+
+    // Handles on the potential curve for reshaping the well; unclipped so they can be grabbed at the chart edge
+    this.potentialHandlesLayer = new PotentialHandlesLayer(
+      model,
+      {
+        toView: (point) => new Vector2(this.dataToViewX(point.x), this.dataToViewY(point.y)),
+        toModel: (viewPoint) => ({ x: this.viewToDataX(viewPoint.x), y: this.viewToDataY(viewPoint.y) }),
+      },
+      (x, y) =>
+        x >= this.xMinProperty.value &&
+        x <= this.xMaxProperty.value &&
+        y >= this.yMinProperty.value &&
+        y <= this.yMaxProperty.value,
+    );
+    this.addChild(this.potentialHandlesLayer);
+
+    // Keyboard order: the handles that reshape the potential come before the (many) energy-level buttons
+    this.pdomOrder = [this.potentialHandlesLayer, null];
 
     // Link to model properties
     this.linkToModel();
@@ -439,18 +503,20 @@ export class EnergyChartNode extends BaseChartNode {
     yTickLabelsNode.y = this.chartMargins.top;
     axesNode.addChild(yTickLabelsNode);
 
-    // X-axis tick labels using bamboo TickLabelSet
-    const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
-      edge: "max",
-      createLabel: (value: number) =>
-        new Text(value.toFixed(0), {
-          font: new PhetFont(12),
-          fill: QPPWColors.labelFillProperty,
-        }),
-    });
-    xTickLabelsNode.x = this.chartMargins.left;
-    xTickLabelsNode.y = this.chartMargins.top + this.plotHeight;
-    axesNode.addChild(xTickLabelsNode);
+    // X-axis tick labels, unless the chart below carries the shared position axis
+    if (!this.sharedXAxis) {
+      const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
+        edge: "max",
+        createLabel: (value: number) =>
+          new Text(value.toFixed(0), {
+            font: new PhetFont(12),
+            fill: QPPWColors.labelFillProperty,
+          }),
+      });
+      xTickLabelsNode.x = this.chartMargins.left;
+      xTickLabelsNode.y = this.chartMargins.top + this.plotHeight;
+      axesNode.addChild(xTickLabelsNode);
+    }
 
     // Axis labels
     const yLabelText = new Text(stringManager.energyEvStringProperty, {
@@ -462,13 +528,15 @@ export class EnergyChartNode extends BaseChartNode {
     });
     axesNode.addChild(yLabelText);
 
-    const xLabelText = new Text(stringManager.positionNmStringProperty, {
-      font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
-      centerX: this.chartWidth / 2,
-      centerY: this.chartHeight - 15,
-    });
-    axesNode.addChild(xLabelText);
+    if (!this.sharedXAxis) {
+      const xLabelText = new Text(stringManager.positionNmStringProperty, {
+        font: new PhetFont(14),
+        fill: QPPWColors.labelFillProperty,
+        centerX: this.chartWidth / 2,
+        centerY: this.chartHeight - 15,
+      });
+      axesNode.addChild(xLabelText);
+    }
 
     return axesNode;
   }
@@ -477,9 +545,9 @@ export class EnergyChartNode extends BaseChartNode {
    * Creates the legend for toggling visibility of elements.
    */
   private createLegend(): Node {
-    const legendContentVBox = new VBox({
-      spacing: 5,
-      align: "left",
+    const legendContentVBox = new (this.sharedXAxis ? HBox : VBox)({
+      spacing: this.sharedXAxis ? 20 : 5,
+      align: this.sharedXAxis ? "center" : "left",
       children: [
         new Checkbox(
           this.viewState.showTotalEnergyProperty,
@@ -528,6 +596,15 @@ export class EnergyChartNode extends BaseChartNode {
 
     legendContentVBox.left = 10;
     legendContentVBox.top = 8;
+
+    // In the shared-axis layout the legend is a borderless row in the top margin, above the plot
+    if (this.sharedXAxis) {
+      legendPanelRectangle.visible = false;
+      legendContentVBox.left = 0;
+      legendContentVBox.top = 0;
+      legendNode.left = this.chartMargins.left;
+      legendNode.centerY = this.chartMargins.top / 2;
+    }
 
     return legendNode;
   }
@@ -604,6 +681,7 @@ export class EnergyChartNode extends BaseChartNode {
     this.axesNode = this.createAxes();
     this.addChild(this.axesNode);
     this.axesNode.moveToBack();
+    this.potentialHandlesLayer.update();
     this.backgroundRect.moveToBack();
   }
 
@@ -619,7 +697,7 @@ export class EnergyChartNode extends BaseChartNode {
       return;
     }
 
-    this.updatePotentialCurve(boundStates);
+    this.updatePotentialCurve();
     this.updateEnergyLevels(boundStates);
     this.updateZeroLine();
     this.updateTotalEnergyLine(boundStates);
@@ -679,11 +757,10 @@ export class EnergyChartNode extends BaseChartNode {
     }
     this.energyLevelNodes.clear();
 
-    // Clear energy labels
-    for (const label of this.energyLabelNodes.values()) {
-      this.removeChild(label);
-    }
-    this.energyLabelNodes.clear();
+    this.levelViewYs = [];
+    this.hoveredEnergyLevelIndex = null;
+    this.selectedLevelLabel.visible = false;
+    this.hoveredLevelLabel.visible = false;
 
     this.removeEnergyLevelHitAreas();
 
@@ -694,450 +771,34 @@ export class EnergyChartNode extends BaseChartNode {
   /**
    * Updates the potential energy curve.
    */
-  private updatePotentialCurve(boundStates: BoundStateResult): void {
+  private updatePotentialCurve(): void {
     // Clear the old shape explicitly
     this.potentialPath.shape = null;
 
     const shape = new Shape();
-    const xGrid = boundStates.xGrid;
 
-    // For simplicity, draw the potential based on the type
-    const potentialType = this.model.potentialTypeProperty.value;
-    const wellWidth = this.model.wellWidthProperty.value;
-    const wellDepth = this.model.wellDepthProperty.value;
-
-    // Calculate the center of the xGrid for alignment
-    const xCenter = ((xGrid[0]! + xGrid[xGrid.length - 1]!) / 2) * QuantumConstants.M_TO_NM;
-
-    if (potentialType === PotentialType.INFINITE_WELL) {
-      // Draw square well centered at x=0 (xCenter should be 0)
-      // Well extends from -wellWidth/2 to +wellWidth/2
-      // V=0 inside, V=15 eV outside (representing infinity)
-      const x1 = this.dataToViewX(-wellWidth / 2);
-      const x2 = this.dataToViewX(wellWidth / 2);
-      const y0 = this.dataToViewY(0);
-      const y15 = this.dataToViewY(15); // Display infinity as 15 eV
-
-      // Left region (x < -wellWidth/2): horizontal line at 15 eV
-      shape.moveTo(this.chartMargins.left, y15);
-      shape.lineTo(x1, y15);
-
-      // Left wall: vertical line from 15 eV down to 0 eV
-      shape.lineTo(x1, y0);
-
-      // Bottom (inside well): horizontal line at 0 eV
-      shape.lineTo(x2, y0);
-
-      // Right wall: vertical line from 0 eV up to 15 eV
-      shape.lineTo(x2, y15);
-
-      // Right region (x > wellWidth/2): horizontal line at 15 eV
-      shape.lineTo(this.chartWidth - this.chartMargins.right, y15);
-    } else if (potentialType === PotentialType.FINITE_WELL) {
-      // Draw finite square well centered at xCenter
-      // V=0 at infinity, V=-wellDepth inside the well
-      const x1 = this.dataToViewX(xCenter - wellWidth / 2);
-      const x2 = this.dataToViewX(xCenter + wellWidth / 2);
-      const y0 = this.dataToViewY(0);
-      const yDepth = this.dataToViewY(-wellDepth);
-
-      shape.moveTo(this.chartMargins.left, y0);
-      shape.lineTo(x1, y0);
-      shape.lineTo(x1, yDepth);
-      shape.lineTo(x2, yDepth);
-      shape.lineTo(x2, y0);
-      shape.lineTo(this.chartWidth - this.chartMargins.right, y0);
-    } else if (potentialType === PotentialType.HARMONIC_OSCILLATOR) {
-      // Draw parabola centered at xCenter
-      const centerX = xCenter;
-      const numPoints = 100;
-      let firstPoint = true;
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-        const k = (2 * wellDepth) / ((wellWidth * wellWidth) / 4); // Spring constant
-        const V = 0.5 * k * dx * dx;
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.ASYMMETRIC_TRIANGLE) {
-      // Draw asymmetric triangle potential (infinite wall version):
-      // V(x) = ∞ for x < 0 (displayed as 15 eV)
-      // V(x) = F·x for x ≥ 0 (linear increasing)
-      // where F = wellDepth/wellWidth (slope)
-
-      const FEVPerNm = wellDepth / wellWidth; // slope in eV/nm
-      const y15eV = this.dataToViewY(15); // Display infinity as 15 eV
-      const y0eV = this.dataToViewY(0);
-
-      // Left region (x < 0): vertical line at x=0 representing infinite wall
-      shape.moveTo(this.chartMargins.left, y15eV);
-      shape.lineTo(this.dataToViewX(0), y15eV);
-      shape.lineTo(this.dataToViewX(0), y0eV);
-
-      // Right region (x ≥ 0): linear increasing potential V = F·x
-      const numPoints = 100;
-      for (let i = 0; i <= numPoints; i++) {
-        const x = ((xGrid[xGrid.length - 1]! * i) / numPoints) * QuantumConstants.M_TO_NM;
-        if (x >= 0) {
-          const V = FEVPerNm * x;
-          const viewX = this.dataToViewX(x);
-          const viewY = this.dataToViewY(Math.min(V, 15)); // Clamp to chart range
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.TRIANGULAR) {
-      // Draw triangular potential (finite well version):
-      // V(x) = height + offset for x < 0
-      // V(x) = offset at x = 0
-      // V(x) = offset + (height/width) * x for 0 < x < width
-      // V(x) = height + offset for x > width
-
-      // Get the offset from potentialOffsetProperty (OneWellModel or IntroModel only)
-      const offset = hasPotentialOffset(this.model) ? this.model.potentialOffsetProperty.value : 0;
-      const height = wellDepth;
-      const barrierTop = height + offset;
-      const slope = height / wellWidth; // eV/nm
-
-      const yBarrier = this.dataToViewY(barrierTop);
-      const yOffset = this.dataToViewY(offset);
-
-      // Left region (x < 0): horizontal line at height + offset
-      shape.moveTo(this.chartMargins.left, yBarrier);
-      shape.lineTo(this.dataToViewX(0), yBarrier);
-
-      // Drop to offset at x = 0
-      shape.lineTo(this.dataToViewX(0), yOffset);
-
-      // Linear region (0 < x < width): V = offset + slope * x
-      const numPoints = 50;
-      for (let i = 1; i <= numPoints; i++) {
-        const x = (wellWidth * i) / numPoints;
-        const V = offset + slope * x;
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
+    // Draw exactly the potential the model solves, sampled across the chart and clamped to the energy axis
+    // (infinite walls and Coulomb singularities are drawn to the chart edge)
+    const numPoints = POTENTIAL_CURVE_SAMPLES;
+    const xMin = this.xMinProperty.value;
+    const xMax = this.xMaxProperty.value;
+    const xGridM: number[] = [];
+    for (let i = 0; i < numPoints; i++) {
+      xGridM.push((xMin + ((xMax - xMin) * i) / (numPoints - 1)) * QuantumConstants.NM_TO_M);
+    }
+    const potentialJ = this.model.getPotentialEnergy(xGridM);
+    const yMin = this.yMinProperty.value;
+    const yMax = this.yMaxProperty.value;
+    for (let i = 0; i < numPoints; i++) {
+      const energyEv = potentialJ[i]! * QuantumConstants.JOULES_TO_EV;
+      const V = Number.isNaN(energyEv) ? yMax : Math.min(yMax, Math.max(yMin, energyEv));
+      const viewX = this.dataToViewX(xGridM[i]! * QuantumConstants.M_TO_NM);
+      const viewY = this.dataToViewY(V);
+      if (i === 0) {
+        shape.moveTo(viewX, viewY);
+      } else {
         shape.lineTo(viewX, viewY);
       }
-
-      // At x = width, we should be back at height + offset
-      // Then continue as horizontal line to the right
-      shape.lineTo(this.chartWidth - this.chartMargins.right, yBarrier);
-    } else if (potentialType === PotentialType.COULOMB_1D || potentialType === PotentialType.COULOMB_3D) {
-      // Draw Coulomb potential: V(x) = -k/|x| where k is determined by wellDepth
-      // V→0 as x→∞, V→-wellDepth at some characteristic distance
-      const centerX = xCenter;
-      const numPoints = 200;
-      let firstPoint = true;
-
-      // Scale factor: at distance wellWidth/2, V = -wellDepth
-      const k = wellDepth * (wellWidth / 2);
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-
-        // Avoid singularity at x=0
-        const distance = Math.max(Math.abs(dx), 0.01);
-        const V = -k / distance;
-
-        // Clamp V to reasonable range for display
-        const VClamped = Math.max(V, this.yMinProperty.value);
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(VClamped);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.DOUBLE_SQUARE_WELL) {
-      // Draw double square well
-      // Convention: V=0 in wells, V=wellDepth in barrier
-      // This matches the analytical solution convention
-      // Wells are centered at ±(separation/2 + wellWidth/2)
-
-      if (!isTwoWellsModel(this.model)) {
-        return; // DOUBLE_SQUARE_WELL requires TwoWellsModel
-      }
-
-      const separation = this.model.wellSeparationProperty.value;
-
-      const leftWellCenter = -(separation / 2 + wellWidth / 2);
-      const rightWellCenter = separation / 2 + wellWidth / 2;
-      const halfWidth = wellWidth / 2;
-
-      // Well boundaries
-      const leftWellLeft = leftWellCenter - halfWidth;
-      const leftWellRight = leftWellCenter + halfWidth;
-      const rightWellLeft = rightWellCenter - halfWidth;
-      const rightWellRight = rightWellCenter + halfWidth;
-
-      const y0 = this.dataToViewY(0); // Well energy
-      const yBarrier = this.dataToViewY(wellDepth); // Barrier energy
-
-      // Draw from left to right
-      // Left outside region (at barrier height)
-      shape.moveTo(this.chartMargins.left, yBarrier);
-      shape.lineTo(this.dataToViewX(leftWellLeft), yBarrier);
-
-      // Left well (drop down to V=0)
-      shape.lineTo(this.dataToViewX(leftWellLeft), y0);
-      shape.lineTo(this.dataToViewX(leftWellRight), y0);
-      shape.lineTo(this.dataToViewX(leftWellRight), yBarrier);
-
-      // Barrier between wells
-      shape.lineTo(this.dataToViewX(rightWellLeft), yBarrier);
-
-      // Right well (drop down to V=0)
-      shape.lineTo(this.dataToViewX(rightWellLeft), y0);
-      shape.lineTo(this.dataToViewX(rightWellRight), y0);
-      shape.lineTo(this.dataToViewX(rightWellRight), yBarrier);
-
-      // Right outside region (at barrier height)
-      shape.lineTo(this.chartWidth - this.chartMargins.right, yBarrier);
-    } else if (potentialType === PotentialType.MORSE) {
-      // Draw Morse potential: V(x) = D_e * (1 - exp(-(x-x_e)/a))^2 - D_e
-      // With x_e = 0 (centered), D_e = wellDepth, a = wellWidth
-      // V=0 at dissociation (x→∞), V=-D_e at bottom of well (x=x_e)
-      const centerX = xCenter;
-      const numPoints = 200;
-      let firstPoint = true;
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-        const exponent = Math.exp(-dx / wellWidth);
-        // V(x) = D_e * (1 - e^(-dx/a))^2 - D_e
-        // At x=x_e (dx=0): V = D_e * (1-1)^2 - D_e = -D_e (bottom of well)
-        // At x→∞: V = D_e * (1-0)^2 - D_e = 0 (dissociation limit)
-        const V = wellDepth * (1 - exponent) ** 2 - wellDepth;
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.POSCHL_TELLER) {
-      // Draw Pöschl-Teller potential: V(x) = -V_0 / cosh²(x/a)
-      const centerX = xCenter;
-      const numPoints = 200;
-      let firstPoint = true;
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-        const coshVal = Math.cosh(dx / wellWidth);
-        const V = -wellDepth / (coshVal * coshVal);
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.ROSEN_MORSE) {
-      // Draw Rosen-Morse potential: V(x) = -V_0 / cosh²(x/a) + V_1 * tanh(x/a)
-      const centerX = xCenter;
-      const barrierHeight = hasBarrierHeight(this.model) ? this.model.barrierHeightProperty.value : 0;
-      const numPoints = 200;
-      let firstPoint = true;
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-        const coshVal = Math.cosh(dx / wellWidth);
-        const tanhVal = Math.tanh(dx / wellWidth);
-        const V = -wellDepth / (coshVal * coshVal) + barrierHeight * tanhVal;
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.ECKART) {
-      // Draw Eckart potential: V(x) = V_0 / (1 + exp(x/a))² - V_1 / (1 + exp(x/a))
-      const centerX = xCenter;
-      const barrierHeight = hasBarrierHeight(this.model) ? this.model.barrierHeightProperty.value : 0;
-      const numPoints = 200;
-      let firstPoint = true;
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-        const dx = x - centerX;
-        const expVal = Math.exp(dx / wellWidth);
-        const denom = 1 + expVal;
-        const V = wellDepth / (denom * denom) - barrierHeight / denom;
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(V);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else if (potentialType === PotentialType.MULTI_SQUARE_WELL) {
-      // Draw multi-square well (generalization of double square well)
-      // Convention: V=0 in wells, V=wellDepth in barrier
-      // Import ManyWellsModel to access numberOfWellsProperty
-      const manyWellsModel = this.model as import("../../many-wells/model/ManyWellsModel.js").ManyWellsModel;
-      const numberOfWells = "numberOfWellsProperty" in manyWellsModel ? manyWellsModel.numberOfWellsProperty.value : 3;
-      const separationParam =
-        "wellSeparationProperty" in manyWellsModel ? manyWellsModel.wellSeparationProperty.value : 0.2;
-      const electricField =
-        "electricFieldProperty" in manyWellsModel ? manyWellsModel.electricFieldProperty.value : 0.0;
-
-      // Calculate the natural total span needed
-      const maxVisibleRange = 7.5; // Use 7.5nm of the 8nm available range (leave small margins)
-
-      // Start with a base scaling for separation
-      let effectiveSeparation = separationParam * 10;
-      let effectiveWellWidth = wellWidth;
-
-      // Calculate what the total span would be
-      const naturalSpan = numberOfWells * effectiveWellWidth + (numberOfWells - 1) * effectiveSeparation;
-
-      // If it exceeds the visible range, scale everything down proportionally
-      if (naturalSpan > maxVisibleRange) {
-        const scaleFactor = maxVisibleRange / naturalSpan;
-        effectiveSeparation *= scaleFactor;
-        effectiveWellWidth *= scaleFactor;
-      }
-
-      // Calculate total span and center the wells
-      const totalSpan = numberOfWells * effectiveWellWidth + (numberOfWells - 1) * effectiveSeparation;
-      const startX = -totalSpan / 2;
-
-      // Helper function to get potential with electric field tilt
-      const getV = (x: number, baseV: number) => baseV - electricField * x;
-
-      // Start from left at barrier height (with field tilt)
-      const leftmostX = this.xMinProperty.value;
-      shape.moveTo(this.chartMargins.left, this.dataToViewY(getV(leftmostX, wellDepth)));
-
-      // Draw each well
-      for (let i = 0; i < numberOfWells; i++) {
-        const wellLeft = startX + i * (effectiveWellWidth + effectiveSeparation);
-        const wellRight = wellLeft + effectiveWellWidth;
-
-        // Drop into well (with field tilt)
-        shape.lineTo(this.dataToViewX(wellLeft), this.dataToViewY(getV(wellLeft, wellDepth)));
-        shape.lineTo(this.dataToViewX(wellLeft), this.dataToViewY(getV(wellLeft, 0)));
-        shape.lineTo(this.dataToViewX(wellRight), this.dataToViewY(getV(wellRight, 0)));
-        shape.lineTo(this.dataToViewX(wellRight), this.dataToViewY(getV(wellRight, wellDepth)));
-
-        // Barrier between wells (except after last well)
-        if (i < numberOfWells - 1) {
-          const barrierRight = wellRight + effectiveSeparation;
-          shape.lineTo(this.dataToViewX(barrierRight), this.dataToViewY(getV(barrierRight, wellDepth)));
-        }
-      }
-
-      // Right outside region (with field tilt)
-      const rightmostX = this.xMaxProperty.value;
-      shape.lineTo(this.chartWidth - this.chartMargins.right, this.dataToViewY(getV(rightmostX, wellDepth)));
-    } else if (potentialType === PotentialType.MULTI_COULOMB_1D) {
-      // Draw multi-Coulomb 1D potential (multiple Coulomb centers)
-      const manyWellsModel = this.model as import("../../many-wells/model/ManyWellsModel.js").ManyWellsModel;
-      const numberOfWells = "numberOfWellsProperty" in manyWellsModel ? manyWellsModel.numberOfWellsProperty.value : 3;
-      const separationParam =
-        "wellSeparationProperty" in manyWellsModel ? manyWellsModel.wellSeparationProperty.value : 0.2;
-      const electricField =
-        "electricFieldProperty" in manyWellsModel ? manyWellsModel.electricFieldProperty.value : 0.0;
-
-      const numPoints = 200;
-      let firstPoint = true;
-
-      // Calculate positions of Coulomb centers
-      // Ensure they fit within the visible range of -4nm to 4nm
-      const maxVisibleRange = 7.5; // Use 7.5nm of the 8nm available range
-
-      // Start with base scaling
-      let effectiveSeparation = separationParam * 10;
-
-      // Calculate natural span
-      const naturalSpan = (numberOfWells - 1) * effectiveSeparation;
-
-      // Scale down if needed to fit within visible range
-      if (naturalSpan > maxVisibleRange) {
-        effectiveSeparation = maxVisibleRange / (numberOfWells - 1);
-      }
-
-      const totalSpan = (numberOfWells - 1) * effectiveSeparation;
-      const centers: number[] = [];
-      for (let i = 0; i < numberOfWells; i++) {
-        centers.push(-totalSpan / 2 + i * effectiveSeparation);
-      }
-
-      // Scale factor for Coulomb strength
-      const k = wellDepth * (wellWidth / 2);
-
-      for (let i = 0; i < numPoints; i++) {
-        const x =
-          (xGrid[0]! + ((xGrid[xGrid.length - 1]! - xGrid[0]!) * i) / (numPoints - 1)) * QuantumConstants.M_TO_NM;
-
-        // Sum contributions from all Coulomb centers
-        let V = 0;
-        for (const center of centers) {
-          const dx = x - center;
-          const distance = Math.max(Math.abs(dx), 0.01); // Avoid singularity
-          V += -k / distance;
-        }
-
-        // Add electric field tilt: V_field(x) = -E * x
-        V += -electricField * x;
-
-        // Clamp V to reasonable range for display
-        const VClamped = Math.max(V, this.yMinProperty.value);
-
-        const viewX = this.dataToViewX(x);
-        const viewY = this.dataToViewY(VClamped);
-
-        if (firstPoint) {
-          shape.moveTo(viewX, viewY);
-          firstPoint = false;
-        } else {
-          shape.lineTo(viewX, viewY);
-        }
-      }
-    } else {
-      // For other potential types, draw a placeholder
-      const y0 = this.dataToViewY(0);
-      shape.moveTo(this.chartMargins.left, y0);
-      shape.lineTo(this.chartWidth - this.chartMargins.right, y0);
     }
 
     this.potentialPath.shape = shape;
@@ -1156,10 +817,65 @@ export class EnergyChartNode extends BaseChartNode {
       line.opacity = isHovered ? 1 : 0.7;
     });
 
-    this.energyLabelNodes.forEach((label, index) => {
-      const isHovered = index === this.hoveredEnergyLevelIndex;
-      label.visible = isHovered;
+    this.updateLevelLabels();
+  }
+
+  /**
+   * Positions the "Eₙ = … eV" readouts for the selected and hovered levels, right-aligned inside the plot
+   * just above their lines. The hovered readout is hidden when it is the selected level.
+   */
+  private updateLevelLabels(): void {
+    const energies = this.model.getEnergyLevels();
+    const right = this.chartWidth - this.chartMargins.right - 4;
+    const place = (label: Text, index: number | null): void => {
+      const y = index === null ? undefined : this.levelViewYs[index];
+      const energy = index === null ? undefined : energies[index];
+      label.visible = y !== undefined && energy !== undefined;
+      if (label.visible && index !== null && energy !== undefined && y !== undefined) {
+        label.string = StringUtils.fillIn(stringManager.energyLevelLabelStringProperty, {
+          level: index + 1,
+          value: energy.toFixed(3),
+        });
+        label.right = right;
+        label.bottom = y - 2;
+      }
+    };
+
+    const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
+    place(this.selectedLevelLabel, selectedIndex);
+    place(this.hoveredLevelLabel, this.hoveredEnergyLevelIndex === selectedIndex ? null : this.hoveredEnergyLevelIndex);
+
+    // Keep the two readouts from overlapping when the hovered level is next to the selected one
+    if (this.selectedLevelLabel.visible && this.hoveredLevelLabel.visible) {
+      if (this.hoveredLevelLabel.bounds.intersectsBounds(this.selectedLevelLabel.bounds)) {
+        this.hoveredLevelLabel.right = this.selectedLevelLabel.left - 10;
+      }
+    }
+  }
+
+  /**
+   * Index of the level nearest the pointer, or null when none is within LEVEL_PICK_DISTANCE.
+   */
+  private getNearestLevelIndex(event: SceneryEvent): number | null {
+    const y = this.levelPickerRectangle.globalToParentPoint(event.pointer.point).y;
+    let nearest: number | null = null;
+    let nearestDistance = LEVEL_PICK_DISTANCE;
+    this.levelViewYs.forEach((levelY, index) => {
+      const distance = Math.abs(levelY - y);
+      if (distance <= nearestDistance) {
+        nearest = index;
+        nearestDistance = distance;
+      }
     });
+    return nearest;
+  }
+
+  private setHoveredLevel(index: number | null): void {
+    if (index !== this.hoveredEnergyLevelIndex) {
+      this.hoveredEnergyLevelIndex = index;
+      this.levelPickerRectangle.cursor = index === null ? null : "pointer";
+      this.updateEnergyLevelStyling();
+    }
   }
 
   /**
@@ -1185,18 +901,16 @@ export class EnergyChartNode extends BaseChartNode {
     }
     this.energyLevelNodes.clear();
 
-    // Remove old energy label nodes
-    for (const label of this.energyLabelNodes.values()) {
-      this.removeChild(label);
-    }
-    this.energyLabelNodes.clear();
-
     this.removeEnergyLevelHitAreas();
 
     // Create new energy level lines
     const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
     const x1 = this.chartMargins.left;
     const x2 = this.chartWidth - this.chartMargins.right;
+    this.levelViewYs = energies.map((energy) => this.dataToViewY(energy));
+    if (this.hoveredEnergyLevelIndex !== null && this.hoveredEnergyLevelIndex >= energies.length) {
+      this.hoveredEnergyLevelIndex = null;
+    }
 
     energies.forEach((energy, index) => {
       const y = this.dataToViewY(energy);
@@ -1241,52 +955,33 @@ export class EnergyChartNode extends BaseChartNode {
       this.model.selectedEnergyLevelIndexProperty.link(updateAriaChecked);
       this.energyLevelHitAreas.push({ hitArea, listener: updateAriaChecked });
 
-      // Add click handler to hit area
+      // Keyboard/screen-reader activation of this level's button. Pointer input goes to levelPickerRectangle,
+      // which lies on top and picks the nearest level.
       hitArea.addInputListener({
-        down: () => {
-          // Only set if index is within valid range
-          if (index >= 0 && index < boundStates.energies.length) {
-            this.model.selectedEnergyLevelIndexProperty.value = index;
-          }
-        },
         click: () => {
-          // Also handle click events for mouse users
           if (index >= 0 && index < boundStates.energies.length) {
             this.model.selectedEnergyLevelIndexProperty.value = index;
           }
-        },
-        enter: () => {
-          this.hoveredEnergyLevelIndex = index;
-          this.updateEnergyLevelStyling();
-        },
-        exit: () => {
-          this.hoveredEnergyLevelIndex = null;
-          this.updateEnergyLevelStyling();
         },
       });
 
       this.energyLevelNodes.set(index, line);
       this.plotContentNode.addChild(line); // Add to clipped content
       this.plotContentNode.addChild(hitArea); // Add hit area on top
-
-      // Add energy label (outside clipped area for visibility)
-      // Use template string from i18n: "E{{level}} = {{value}} eV"
-      const template = stringManager.energyLevelLabelStringProperty.value;
-      const labelText = template.replace("{{level}}", (index + 1).toString()).replace("{{value}}", energy.toFixed(3));
-      const label = new Text(labelText, {
-        font: "10px sans-serif",
-        fill: QPPWColors.labelFillProperty,
-        left: x2 + 5,
-        centerY: y,
-        visible: isHovered, // Only show when hovering
-      });
-      this.energyLabelNodes.set(index, label);
-      this.addChild(label);
     });
 
-    // Ensure total energy line and legend are on top
+    // Readouts and the picker go over the levels; total energy line and legend on top
+    for (const node of [this.selectedLevelLabel, this.hoveredLevelLabel, this.levelPickerRectangle]) {
+      if (this.plotContentNode.hasChild(node)) {
+        node.moveToFront();
+      } else {
+        this.plotContentNode.addChild(node);
+      }
+    }
+    this.updateLevelLabels();
     this.totalEnergyLine.moveToFront();
     this.legendNode.moveToFront();
+    this.potentialHandlesLayer.moveToFront();
   }
 
   /**
