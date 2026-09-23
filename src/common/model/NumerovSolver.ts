@@ -201,7 +201,7 @@ export function integrateNumerovFromCenter(
     psi[j + 1] = numerator / denominator;
 
     // Stop on catastrophic numerical failure
-    if (!isFinite(psi[j + 1])) {
+    if (!Number.isFinite(psi[j + 1])) {
       for (let k = j + 1; k < N; k++) {
         psi[k] = 1e100;
       }

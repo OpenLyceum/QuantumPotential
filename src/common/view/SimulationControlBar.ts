@@ -9,6 +9,7 @@ import { PhetFont, TimeControlNode } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { BaseModel } from "../model/BaseModel.js";
+import { FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS, TIME_CONTROL_SPEED_RADIO_OPTIONS } from "../QPPWButtonOptions.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -56,9 +57,11 @@ export class SimulationControlBar extends Node {
     const timeControlNode = new TimeControlNode(this.model.isPlayingProperty, {
       timeSpeedProperty: this.model.timeSpeedProperty,
       playPauseStepButtonOptions: {
+        ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS,
         includeStepForwardButton: true,
         includeStepBackwardButton: true,
         stepForwardButtonOptions: {
+          ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS.stepForwardButtonOptions,
           listener: () => {
             // Step forward by one frame (forced even when paused)
             this.model.step(BaseModel.MANUAL_STEP_SIZE, true);
@@ -73,6 +76,7 @@ export class SimulationControlBar extends Node {
           //   "Step forward one frame in time. Advances wavefunction by small time increment.",
         },
         stepBackwardButtonOptions: {
+          ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS.stepBackwardButtonOptions,
           listener: () => {
             // Step backward by one frame (negative time step, forced even when paused)
             this.model.step(-BaseModel.MANUAL_STEP_SIZE, true);
@@ -87,6 +91,7 @@ export class SimulationControlBar extends Node {
           //   "Step backward one frame in time. Reverses wavefunction by small time increment.",
         },
         playPauseButtonOptions: {
+          ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS.playPauseButtonOptions,
           // PDOM
           innerContent: new DerivedProperty(
             [this.model.isPlayingProperty, a11y.controls.pauseStringProperty, a11y.controls.playStringProperty],
@@ -99,9 +104,7 @@ export class SimulationControlBar extends Node {
       },
       speedRadioButtonGroupPlacement: "left",
       speedRadioButtonGroupOptions: {
-        labelOptions: {
-          fill: QPPWColors.textFillProperty,
-        },
+        ...TIME_CONTROL_SPEED_RADIO_OPTIONS.speedRadioButtonGroupOptions,
 
         // PDOM
         accessibleName: a11y.controls.animationSpeedStringProperty,

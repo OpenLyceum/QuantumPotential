@@ -21,6 +21,7 @@ export class ManyWellsScreen extends Screen<ManyWellsModel, ManyWellsScreenView>
         {
           backgroundColorProperty: QPPWColors.backgroundColorProperty,
           homeScreenIcon: new ManyWellsScreenIcon(),
+          navigationBarIcon: new ManyWellsScreenIcon(),
           createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
         },
         options,

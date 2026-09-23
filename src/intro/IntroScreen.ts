@@ -22,6 +22,7 @@ export class IntroScreen extends Screen<IntroModel, IntroScreenView> {
         {
           backgroundColorProperty: QPPWColors.backgroundColorProperty,
           homeScreenIcon: new IntroScreenIcon(),
+          navigationBarIcon: new IntroScreenIcon(),
           createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
         },
         options,

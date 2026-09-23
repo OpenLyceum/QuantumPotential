@@ -23,6 +23,7 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 | Closed-form solutions | `src/common/model/analytical-solutions/` (one file per potential) + `potentials/` class wrappers, built by `PotentialFactory` |
 | Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/` |
 | Control panels | `src/common/view/ControlPanelNode.ts` (One/Two/Many Wells), `src/intro/view/IntroControlPanelNode.ts` (Intro) |
+| Shared UI styling | `src/common/QPPWPanel.ts`, `QPPWButtonOptions.ts`, `QPPWControlOptions.ts` |
 | A11y | `src/common/view/accessibility/` (`QPPWDescriber`, `QPPWAlerter`); screen summary in `BaseScreenView`, `src/common/view/QPPWKeyboardHelpContent.ts` |
 | Preferences | `src/preferences/` — `QPPWPreferencesModel` (numerical method, grid points, …), `QPPWPreferencesNode`, `qppwQueryParameters` |
 | Colors / namespace | `src/QPPWColors.ts`, `src/QPPWNamespace.ts` |

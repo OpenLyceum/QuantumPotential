@@ -21,6 +21,7 @@ export class OneWellScreen extends Screen<OneWellModel, OneWellScreenView> {
         {
           backgroundColorProperty: QPPWColors.backgroundColorProperty,
           homeScreenIcon: new OneWellScreenIcon(),
+          navigationBarIcon: new OneWellScreenIcon(),
           createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
         },
         options,

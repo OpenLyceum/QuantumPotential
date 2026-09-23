@@ -469,7 +469,7 @@ export abstract class BaseModel {
       this.calculateBoundStates();
     }
 
-    if (!(this.boundStateResult && this.boundStateResult.energies)) {
+    if (!this.boundStateResult?.energies) {
       return [];
     }
 

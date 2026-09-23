@@ -17,6 +17,7 @@ import QPPWColors from "../../QPPWColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import type { BaseModel } from "../model/BaseModel.js";
+import { FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
@@ -78,7 +79,9 @@ export abstract class BaseScreenView extends ScreenView {
 
     // Create the reset all button in the bottom-right corner
     this.resetButton = new ResetAllButton({
+      ...FLAT_RESET_ALL_BUTTON_OPTIONS,
       listener: () => {
+        this.interruptSubtreeInput();
         model.reset();
         this.reset();
 

@@ -27,6 +27,7 @@ import {
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
@@ -487,6 +488,7 @@ export class EnergyChartNode extends BaseChartNode {
             fill: QPPWColors.textFillProperty,
           }),
           {
+            ...PANEL_CHECKBOX_OPTIONS,
             boxWidth: 15,
           },
         ),
@@ -497,6 +499,7 @@ export class EnergyChartNode extends BaseChartNode {
             fill: QPPWColors.textFillProperty,
           }),
           {
+            ...PANEL_CHECKBOX_OPTIONS,
             boxWidth: 15,
           },
         ),
@@ -671,15 +674,15 @@ export class EnergyChartNode extends BaseChartNode {
     this.potentialPath.shape = null;
 
     // Clear energy level lines
-    this.energyLevelNodes.forEach((line) => {
+    for (const line of this.energyLevelNodes.values()) {
       this.plotContentNode.removeChild(line);
-    });
+    }
     this.energyLevelNodes.clear();
 
     // Clear energy labels
-    this.energyLabelNodes.forEach((label) => {
+    for (const label of this.energyLabelNodes.values()) {
       this.removeChild(label);
-    });
+    }
     this.energyLabelNodes.clear();
 
     this.removeEnergyLevelHitAreas();
@@ -1177,15 +1180,15 @@ export class EnergyChartNode extends BaseChartNode {
    */
   private updateEnergyLevels(boundStates: BoundStateResult): void {
     // Remove old energy level nodes
-    this.energyLevelNodes.forEach((line) => {
+    for (const line of this.energyLevelNodes.values()) {
       this.plotContentNode.removeChild(line);
-    });
+    }
     this.energyLevelNodes.clear();
 
     // Remove old energy label nodes
-    this.energyLabelNodes.forEach((label) => {
+    for (const label of this.energyLabelNodes.values()) {
       this.removeChild(label);
-    });
+    }
     this.energyLabelNodes.clear();
 
     this.removeEnergyLevelHitAreas();

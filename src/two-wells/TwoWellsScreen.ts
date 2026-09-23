@@ -21,6 +21,7 @@ export class TwoWellsScreen extends Screen<TwoWellsModel, TwoWellsScreenView> {
         {
           backgroundColorProperty: QPPWColors.backgroundColorProperty,
           homeScreenIcon: new TwoWellsScreenIcon(),
+          navigationBarIcon: new TwoWellsScreenIcon(),
           createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
         },
         options,

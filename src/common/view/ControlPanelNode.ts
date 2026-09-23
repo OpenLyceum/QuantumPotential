@@ -3,11 +3,10 @@
  * This includes potential selection, display options, particle mass, and well parameters.
  */
 
-import { Dimension2 } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { HBox, HSeparator, Node, RichText, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import { Checkbox, ComboBox, type ComboBoxItem, HSlider, Panel, VerticalAquaRadioButtonGroup } from "scenerystack/sun";
+import { Checkbox, ComboBox, type ComboBoxItem, HSlider, VerticalAquaRadioButtonGroup } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
@@ -26,6 +25,8 @@ import {
 } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
+import { COMPACT_PANEL_SLIDER_OPTIONS, PANEL_CHECKBOX_OPTIONS, PANEL_SLIDER_OPTIONS } from "../QPPWControlOptions.js";
+import { QPPWPanel } from "../QPPWPanel.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
@@ -95,13 +96,7 @@ export class ControlPanelNode extends Node {
       children: children,
     });
 
-    const controlPanel = new Panel(contentVBox, {
-      fill: QPPWColors.panelFillProperty,
-      stroke: QPPWColors.panelStrokeProperty,
-      xMargin: 15,
-      yMargin: 15,
-      cornerRadius: 5,
-    });
+    const controlPanel = new QPPWPanel(contentVBox);
 
     this.addChild(controlPanel);
   }
@@ -449,8 +444,7 @@ export class ControlPanelNode extends Node {
         this.model.coherentDisplacementProperty,
         this.model.coherentDisplacementProperty.range!,
         {
-          trackSize: new Dimension2(120, 4),
-          thumbSize: new Dimension2(15, 30),
+          ...COMPACT_PANEL_SLIDER_OPTIONS,
 
           // PDOM
           accessibleName: QPPWDescriber.getParameterNameProperty("coherentDisplacement"),
@@ -610,7 +604,7 @@ export class ControlPanelNode extends Node {
               fill: QPPWColors.textFillProperty,
             }),
             {
-              boxWidth: 16,
+              ...PANEL_CHECKBOX_OPTIONS,
 
               // PDOM
               labelContent: a11y.controls.showClassicalProbabilityStringProperty,
@@ -641,7 +635,7 @@ export class ControlPanelNode extends Node {
         fill: QPPWColors.textFillProperty,
       }),
       {
-        boxWidth: 16,
+        ...PANEL_CHECKBOX_OPTIONS,
 
         // PDOM
         labelContent: a11y.controls.showRealPartStringProperty,
@@ -658,7 +652,7 @@ export class ControlPanelNode extends Node {
         fill: QPPWColors.textFillProperty,
       }),
       {
-        boxWidth: 16,
+        ...PANEL_CHECKBOX_OPTIONS,
 
         // PDOM
         labelContent: a11y.controls.showImaginaryPartStringProperty,
@@ -675,7 +669,7 @@ export class ControlPanelNode extends Node {
         fill: QPPWColors.textFillProperty,
       }),
       {
-        boxWidth: 16,
+        ...PANEL_CHECKBOX_OPTIONS,
 
         // PDOM
         labelContent: a11y.controls.showMagnitudeStringProperty,
@@ -692,7 +686,7 @@ export class ControlPanelNode extends Node {
         fill: QPPWColors.textFillProperty,
       }),
       {
-        boxWidth: 16,
+        ...PANEL_CHECKBOX_OPTIONS,
 
         // PDOM
         labelContent: a11y.controls.showPhaseStringProperty,
@@ -763,8 +757,7 @@ export class ControlPanelNode extends Node {
     });
 
     const massSlider = new HSlider(this.model.particleMassProperty, this.model.particleMassProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
@@ -806,8 +799,7 @@ export class ControlPanelNode extends Node {
     });
 
     const widthSlider = new HSlider(this.model.wellWidthProperty, this.model.wellWidthProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("wellWidth"),
@@ -842,8 +834,7 @@ export class ControlPanelNode extends Node {
     });
 
     const depthSlider = new HSlider(this.model.wellDepthProperty, this.model.wellDepthProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("wellDepth"),
@@ -883,8 +874,7 @@ export class ControlPanelNode extends Node {
         this.model.barrierHeightProperty,
         this.model.barrierHeightProperty.range!,
         {
-          trackSize: new Dimension2(150, 4),
-          thumbSize: new Dimension2(15, 30),
+          ...PANEL_SLIDER_OPTIONS,
 
           // PDOM
           accessibleName: QPPWDescriber.getParameterNameProperty("barrierHeight"),
@@ -923,8 +913,7 @@ export class ControlPanelNode extends Node {
       });
 
       const offsetSlider = new HSlider(this.model.potentialOffsetProperty, this.model.potentialOffsetProperty.range!, {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+        ...PANEL_SLIDER_OPTIONS,
 
         // PDOM
         accessibleName: QPPWDescriber.getParameterNameProperty("potentialOffset"),
@@ -966,8 +955,7 @@ export class ControlPanelNode extends Node {
         this.model.wellSeparationProperty,
         this.model.wellSeparationProperty.range!,
         {
-          trackSize: new Dimension2(150, 4),
-          thumbSize: new Dimension2(15, 30),
+          ...PANEL_SLIDER_OPTIONS,
 
           // PDOM
           accessibleName: QPPWDescriber.getParameterNameProperty("wellSeparation"),
@@ -1008,8 +996,7 @@ export class ControlPanelNode extends Node {
         this.model.numberOfWellsProperty,
         this.model.numberOfWellsProperty.range!,
         {
-          trackSize: new Dimension2(150, 4),
-          thumbSize: new Dimension2(15, 30),
+          ...PANEL_SLIDER_OPTIONS,
           constrainValue: (value: number) => Math.round(value), // Integer values only
 
           // PDOM
@@ -1111,8 +1098,7 @@ export class ControlPanelNode extends Node {
         this.model.electricFieldProperty,
         this.model.electricFieldProperty.range!,
         {
-          trackSize: new Dimension2(150, 4),
-          thumbSize: new Dimension2(15, 30),
+          ...PANEL_SLIDER_OPTIONS,
 
           // PDOM
           accessibleName: QPPWDescriber.getParameterNameProperty("electricField"),

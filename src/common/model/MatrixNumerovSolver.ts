@@ -151,7 +151,7 @@ export function solveMatrixNumerov(
 
     // Only include bound states (E < V at boundaries)
     // Also filter out negative energies that are too large (numerical artifacts)
-    if (energy < VBoundary && isFinite(energy)) {
+    if (energy < VBoundary && Number.isFinite(energy)) {
       energies.push(energy);
     }
   }
@@ -172,7 +172,7 @@ export function solveMatrixNumerov(
 
     // Only include bound states (E < V at boundaries)
     // Also filter out negative energies that are too large (numerical artifacts)
-    if (energy < VBoundary && isFinite(energy)) {
+    if (energy < VBoundary && Number.isFinite(energy)) {
       // Extract and normalize wavefunction
       const wavefunction = [...eigen.eigenvectors[idx]!];
 

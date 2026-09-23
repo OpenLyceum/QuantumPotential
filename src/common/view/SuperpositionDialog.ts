@@ -12,6 +12,7 @@ import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import type { BoundStateResult } from "../model/PotentialFunction.js";
 import type { SuperpositionConfig } from "../model/SuperpositionType.js";
+import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 
 export class SuperpositionDialog {
   private readonly dialog: Dialog;
@@ -162,9 +163,9 @@ export class SuperpositionDialog {
       };
     };
 
-    this.amplitudeProperties.forEach((prop) => {
+    for (const prop of this.amplitudeProperties) {
       prop.link(updateConfig);
-    });
+    }
 
     const slidersVBox = new VBox({
       spacing: 10,
@@ -190,12 +191,13 @@ export class SuperpositionDialog {
       }
     };
 
-    this.amplitudeProperties.forEach((prop) => {
+    for (const prop of this.amplitudeProperties) {
       prop.link(updateNormalization);
-    });
+    }
 
     // Normalize button
     const normalizeButton = new RectangularPushButton({
+      ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
       content: new Text(stringManager.normalizeButtonStringProperty, {
         font: new PhetFont(12),
         fill: QPPWColors.textFillProperty,
@@ -205,12 +207,11 @@ export class SuperpositionDialog {
         const normFactor = Math.sqrt(sumSquared);
 
         if (normFactor > 0) {
-          this.amplitudeProperties.forEach((prop) => {
-            prop.value = prop.value / normFactor;
-          });
+          for (const prop of this.amplitudeProperties) {
+            prop.value /= normFactor;
+          }
         }
       },
-      baseColor: QPPWColors.controlPanelBackgroundColorProperty,
     });
 
     const normalizationRowHBox = new HBox({
@@ -220,6 +221,7 @@ export class SuperpositionDialog {
 
     // OK and Cancel buttons
     const okButton = new RectangularPushButton({
+      ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
       content: new Text(stringManager.okButtonStringProperty, {
         font: new PhetFont({ size: 14, weight: "bold" }),
         fill: QPPWColors.textFillProperty,
@@ -227,11 +229,11 @@ export class SuperpositionDialog {
       listener: () => {
         this.handleOK();
       },
-      baseColor: QPPWColors.controlPanelBackgroundColorProperty,
       minWidth: 80,
     });
 
     const cancelButton = new RectangularPushButton({
+      ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
       content: new Text(stringManager.cancelButtonStringProperty, {
         font: new PhetFont(14),
         fill: QPPWColors.textFillProperty,
@@ -239,7 +241,6 @@ export class SuperpositionDialog {
       listener: () => {
         this.handleCancel();
       },
-      baseColor: QPPWColors.controlPanelBackgroundColorProperty,
       minWidth: 80,
     });
 

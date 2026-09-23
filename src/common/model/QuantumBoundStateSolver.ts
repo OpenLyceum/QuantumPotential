@@ -1274,7 +1274,7 @@ export class QuantumBoundStateSolver {
     // (the middle one when there are several wells). A single well has exactly one such point; it
     // used to fall through to the fixed 45 % fraction, which for an asymmetric well such as Morse lies
     // deep in the forbidden region and made the matched wavefunctions of different states identical.
-    if (turningPoints.length >= 1) {
+    if (turningPoints.length > 0) {
       return turningPoints[Math.floor(turningPoints.length / 2)]!;
     }
 

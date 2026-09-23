@@ -3,12 +3,13 @@
  * It excludes the superposition combo box and phase color display mode.
  */
 
-import { Dimension2 } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { HBox, HSeparator, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import { Checkbox, ComboBox, type ComboBoxItem, HSlider, Panel } from "scenerystack/sun";
+import { Checkbox, ComboBox, type ComboBoxItem, HSlider } from "scenerystack/sun";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
+import { PANEL_CHECKBOX_OPTIONS, PANEL_SLIDER_OPTIONS } from "../../common/QPPWControlOptions.js";
+import { QPPWPanel } from "../../common/QPPWPanel.js";
 import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
 import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
@@ -55,13 +56,7 @@ export class IntroControlPanelNode extends Node {
       children: children,
     });
 
-    const controlPanel = new Panel(contentVBox, {
-      fill: QPPWColors.panelFillProperty,
-      stroke: QPPWColors.panelStrokeProperty,
-      xMargin: 15,
-      yMargin: 15,
-      cornerRadius: 5,
-    });
+    const controlPanel = new QPPWPanel(contentVBox);
 
     this.addChild(controlPanel);
   }
@@ -211,7 +206,7 @@ export class IntroControlPanelNode extends Node {
         font: new PhetFont(12),
         fill: QPPWColors.textFillProperty,
       }),
-      { boxWidth: 16 },
+      { ...PANEL_CHECKBOX_OPTIONS },
     );
 
     const classicalProbabilityCheckbox = new Node({
@@ -226,7 +221,7 @@ export class IntroControlPanelNode extends Node {
         font: new PhetFont(12),
         fill: QPPWColors.textFillProperty,
       }),
-      { boxWidth: 16 },
+      { ...PANEL_CHECKBOX_OPTIONS },
     );
 
     const showZerosCheckbox = new Node({
@@ -242,7 +237,7 @@ export class IntroControlPanelNode extends Node {
             font: new PhetFont(12),
             fill: QPPWColors.textFillProperty,
           }),
-          { boxWidth: 16 },
+          { ...PANEL_CHECKBOX_OPTIONS },
         )
       : null;
 
@@ -261,7 +256,7 @@ export class IntroControlPanelNode extends Node {
         font: new PhetFont(12),
         fill: QPPWColors.textFillProperty,
       }),
-      { boxWidth: 16 },
+      { ...PANEL_CHECKBOX_OPTIONS },
     );
 
     const rmsIndicatorCheckbox = new Node({
@@ -306,8 +301,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     const massSlider = new HSlider(this.model.particleMassProperty, this.model.particleMassProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
@@ -342,8 +336,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     const widthSlider = new HSlider(this.model.wellWidthProperty, this.model.wellWidthProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("wellWidth"),
@@ -378,8 +371,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     const depthSlider = new HSlider(this.model.wellDepthProperty, this.model.wellDepthProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("wellDepth"),
@@ -414,8 +406,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     const barrierHeightSlider = new HSlider(this.model.barrierHeightProperty, this.model.barrierHeightProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("barrierHeight"),
@@ -450,8 +441,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     const offsetSlider = new HSlider(this.model.potentialOffsetProperty, this.model.potentialOffsetProperty.range!, {
-      trackSize: new Dimension2(150, 4),
-      thumbSize: new Dimension2(15, 30),
+      ...PANEL_SLIDER_OPTIONS,
 
       // PDOM
       accessibleName: QPPWDescriber.getParameterNameProperty("potentialOffset"),

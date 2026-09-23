@@ -21,6 +21,7 @@ import type { BoundStateResult, PotentialType } from "../model/PotentialFunction
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import Logger from "../utils/Logger.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { AreaMeasurementTool } from "./chart-tools/AreaMeasurementTool.js";
@@ -324,7 +325,7 @@ export class WaveFunctionChartNode extends Node {
           font: new PhetFont(12),
           fill: QPPWColors.textFillProperty,
         }),
-        { boxWidth: 14 },
+        { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
       );
 
       const derivativeCheckbox = new Checkbox(
@@ -333,7 +334,7 @@ export class WaveFunctionChartNode extends Node {
           font: new PhetFont(12),
           fill: QPPWColors.textFillProperty,
         }),
-        { boxWidth: 14 },
+        { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
       );
 
       // Group checkboxes in a VBox
@@ -803,7 +804,7 @@ export class WaveFunctionChartNode extends Node {
     return num
       .toString()
       .split("")
-      .map((digit) => subscriptDigits[parseInt(digit)])
+      .map((digit) => subscriptDigits[Number.parseInt(digit, 10)])
       .join("");
   }
 
