@@ -12,6 +12,7 @@ import { PANEL_CHECKBOX_OPTIONS, PANEL_SLIDER_OPTIONS } from "../../common/QPPWC
 import { QPPWPanel } from "../../common/QPPWPanel.js";
 import isDevMode from "../../common/utils/isDevMode.js";
 import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
+import { EnergyLevelControl } from "../../common/view/EnergyLevelControl.js";
 import { QPPWNumberControl } from "../../common/view/QPPWNumberControl.js";
 import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
@@ -187,7 +188,16 @@ export class IntroControlPanelNode extends Node {
 
     // No superposition dropdown in intro screen
 
-    const children: Node[] = [titleText, potentialRowNode];
+    const children: Node[] = [
+      titleText,
+      potentialRowNode,
+      new EnergyLevelControl(this.model),
+      new Checkbox(
+        this.viewState.showEnergyValuesProperty,
+        new Text(stringManager.valuesStringProperty, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        { ...PANEL_CHECKBOX_OPTIONS },
+      ),
+    ];
 
     return new VBox({
       spacing: 8,

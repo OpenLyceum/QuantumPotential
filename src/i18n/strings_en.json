@@ -30,6 +30,8 @@
   "phase": "Phase",
   "potentialEnergy": "Potential Energy",
   "energyLevel": "Energy Level",
+  "values": "Values",
+  "togglePlottedState": "Show or hide plotted state",
   "showWaveFunction": "Show Wave Function",
   "showProbabilityDensity": "Show Probability Density",
   "showMagnitude": "Show Magnitude",

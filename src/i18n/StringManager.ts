@@ -382,6 +382,18 @@ export class StringManager {
     return this.stringProperties.electronVoltsStringProperty;
   }
 
+  get valuesStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.valuesStringProperty;
+  }
+
+  get energyLevelStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.energyLevelStringProperty;
+  }
+
+  get togglePlottedStateStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.togglePlottedStateStringProperty;
+  }
+
   get nanometersStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.nanometersStringProperty;
   }

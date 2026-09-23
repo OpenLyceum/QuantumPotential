@@ -37,6 +37,7 @@ import isDevMode from "../utils/isDevMode.js";
 import type { QPPWParameter } from "./accessibility/QPPWDescriber.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
+import { EnergyLevelControl } from "./EnergyLevelControl.js";
 import { QPPWNumberControl } from "./QPPWNumberControl.js";
 import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
@@ -99,6 +100,12 @@ export class ControlPanelNode {
     const energyChildren: Node[] = [
       this.createPotentialGroup(listBoxParent),
       this.createSuperpositionGroup(listBoxParent),
+      new EnergyLevelControl(model),
+      new Checkbox(
+        this.viewState.showEnergyValuesProperty,
+        new Text(stringManager.valuesStringProperty, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        { ...PANEL_CHECKBOX_OPTIONS },
+      ),
     ];
     energyChildren.push(...this.createParameterControls());
     if (isDevMode()) {

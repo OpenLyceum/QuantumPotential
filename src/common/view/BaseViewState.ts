@@ -20,6 +20,7 @@ export abstract class BaseViewState {
   // Chart element visibility
   public readonly showTotalEnergyProperty: Property<boolean>;
   public readonly showPotentialEnergyProperty: Property<boolean>;
+  public readonly showEnergyValuesProperty: Property<boolean>;
 
   // Display mode (common to all screens)
   public abstract readonly displayModeProperty: Property<DisplayMode | "probabilityDensity" | "waveFunction">;
@@ -36,6 +37,7 @@ export abstract class BaseViewState {
     // Initialize chart visibility
     this.showTotalEnergyProperty = new Property<boolean>(true);
     this.showPotentialEnergyProperty = new Property<boolean>(true);
+    this.showEnergyValuesProperty = new Property<boolean>(false);
   }
 
   /**
@@ -51,5 +53,6 @@ export abstract class BaseViewState {
     this.showZerosProperty.reset();
     this.showTotalEnergyProperty.reset();
     this.showPotentialEnergyProperty.reset();
+    this.showEnergyValuesProperty.reset();
   }
 }

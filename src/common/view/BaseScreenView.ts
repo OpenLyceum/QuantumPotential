@@ -291,6 +291,7 @@ export abstract class BaseScreenView extends ScreenView {
       this.energyChart.update();
     }
     if (this.waveFunctionChart) {
+      this.waveFunctionChart.resetVisibility();
       this.waveFunctionChart.update();
     }
     // Base implementation - subclasses should call super.reset() and add their own logic

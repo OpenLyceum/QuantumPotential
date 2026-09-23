@@ -3,7 +3,7 @@
  * for the selected energy state. This is the bottom chart in the One Well screen.
  */
 
-import { DerivedProperty, NumberProperty } from "scenerystack/axon";
+import { DerivedProperty, NumberProperty, Property } from "scenerystack/axon";
 import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
@@ -11,8 +11,8 @@ import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Line, Node, Path, Text, VBox } from "scenerystack/scenery";
-import { PhetFont } from "scenerystack/scenery-phet";
-import { Checkbox } from "scenerystack/sun";
+import { EyeToggleButton, PhetFont } from "scenerystack/scenery-phet";
+import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { hasSuperpositionConfig, hasWellOffset, hasWellSeparation } from "../model/ModelTypeGuards.js";
@@ -75,6 +75,8 @@ export class WaveFunctionChartNode extends Node {
   // Visual elements
   private readonly backgroundRect: ChartRectangle;
   private readonly plotContentNode: Node; // Clipped container for plot content
+  private readonly curvesNode: Node;
+  private readonly curvesVisibleProperty = new Property<boolean>(true);
   private readonly realPartPath: Path;
   private readonly imaginaryPartPath: Path;
   private readonly magnitudePath: Path;
@@ -85,6 +87,7 @@ export class WaveFunctionChartNode extends Node {
   private readonly axesNode: Node;
   private yAxisLabel!: Text;
   private readonly stateLabelNode: Text; // Label showing which wavefunction is displayed
+  private readonly stateLabelPanel: Panel;
   private readonly avgPositionLabel: Text;
   private readonly rmsPositionLabel: Text;
 
@@ -115,6 +118,10 @@ export class WaveFunctionChartNode extends Node {
 
   public get showDerivativeToolProperty() {
     return this.derivativeTool.showProperty;
+  }
+
+  public resetVisibility(): void {
+    this.curvesVisibleProperty.reset();
   }
 
   public constructor(
@@ -198,13 +205,15 @@ export class WaveFunctionChartNode extends Node {
       lineDash: [5, 5],
     });
     this.plotContentNode.addChild(this.zeroLine);
+    this.curvesNode = new Node();
+    this.plotContentNode.addChild(this.curvesNode);
 
     // Phase is a colored fill behind the magnitude and component curves, as in Quantum Bound States.
     this.phaseColorVisualization = new PhaseColorVisualization({
       dataToViewX: this.dataToViewX.bind(this),
       dataToViewY: this.dataToViewY.bind(this),
     });
-    this.plotContentNode.addChild(this.phaseColorVisualization);
+    this.curvesNode.addChild(this.phaseColorVisualization);
 
     // Create wave function paths
     this.realPartPath = new Path(null, {
@@ -212,28 +221,28 @@ export class WaveFunctionChartNode extends Node {
       lineWidth: 2,
       visible: false,
     });
-    this.plotContentNode.addChild(this.realPartPath);
+    this.curvesNode.addChild(this.realPartPath);
 
     this.imaginaryPartPath = new Path(null, {
       stroke: QPPWColors.wavefunctionImaginaryProperty,
       lineWidth: 2,
       visible: false,
     });
-    this.plotContentNode.addChild(this.imaginaryPartPath);
+    this.curvesNode.addChild(this.imaginaryPartPath);
 
     this.magnitudePath = new Path(null, {
       stroke: QPPWColors.wavefunctionMagnitudeProperty,
       lineWidth: 2,
       visible: false,
     });
-    this.plotContentNode.addChild(this.magnitudePath);
+    this.curvesNode.addChild(this.magnitudePath);
 
     this.probabilityDensityPath = new Path(null, {
       stroke: QPPWColors.wavefunctionProbabilityProperty,
       lineWidth: 2,
       fill: QPPWColors.wavefunctionProbabilityFillProperty, // Semi-transparent fill
     });
-    this.plotContentNode.addChild(this.probabilityDensityPath);
+    this.curvesNode.addChild(this.probabilityDensityPath);
 
     // Create average position indicator (vertical line)
     this.avgPositionIndicator = new Line(0, 0, 0, 0, {
@@ -294,17 +303,37 @@ export class WaveFunctionChartNode extends Node {
     this.stateLabelNode = new Text("", {
       font: new PhetFont({ size: 16, style: "italic" }),
       fill: QPPWColors.labelFillProperty,
-      right: this.chartWidth - this.chartMargins.right - 55,
-      top: this.chartMargins.top + 5,
     });
-    this.addChild(this.stateLabelNode);
+    this.stateLabelPanel = new Panel(this.stateLabelNode, {
+      fill: QPPWColors.controlPanelBackgroundColorProperty,
+      stroke: QPPWColors.controlPanelStrokeColorProperty,
+      cornerRadius: 3,
+      xMargin: 5,
+      yMargin: 2,
+      pickable: false,
+    });
+    this.stateLabelPanel.left = this.chartMargins.left + 40;
+    this.stateLabelPanel.top = this.chartMargins.top + 4;
+    this.addChild(this.stateLabelPanel);
+
+    const eyeButton = new EyeToggleButton(this.curvesVisibleProperty, {
+      accessibleName: stringManager.togglePlottedStateStringProperty,
+      scale: 0.35,
+    });
+    eyeButton.left = this.chartMargins.left + 4;
+    eyeButton.top = this.chartMargins.top + 3;
+    this.addChild(eyeButton);
+    this.curvesVisibleProperty.link((visible) => {
+      this.curvesNode.visible = visible;
+      this.stateLabelPanel.visible = visible && this.stateLabelNode.string.length > 0;
+    });
 
     // Create labels for average and RMS position
     this.avgPositionLabel = new Text("", {
       font: new PhetFont(12),
       fill: QPPWColors.labelFillProperty,
       left: this.chartMargins.left + 10,
-      top: this.chartMargins.top + 5,
+      top: this.chartMargins.top + 35,
     });
     this.addChild(this.avgPositionLabel);
 
@@ -312,7 +341,7 @@ export class WaveFunctionChartNode extends Node {
       font: new PhetFont(12),
       fill: QPPWColors.labelFillProperty,
       left: this.chartMargins.left + 10,
-      top: this.chartMargins.top + 25,
+      top: this.chartMargins.top + 55,
     });
     this.addChild(this.rmsPositionLabel);
 
@@ -342,7 +371,7 @@ export class WaveFunctionChartNode extends Node {
         spacing: 5,
         align: "left",
         right: this.chartWidth - this.chartMargins.right - 5,
-        top: this.chartMargins.top + 5,
+        top: this.chartMargins.top + 35,
       });
       this.addChild(toolCheckboxes);
 
@@ -748,41 +777,7 @@ export class WaveFunctionChartNode extends Node {
     const isSuperposition = superpositionType !== SuperpositionType.SINGLE;
 
     if (isSuperposition) {
-      // Display superposition label
-      let label: string;
-      switch (superpositionType) {
-        case SuperpositionType.PSI_I_PSI_J:
-          label = "ψ₀+ψ₁";
-          break;
-        case SuperpositionType.LOCALIZED_NARROW:
-          label = "Localized";
-          break;
-        case SuperpositionType.LOCALIZED_WIDE:
-          label = "Localized";
-          break;
-        case SuperpositionType.COHERENT:
-          label = "Coherent";
-          break;
-        case SuperpositionType.CUSTOM:
-          label = "Custom";
-          break;
-        default:
-          label = "Superposition";
-      }
-
-      if (displayMode === "probabilityDensity") {
-        this.stateLabelNode.string = stringManager.stateLabelProbabilityStringProperty.value.replace(
-          "{{label}}",
-          label,
-        );
-      } else if (displayMode === "phaseColor") {
-        this.stateLabelNode.string = stringManager.stateLabelWavefunctionStringProperty.value.replace(
-          "{{label}}",
-          label,
-        );
-      } else {
-        this.stateLabelNode.string = label;
-      }
+      this.stateLabelNode.string = displayMode === "probabilityDensity" ? "|Ψ(x,t)|²" : "Ψ(x,t)";
     } else {
       // Display single eigenstate label
       const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
@@ -790,17 +785,19 @@ export class WaveFunctionChartNode extends Node {
 
       if (!boundStates || selectedIndex < 0) {
         this.stateLabelNode.string = "";
+        this.stateLabelPanel.visible = false;
         return;
       }
 
       if (selectedIndex >= boundStates.wavefunctions.length) {
         this.stateLabelNode.string = "";
+        this.stateLabelPanel.visible = false;
         return;
       }
 
-      // Format: ψ₁, ψ₂, etc. (or |ψ₁|² for probability density)
+      // Use the same state-numbered function form as Quantum Bound States.
       const stateNumber = selectedIndex + 1;
-      const stateLabel = `ψ${this.toSubscript(stateNumber)}`;
+      const stateLabel = `ψ${this.toSubscript(stateNumber)}(x,t)`;
 
       if (displayMode === "probabilityDensity") {
         this.stateLabelNode.string = stringManager.stateLabelProbabilityStringProperty.value.replace(
@@ -816,6 +813,8 @@ export class WaveFunctionChartNode extends Node {
         this.stateLabelNode.string = stateLabel;
       }
     }
+    this.stateLabelPanel.left = this.chartMargins.left + 40;
+    this.stateLabelPanel.visible = this.curvesVisibleProperty.value;
   }
 
   /**

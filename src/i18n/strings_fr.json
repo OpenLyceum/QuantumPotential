@@ -30,6 +30,8 @@
   "phase": "Phase",
   "potentialEnergy": "Énergie Potentielle",
   "energyLevel": "Niveau d'Énergie",
+  "values": "Valeurs",
+  "togglePlottedState": "Afficher ou masquer l'état tracé",
   "showWaveFunction": "Afficher la Fonction d'Onde",
   "showProbabilityDensity": "Afficher la Densité de Probabilité",
   "showMagnitude": "Afficher l'Amplitude",

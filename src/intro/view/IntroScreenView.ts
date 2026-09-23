@@ -160,6 +160,7 @@ export class IntroScreenView extends BaseScreenView {
     this.viewState.reset();
 
     // Update IntroScreen-specific charts to reflect reset model state
+    this.probabilityChart.resetVisibility();
     this.probabilityChart.update();
     this.wavenumberChart.update();
   }

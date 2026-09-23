@@ -10,9 +10,9 @@ import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
-import { HBox, Line, Node, Path, Rectangle, type SceneryEvent, Text, VBox } from "scenerystack/scenery";
+import { HBox, Line, Node, Path, Rectangle, RichText, type SceneryEvent, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import { Checkbox } from "scenerystack/sun";
+import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import {
@@ -29,6 +29,7 @@ import type { ScreenModel } from "../model/ScreenModels.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
+import { getEnergyLevelDecimalPlaces } from "./EnergyLevelPrecision.js";
 import { PotentialHandlesLayer } from "./handles/PotentialHandlesLayer.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
 
@@ -100,8 +101,10 @@ export class EnergyChartNode extends BaseChartNode {
   private readonly potentialPath: Path;
   private readonly energyLevelNodes: Map<number, Line>;
   // "Eₙ = … eV" readouts for the selected and the hovered level, drawn inside the plot above their lines
-  private readonly selectedLevelLabel: Text;
-  private readonly hoveredLevelLabel: Text;
+  private readonly selectedLevelLabel: RichText;
+  private readonly hoveredLevelLabel: RichText;
+  private readonly selectedLevelPanel: Panel;
+  private readonly hoveredLevelPanel: Panel;
 
   // Transparent layer over the plot that picks the level nearest the pointer (as in Quantum Bound States),
   // so closely spaced levels in a band can still be hovered and selected one by one
@@ -184,8 +187,18 @@ export class EnergyChartNode extends BaseChartNode {
     // Create energy level lines and labels containers
     this.energyLevelNodes = new Map();
     const levelLabelOptions = { font: new PhetFont({ size: 12, weight: "bold" }), maxWidth: 200 };
-    this.selectedLevelLabel = new Text("", { ...levelLabelOptions, fill: QPPWColors.energyLevelSelectedProperty });
-    this.hoveredLevelLabel = new Text("", { ...levelLabelOptions, fill: QPPWColors.labelFillProperty });
+    this.selectedLevelLabel = new RichText("", { ...levelLabelOptions, fill: QPPWColors.energyLevelSelectedProperty });
+    this.hoveredLevelLabel = new RichText("", { ...levelLabelOptions, fill: QPPWColors.labelFillProperty });
+    const levelPanelOptions = {
+      fill: QPPWColors.controlPanelBackgroundColorProperty,
+      stroke: QPPWColors.controlPanelStrokeColorProperty,
+      cornerRadius: 3,
+      xMargin: 6,
+      yMargin: 2,
+      pickable: false,
+    };
+    this.selectedLevelPanel = new Panel(this.selectedLevelLabel, levelPanelOptions);
+    this.hoveredLevelPanel = new Panel(this.hoveredLevelLabel, levelPanelOptions);
 
     this.levelPickerRectangle = new Rectangle(
       this.chartMargins.left,
@@ -205,6 +218,8 @@ export class EnergyChartNode extends BaseChartNode {
         }
       },
     });
+    // Keep the picker above plotted lines and axes, as QBS does with its chart rectangle.
+    this.addChild(this.levelPickerRectangle);
 
     // Create total energy line
     this.totalEnergyLine = new Line(0, 0, 0, 0, {
@@ -605,8 +620,10 @@ export class EnergyChartNode extends BaseChartNode {
       legendPanelRectangle.visible = false;
       legendContentVBox.left = 0;
       legendContentVBox.top = 0;
-      legendNode.left = this.chartMargins.left;
+      legendNode.right = this.chartWidth - this.chartMargins.right;
       legendNode.centerY = this.chartMargins.top / 2;
+    } else {
+      legendNode.right = this.chartWidth - this.chartMargins.right - 10;
     }
 
     return legendNode;
@@ -616,6 +633,7 @@ export class EnergyChartNode extends BaseChartNode {
    * Links chart updates to model property changes.
    */
   protected linkToModel(): void {
+    this.viewState.showEnergyValuesProperty.lazyLink(() => this.updateLevelLabels());
     // Update when any parameter changes
     this.model.potentialTypeProperty.lazyLink(() => {
       this.updateEnergyAxisRange();
@@ -762,8 +780,8 @@ export class EnergyChartNode extends BaseChartNode {
 
     this.levelViewYs = [];
     this.hoveredEnergyLevelIndex = null;
-    this.selectedLevelLabel.visible = false;
-    this.hoveredLevelLabel.visible = false;
+    this.selectedLevelPanel.visible = false;
+    this.hoveredLevelPanel.visible = false;
 
     this.removeEnergyLevelHitAreas();
 
@@ -823,35 +841,36 @@ export class EnergyChartNode extends BaseChartNode {
     this.updateLevelLabels();
   }
 
-  /**
-   * Positions the "Eₙ = … eV" readouts for the selected and hovered levels, right-aligned inside the plot
-   * just above their lines. The hovered readout is hidden when it is the selected level.
-   */
+  /** Position selected and hovered level panels above their energy lines. */
   private updateLevelLabels(): void {
     const energies = this.model.getEnergyLevels();
-    const right = this.chartWidth - this.chartMargins.right - 4;
-    const place = (label: Text, index: number | null): void => {
+    const left = this.chartMargins.left + 12;
+    const place = (panel: Panel, label: RichText, index: number | null): void => {
       const y = index === null ? undefined : this.levelViewYs[index];
       const energy = index === null ? undefined : energies[index];
-      label.visible = y !== undefined && energy !== undefined;
-      if (label.visible && index !== null && energy !== undefined && y !== undefined) {
-        label.string = StringUtils.fillIn(stringManager.energyLevelLabelStringProperty, {
-          level: index + 1,
-          value: energy.toFixed(3),
-        });
-        label.right = right;
-        label.bottom = y - 2;
+      panel.visible = y !== undefined && energy !== undefined;
+      if (panel.visible && index !== null && energy !== undefined && y !== undefined) {
+        const level = `E<sub>${index + 1}</sub>`;
+        label.string = this.viewState.showEnergyValuesProperty.value
+          ? `${level} = ${energy.toFixed(getEnergyLevelDecimalPlaces(energies, index))} ${stringManager.electronVoltsStringProperty.value}`
+          : level;
+        panel.left = left;
+        panel.bottom = y - 3;
       }
     };
 
     const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-    place(this.selectedLevelLabel, selectedIndex);
-    place(this.hoveredLevelLabel, this.hoveredEnergyLevelIndex === selectedIndex ? null : this.hoveredEnergyLevelIndex);
+    place(this.selectedLevelPanel, this.selectedLevelLabel, selectedIndex);
+    place(
+      this.hoveredLevelPanel,
+      this.hoveredLevelLabel,
+      this.hoveredEnergyLevelIndex === selectedIndex ? null : this.hoveredEnergyLevelIndex,
+    );
 
     // Keep the two readouts from overlapping when the hovered level is next to the selected one
-    if (this.selectedLevelLabel.visible && this.hoveredLevelLabel.visible) {
-      if (this.hoveredLevelLabel.bounds.intersectsBounds(this.selectedLevelLabel.bounds)) {
-        this.hoveredLevelLabel.right = this.selectedLevelLabel.left - 10;
+    if (this.selectedLevelPanel.visible && this.hoveredLevelPanel.visible) {
+      if (this.hoveredLevelPanel.bounds.intersectsBounds(this.selectedLevelPanel.bounds)) {
+        this.hoveredLevelPanel.left = this.selectedLevelPanel.right + 6;
       }
     }
   }
@@ -973,12 +992,12 @@ export class EnergyChartNode extends BaseChartNode {
       this.plotContentNode.addChild(hitArea); // Add hit area on top
     });
 
-    // Readouts and the picker go over the levels; total energy line and legend on top
-    for (const node of [this.selectedLevelLabel, this.hoveredLevelLabel, this.levelPickerRectangle]) {
-      if (this.plotContentNode.hasChild(node)) {
+    // Keep readouts outside the clipped plot so high levels can use the top margin.
+    for (const node of [this.selectedLevelPanel, this.hoveredLevelPanel]) {
+      if (this.hasChild(node)) {
         node.moveToFront();
       } else {
-        this.plotContentNode.addChild(node);
+        this.addChild(node);
       }
     }
     this.updateLevelLabels();
