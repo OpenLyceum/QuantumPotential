@@ -23,6 +23,7 @@ import {
   DotMatrix,
   diagonalize,
   matrixToArray,
+  normalizeOnGrid,
   normalizeWavefunction,
 } from "./LinearAlgebraUtils.js";
 import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
@@ -151,7 +152,8 @@ export function solveDVR(
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
     const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
-    fineWavefunctions.push(fineYValues);
+    // Re-normalize on the fine grid: spline interpolation does not preserve ∫|ψ|² dx
+    fineWavefunctions.push(normalizeOnGrid(fineYValues, fineXGrid));
   }
 
   return {

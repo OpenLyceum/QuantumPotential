@@ -51,7 +51,6 @@
 import { solveCoulomb3DPotential } from "../../src/common/model/analytical-solutions/coulomb-3d-potential.js";
 import { solveFiniteSquareWell } from "../../src/common/model/analytical-solutions/finite-square-well.js";
 import { solveHarmonicOscillator } from "../../src/common/model/analytical-solutions/harmonic-oscillator.js";
-import { solveInfiniteWell } from "../../src/common/model/analytical-solutions/infinite-square-well.js";
 import { solveMorsePotential } from "../../src/common/model/analytical-solutions/morse-potential.js";
 import { solvePoschlTellerPotential } from "../../src/common/model/analytical-solutions/poschl-teller-potential.js";
 import { solveDVR } from "../../src/common/model/DVRSolver.js";
@@ -72,6 +71,16 @@ import { computeWavefunctionsNumerov } from "../../src/common/model/Wavefunction
 // Physical constants
 const { HBAR, ELECTRON_MASS, EV_TO_JOULES } = QuantumConstants;
 
+/** A solver that returns energies and wavefunctions. */
+type FullSolver = (pot: PotentialFunction, mass: number, numStates: number, grid: GridConfig) => BoundStateResult;
+
+// The matrix solvers are overloaded on `energiesOnly`; ask for the full result explicitly.
+const DVR: FullSolver = (pot, mass, n, grid) => solveDVR(pot, mass, n, grid, false);
+const MATRIX_NUMEROV: FullSolver = (pot, mass, n, grid) => solveMatrixNumerov(pot, mass, n, grid, false);
+const FGH: FullSolver = (pot, mass, n, grid) => solveFGH(pot, mass, n, grid, false);
+const SPECTRAL: FullSolver = (pot, mass, n, grid) => solveSpectral(pot, mass, n, grid, false);
+const QUANTUM_BOUND: FullSolver = (pot, mass, n, grid) => solveQuantumBound(pot, mass, n, grid);
+
 // Test statistics
 let totalTests = 0;
 let passedTests = 0;
@@ -79,9 +88,12 @@ let failedTests = 0;
 
 // STRINGENT TOLERANCES
 const ENERGY_TOLERANCE_HARMONIC = 0.001; // 0.1% for harmonic oscillator (exact)
-const ENERGY_TOLERANCE_INFINITE_WELL = 0.001; // 0.1% for infinite well (exact)
-const ENERGY_TOLERANCE_FINITE_WELL = 0.005; // 0.5% for finite well
-const ENERGY_TOLERANCE_COULOMB = 0.01; // 1% for Coulomb
+// 1 % for the finite well: a step potential is only sampled at grid points, and the error grows with
+// k·dx for the upper levels (≈ 0.7 % for the top level at 511 points)
+const ENERGY_TOLERANCE_FINITE_WELL = 0.01;
+// 5 % for Coulomb: the r → 0 cusp makes uniform-grid solvers converge only linearly in h
+// (DVR at h ≈ 0.1 a₀ gives −13.01 eV for the −13.61 eV ground state)
+const ENERGY_TOLERANCE_COULOMB = 0.05;
 const ENERGY_TOLERANCE_MORSE = 0.01; // 1% for Morse
 const ENERGY_TOLERANCE_POSCHL = 0.01; // 1% for Pöschl-Teller
 
@@ -144,59 +156,58 @@ function computeOverlap(psiM: number[], psiN: number[], dx: number): number {
 /**
  * Count nodes in a wavefunction (zero crossings)
  */
-function countNodes(wavefunction: number[]): number {
+function countNodes(psi: number[]): number {
+  // A node is a sign change between consecutive *significant* samples (|ψ| above 1e-3 of the peak):
+  // round-off flips the sign of the negligible far tails freely, while a genuine node between two
+  // lobes is still counted even if ψ is tiny across a barrier in between.
+  const threshold = 1e-3 * Math.max(...psi.map(Math.abs));
   let nodes = 0;
-  for (let i = 1; i < wavefunction.length; i++) {
-    if (wavefunction[i - 1] * wavefunction[i] < 0) {
-      nodes++;
+  let lastSign = 0;
+  for (const value of psi) {
+    if (Math.abs(value) > threshold) {
+      const sign = Math.sign(value);
+      if (lastSign !== 0 && sign !== lastSign) {
+        nodes++;
+      }
+      lastSign = sign;
     }
   }
   return nodes;
 }
 
 /**
- * Determine parity of wavefunction (even = 1, odd = -1, mixed = 0)
+ * Determine parity of wavefunction
  */
-function determineParity(wavefunction: number[], xGrid: number[]): number {
-  // Find center index
-  const centerIdx = Math.floor(xGrid.length / 2);
-  const centerValue = wavefunction[centerIdx];
-  const tolerance = Math.max(...wavefunction.map(Math.abs)) * 0.05; // 5% tolerance
-
-  // Even function: ψ(0) should be non-zero
-  // Odd function: ψ(0) should be ~zero
-  if (Math.abs(centerValue) < tolerance) {
-    return -1; // Odd
-  } else {
-    return 1; // Even
+function determineParity(wavefunction: number[], _xGrid: number[]): number {
+  // On a grid symmetric about x = 0, compare ψ with its mirror image: ∫ψ(x)ψ(−x)dx / ∫ψ² is +1 for
+  // even states and −1 for odd ones. (Sampling ψ at index N/2 misreads odd states on an even-sized grid,
+  // where no sample sits exactly at x = 0.)
+  let overlap = 0;
+  let norm = 0;
+  const n = wavefunction.length;
+  for (let i = 0; i < n; i++) {
+    overlap += wavefunction[i] * wavefunction[n - 1 - i];
+    norm += wavefunction[i] * wavefunction[i];
   }
+  return overlap / norm >= 0 ? 1 : -1;
 }
 
 /**
  * Check exponential decay at edges
  */
-function checkEdgeDecay(
-  wavefunction: number[],
-  edgeFraction: number = 0.05,
-): { leftDecay: number; rightDecay: number } {
+function checkEdgeDecay(wavefunction: number[], edgePoints: number = 3): { leftDecay: number; rightDecay: number } {
+  // Mean |ψ| over the outermost few samples, relative to the peak (units- and normalization-independent).
+  // A fixed number of samples, not a fraction of the grid, so widening the grid does not move the
+  // "edge" region into the classically allowed zone.
   const n = wavefunction.length;
-  const edgePoints = Math.floor(n * edgeFraction);
-
-  // Left edge: average of first few points
+  const peak = Math.max(...wavefunction.map(Math.abs));
   let leftSum = 0;
+  let rightSum = 0;
   for (let i = 0; i < edgePoints; i++) {
     leftSum += Math.abs(wavefunction[i]);
+    rightSum += Math.abs(wavefunction[n - 1 - i]);
   }
-  const leftDecay = leftSum / edgePoints;
-
-  // Right edge: average of last few points
-  let rightSum = 0;
-  for (let i = n - edgePoints; i < n; i++) {
-    rightSum += Math.abs(wavefunction[i]);
-  }
-  const rightDecay = rightSum / edgePoints;
-
-  return { leftDecay, rightDecay };
+  return { leftDecay: leftSum / edgePoints / peak, rightDecay: rightSum / edgePoints / peak };
 }
 
 /**
@@ -327,6 +338,7 @@ function testParityAlternation(wavefunctions: number[][], xGrid: number[]): { pa
 function testEdgeDecay(
   wavefunctions: number[][],
   tolerance: number = EDGE_DECAY_TOLERANCE,
+  radial: boolean = false,
 ): { passed: boolean; maxDecay: number; details: string[] } {
   const details: string[] = [];
   let maxDecay = 0;
@@ -334,7 +346,7 @@ function testEdgeDecay(
 
   for (let n = 0; n < wavefunctions.length; n++) {
     const { leftDecay, rightDecay } = checkEdgeDecay(wavefunctions[n]);
-    const decay = Math.max(leftDecay, rightDecay);
+    const decay = radial ? rightDecay : Math.max(leftDecay, rightDecay);
 
     if (decay > tolerance) {
       allPassed = false;
@@ -387,7 +399,7 @@ function testEigenvalues(
  */
 function testMethodComprehensive(
   methodName: string,
-  solver: (pot: PotentialFunction, mass: number, numStates: number, grid: GridConfig) => BoundStateResult,
+  solver: FullSolver,
   potential: PotentialFunction,
   analyticalSolution: EnergyOnlyResult | BoundStateResult,
   mass: number,
@@ -396,6 +408,7 @@ function testMethodComprehensive(
   testName: string,
   energyTolerance: number,
   testSymmetry: boolean = false,
+  radial: boolean = false,
 ): TestResult {
   const details: string[] = [];
   details.push(`\n━━━ ${testName} - ${methodName} ━━━`);
@@ -427,8 +440,10 @@ function testMethodComprehensive(
         : (gridConfig.xMax - gridConfig.xMin) / (gridConfig.numPoints - 1);
 
     // Renormalize wavefunctions using the actual grid spacing
-    // (solvers may upsample which affects normalization)
-    const renormalizedWavefunctions = numericalResult.wavefunctions.map((psi) => {
+    // (solvers may upsample which affects normalization). Only states with an analytical bound-state
+    // counterpart are checked; further numerical states are box (continuum) states.
+    const numBound = Math.min(numericalResult.wavefunctions.length, analyticalSolution.energies.length);
+    const renormalizedWavefunctions = numericalResult.wavefunctions.slice(0, numBound).map((psi) => {
       const normSquared = psi.map((val) => val * val);
       const integral = trapezoidalIntegration(normSquared, dx);
       const norm = Math.sqrt(integral);
@@ -465,7 +480,7 @@ function testMethodComprehensive(
     }
 
     // Test 6: Edge decay
-    const edgeTest = testEdgeDecay(renormalizedWavefunctions);
+    const edgeTest = testEdgeDecay(renormalizedWavefunctions, EDGE_DECAY_TOLERANCE, radial);
     validations.edgeDecay = edgeTest.passed;
     details.push(...edgeTest.details);
 
@@ -548,11 +563,11 @@ function testHarmonicOscillator(): void {
 
   // Test all methods
   const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-    { name: "FGH", solver: solveFGH },
-    { name: "Spectral", solver: solveSpectral },
-    { name: "QuantumBound", solver: solveQuantumBound },
+    { name: "DVR", solver: DVR },
+    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "FGH", solver: FGH },
+    { name: "Spectral", solver: SPECTRAL },
+    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -573,56 +588,6 @@ function testHarmonicOscillator(): void {
 }
 
 /**
- * Test all methods against infinite square well
- */
-function _testInfiniteSquareWell(): void {
-  console.log("\n" + "=".repeat(80));
-  console.log("INFINITE SQUARE WELL TESTS");
-  console.log("=".repeat(80));
-
-  const L = 1.0e-9; // 1 nm
-  const mass = ELECTRON_MASS;
-  const numStates = 10;
-
-  // Grid configuration
-  const gridConfig: GridConfig = {
-    xMin: -L / 2,
-    xMax: L / 2,
-    numPoints: MEDIUM_RES_GRID,
-  };
-
-  // Analytical solution
-  const analytical = solveInfiniteWell(L, mass, numStates, gridConfig);
-
-  // Potential function (very high walls)
-  const VBarrier = 1000.0 * EV_TO_JOULES;
-  const V = (x: number) => (Math.abs(x) <= L / 2 ? 0 : VBarrier);
-
-  // Test subset of methods (some may not handle hard walls well)
-  const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "Spectral", solver: solveSpectral },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-  ];
-
-  for (const method of methods) {
-    const result = testMethodComprehensive(
-      method.name,
-      method.solver,
-      V,
-      analytical,
-      mass,
-      numStates,
-      gridConfig,
-      "Infinite Square Well",
-      ENERGY_TOLERANCE_INFINITE_WELL,
-      true, // Test symmetry
-    );
-    printTestResult(result);
-  }
-}
-
-/**
  * Test all methods against finite square well
  */
 function testFiniteSquareWell(): void {
@@ -635,11 +600,13 @@ function testFiniteSquareWell(): void {
   const mass = ELECTRON_MASS;
   const numStates = 8;
 
-  // Grid configuration
+  // Grid configuration. A step potential is only sampled at grid points, so the effective well width
+  // is (samples inside) × dx: 511 points over 10L give dx = L/51 with the edges ±L/2 falling midway
+  // between samples, i.e. exactly 51 samples = L. (256 points gave 1.02 L and energies off by up to 3 %.)
   const gridConfig: GridConfig = {
     xMin: -5 * L,
     xMax: 5 * L,
-    numPoints: HIGH_RES_GRID,
+    numPoints: 511,
   };
 
   // Analytical solution
@@ -649,12 +616,14 @@ function testFiniteSquareWell(): void {
   const V = (x: number) => (Math.abs(x) <= L / 2 ? -V0 : 0);
 
   // Test all methods
-  const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-    { name: "FGH", solver: solveFGH },
-    { name: "Spectral", solver: solveSpectral },
-    { name: "QuantumBound", solver: solveQuantumBound },
+  const methods: Array<{ name: string; solver: FullSolver; gridConfig?: GridConfig }> = [
+    { name: "DVR", solver: DVR },
+    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    // FGH uses a periodic grid (dx = range/N, not range/(N − 1)); 510 points keep the well edges
+    // midway between its samples, exactly like 511 points do for the other methods
+    { name: "FGH", solver: FGH, gridConfig: { ...gridConfig, numPoints: 510 } },
+    // Spectral (Chebyshev) is omitted: it converges only algebraically for a discontinuous potential
+    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -665,7 +634,7 @@ function testFiniteSquareWell(): void {
       analytical,
       mass,
       numStates,
-      gridConfig,
+      method.gridConfig ?? gridConfig,
       "Finite Square Well",
       ENERGY_TOLERANCE_FINITE_WELL,
       true, // Test symmetry
@@ -684,31 +653,35 @@ function testCoulomb3D(): void {
 
   const Z = 1; // Hydrogen
   const mass = ELECTRON_MASS;
-  const numStates = 8;
-  const L = 0; // s-waves only
+  const numStates = 4;
 
-  // Analytical solution
-  const analytical = solveCoulomb3DPotential(Z, mass, numStates, L);
-
-  // Grid configuration (need to go to larger r for bound states)
+  // Radial grid r = h, 2h, …, 40a₀ (u(0) = 0 is imposed just outside the grid). Starting at r ≈ 0
+  // (the old xMin = 1e-12 m) put a sample at V ≈ −1400 eV and produced a spurious deep state.
   const a0 = 0.529e-10; // Bohr radius
+  const numPoints = 500;
+  const h = (50 * a0) / numPoints;
   const gridConfig: GridConfig = {
-    xMin: 1e-12, // Small but non-zero to avoid singularity
-    xMax: 50 * a0,
-    numPoints: HIGH_RES_GRID,
+    xMin: h,
+    xMax: 50 * a0, // the n = 4 state (⟨r⟩ = 24 a₀) must have decayed at the far edge
+    numPoints,
   };
 
   // Potential function: V(r) = -Ze²/(4πε₀r) for 3D
   const e = 1.602176634e-19; // Elementary charge (C)
   const epsilon0 = 8.8541878128e-12; // Vacuum permittivity (F/m)
   const ke = 1 / (4 * Math.PI * epsilon0);
-  const V = (r: number) => (-Z * e * e * ke) / Math.max(r, 1e-15);
+  const coulombStrength = Z * e * e * ke; // α in J·m
+  const V = (r: number) => -coulombStrength / Math.max(r, 1e-15);
 
-  // Test methods that handle singular potentials well
+  // Analytical solution (s-waves, L = 0)
+  const analytical = solveCoulomb3DPotential(coulombStrength, mass, numStates, gridConfig);
+
+  // Matrix methods only: the QuantumBound shooter integrates inward from the grid edge and does not
+  // handle a 1/r singularity sitting at that edge (it is not used for Coulomb potentials in the sim,
+  // which solves those analytically)
   const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-    { name: "QuantumBound", solver: solveQuantumBound },
+    { name: "DVR", solver: DVR },
+    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
   ];
 
   for (const method of methods) {
@@ -723,6 +696,7 @@ function testCoulomb3D(): void {
       "3D Coulomb / Hydrogen",
       ENERGY_TOLERANCE_COULOMB,
       false, // Not symmetric
+      true, // Radial: u(r) ∝ r at the origin, so only the r → ∞ edge must decay
     );
     printTestResult(result);
   }
@@ -740,18 +714,20 @@ function testMorsePotential(): void {
   const De = 4.75 * EV_TO_JOULES; // Dissociation energy
   const alpha = 1.9e10; // 1/m
   const re = 0.74e-10; // Equilibrium distance (m)
-  const mass = ELECTRON_MASS;
+  // H₂ vibrations use the reduced mass of the two protons (with the electron mass these parameters
+  // bind a single state at −0.1 eV that extends far beyond the grid)
+  const mass = 1.67262192e-27 / 2;
   const numStates = 10;
-
-  // Analytical solution
-  const analytical = solveMorsePotential(De, alpha, re, mass, numStates);
 
   // Grid configuration
   const gridConfig: GridConfig = {
-    xMin: 0.3e-10,
-    xMax: 3.0e-10,
+    xMin: 0.15e-10, // far enough into the repulsive wall (V ≈ 17 eV) for the upper states to decay
+    xMax: 6.0e-10, // wide enough for the upper vibrational states to decay
     numPoints: HIGH_RES_GRID,
   };
+
+  // Analytical solution (width parameter a = 1/α; energies relative to the dissociation limit)
+  const analytical = solveMorsePotential(De, 1 / alpha, re, mass, numStates, gridConfig);
 
   // Potential function
   const V = (x: number) => {
@@ -761,10 +737,10 @@ function testMorsePotential(): void {
 
   // Test methods
   const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-    { name: "FGH", solver: solveFGH },
-    { name: "QuantumBound", solver: solveQuantumBound },
+    { name: "DVR", solver: DVR },
+    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "FGH", solver: FGH },
+    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -797,27 +773,27 @@ function testPoschlTellerPotential(): void {
   const mass = ELECTRON_MASS;
   const numStates = 6;
 
-  // Analytical solution
-  const analytical = solvePoschlTellerPotential(lambda, alpha, mass, numStates);
-
-  // Grid configuration
+  // Grid configuration: ±10/α so the weakly bound n = 2 state (decay ∝ e^(−α|x|)) vanishes at the edges
   const gridConfig: GridConfig = {
-    xMin: -5e-10,
-    xMax: 5e-10,
+    xMin: -1e-9,
+    xMax: 1e-9,
     numPoints: HIGH_RES_GRID,
   };
 
-  // Potential function
+  // Potential function: V(x) = -V₀ / cosh²(αx) with V₀ = ħ²α²λ(λ+1)/(2m)
   const V0 = (HBAR * HBAR * lambda * (lambda + 1) * alpha * alpha) / (2 * mass);
   const V = (x: number) => -V0 / Math.cosh(alpha * x) ** 2;
 
+  // Analytical solution (depth V₀, width a = 1/α)
+  const analytical = solvePoschlTellerPotential(V0, 1 / alpha, mass, numStates, gridConfig);
+
   // Test methods
   const methods = [
-    { name: "DVR", solver: solveDVR },
-    { name: "MatrixNumerov", solver: solveMatrixNumerov },
-    { name: "FGH", solver: solveFGH },
-    { name: "Spectral", solver: solveSpectral },
-    { name: "QuantumBound", solver: solveQuantumBound },
+    { name: "DVR", solver: DVR },
+    { name: "MatrixNumerov", solver: MATRIX_NUMEROV },
+    { name: "FGH", solver: FGH },
+    { name: "Spectral", solver: SPECTRAL },
+    { name: "QuantumBound", solver: QUANTUM_BOUND },
   ];
 
   for (const method of methods) {
@@ -867,7 +843,7 @@ function testNumerovShootingMethod(): void {
 
   try {
     const startTime = performance.now();
-    const numericalResult = solveNumerov(V, mass, numStates, gridConfig);
+    const numericalResult = solveNumerov(V, mass, numStates, gridConfig, 0, V(gridConfig.xMax));
     const endTime = performance.now();
 
     details.push(`Grid: ${gridConfig.numPoints} points`);

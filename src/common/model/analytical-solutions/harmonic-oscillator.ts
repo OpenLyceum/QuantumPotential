@@ -468,7 +468,8 @@ export function calculateHarmonicOscillatorSuperpositionMinMax(
 
       // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
       // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
     if (realPart < min) {
@@ -758,16 +759,25 @@ export function calculateCoherentStateCoefficients(
   // Calculate α = √(mω/2ℏ) * x₀
   const alpha = Math.sqrt((mass * omega) / (2 * HBAR)) * displacement;
 
-  // Calculate coefficients: c_n = e^(-α²/2) * α^n / √n!
-  const prefactor = Math.exp((-alpha * alpha) / 2);
-  const amplitudes: number[] = [];
-
+  // Coefficients c_n = e^(−α²/2) α^n / √n!, computed in log space: for large α or n the direct form
+  // overflows (α^n, n!) or underflows (the prefactor) to ∞/∞ = NaN. The common prefactor cancels in
+  // the normalization, so only log|c_n| = n ln|α| − ½ ln n! is needed, shifted by its maximum.
+  const logAbsAlpha = Math.log(Math.abs(alpha));
+  const logMagnitudes: number[] = [];
+  let logFactorial = 0;
   for (let n = 0; n < numStates; n++) {
-    const coeff = (prefactor * alpha ** n) / Math.sqrt(factorial(n));
-    amplitudes.push(coeff);
+    if (n > 0) {
+      logFactorial += Math.log(n);
+    }
+    logMagnitudes.push(alpha === 0 ? (n === 0 ? 0 : -Infinity) : n * logAbsAlpha - logFactorial / 2);
   }
+  const maxLog = Math.max(...logMagnitudes);
+  const amplitudes = logMagnitudes.map((logMagnitude, n) => {
+    const sign = alpha < 0 && n % 2 === 1 ? -1 : 1;
+    return sign * Math.exp(logMagnitude - maxLog);
+  });
 
-  // Normalize the coefficients (should already be normalized, but ensure it)
+  // Normalize over the states kept (the truncated Poisson distribution)
   const norm = Math.sqrt(amplitudes.reduce((sum, a) => sum + a * a, 0));
   for (let i = 0; i < amplitudes.length; i++) {
     amplitudes[i]! /= norm;

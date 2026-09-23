@@ -18,8 +18,7 @@ export class OneWellScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "One Well",
-        screenDescription: "One Well screen for exploring quantum bound states in various potential wells.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().oneWellStringProperty,
       },
       options,
     );

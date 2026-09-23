@@ -20,9 +20,7 @@ export class ManyWellsScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "Many Wells",
-        screenDescription:
-          "Many Wells screen for exploring band structure and quantum mechanics in multi-well potentials.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().manyWellsStringProperty,
       },
       options,
     );

@@ -9,8 +9,5 @@
     "exactOptionalPropertyTypes": false,
     "types": ["node"]
   },
-  "include": ["tests/accuracy"],
-  // Stale against the current analytical-solver signatures (and already crashing on main before the
-  // fleet migration) — see CLAUDE.md "Compliance carve-outs". Repair, then drop this exclude.
-  "exclude": ["tests/accuracy/test-wavefunction-comprehensive.ts"]
+  "include": ["tests/accuracy"]
 }

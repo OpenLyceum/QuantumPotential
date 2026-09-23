@@ -6,6 +6,7 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { type GridConfig, PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
@@ -151,16 +152,17 @@ export class TwoWellsModel extends BaseModel {
   public readonly tunnelingProbabilityProperty: NumberProperty;
 
   public constructor() {
-    super();
-
-    // Override potential type to default to double square well
-    this.potentialTypeProperty.value = PotentialType.DOUBLE_SQUARE_WELL;
-
-    // Override well width range for double square well
-    this.wellWidthProperty.setValueAndRange(
-      TwoWellsModel.DEFAULT_WELL_WIDTH,
-      new Range(TwoWellsModel.TWO_WELL_WIDTH_MIN, TwoWellsModel.TWO_WELL_WIDTH_MAX),
-    );
+    super({
+      potentialType: PotentialType.DOUBLE_SQUARE_WELL,
+      wellWidth: TwoWellsModel.DEFAULT_WELL_WIDTH,
+      wellWidthRange: new Range(TwoWellsModel.TWO_WELL_WIDTH_MIN, TwoWellsModel.TWO_WELL_WIDTH_MAX),
+      // Default to an equal superposition of the first two states
+      superpositionConfig: {
+        type: SuperpositionType.PSI_I_PSI_J,
+        amplitudes: [TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE],
+        phases: [0, 0],
+      },
+    });
 
     // Initialize model-specific well parameters
     this.wellSeparationProperty = new NumberProperty(TwoWellsModel.DEFAULT_WELL_SEPARATION, {
@@ -177,13 +179,6 @@ export class TwoWellsModel extends BaseModel {
 
     // Initialize tunneling probability
     this.tunnelingProbabilityProperty = new NumberProperty(0);
-
-    // Override superposition config default
-    this.superpositionConfigProperty.value = {
-      type: SuperpositionType.PSI_I_PSI_J,
-      amplitudes: [TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE], // Default to equal superposition of first two states (normalized)
-      phases: [0, 0],
-    };
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -249,25 +244,21 @@ export class TwoWellsModel extends BaseModel {
       return;
     }
 
-    const selectedIndex = this.selectedEnergyLevelIndexProperty.value;
-    const energyJoules = boundStates.energies[selectedIndex]!;
-    const energy = energyJoules * 6.241509074e18; // Convert from Joules to eV
-    const barrierHeight = this.barrierHeightProperty.value;
-    const barrierWidth = this.barrierWidthProperty.value * 1e-9; // Convert to meters
+    // The selection can briefly exceed the level count until step() clamps it; leave the value as is
+    const energyJoules = boundStates.energies[this.selectedEnergyLevelIndexProperty.value];
+    if (energyJoules === undefined) {
+      return;
+    }
+    const barrierHeightJoules = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+    const barrierWidth = this.barrierWidthProperty.value * QuantumConstants.NM_TO_M;
 
-    if (energy >= barrierHeight) {
+    if (energyJoules >= barrierHeightJoules) {
       // Classical regime - particle goes over the barrier
       this.tunnelingProbabilityProperty.value = 1.0;
     } else {
-      // Quantum tunneling regime
-      const hbar = 1.054571817e-34; // Reduced Planck constant (J·s)
-      const electronMass = 9.10938356e-31; // Electron mass (kg)
-      const eV = 1.602176634e-19; // Electron volt in joules
-
-      const V0 = barrierHeight * eV;
-      const E = energy * eV;
-      const kappa = Math.sqrt((2 * electronMass * (V0 - E)) / (hbar * hbar));
-
+      // Quantum tunneling regime: T ≈ exp(−2κd), κ = √(2m(V₀ − E))/ℏ
+      const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+      const kappa = Math.sqrt(2 * mass * (barrierHeightJoules - energyJoules)) / QuantumConstants.HBAR;
       this.tunnelingProbabilityProperty.value = Math.exp(-2 * kappa * barrierWidth);
     }
   }
@@ -361,16 +352,12 @@ export class TwoWellsModel extends BaseModel {
 
       // Attempt analytical solution first
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
     } catch (error) {
-      Logger.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }

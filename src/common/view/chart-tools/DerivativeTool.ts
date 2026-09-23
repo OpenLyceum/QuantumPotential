@@ -5,6 +5,7 @@
 
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
@@ -27,6 +28,8 @@ export type DerivativeToolOptions = {
   parentNode: Node; // Reference to parent chart node for coordinate conversions
 };
 
+const tools = stringManager.getA11yStrings().tools;
+
 export class DerivativeTool extends Node {
   private readonly model: ScreenModel;
   private readonly options: DerivativeToolOptions;
@@ -48,13 +51,11 @@ export class DerivativeTool extends Node {
       // pdom - container for the derivative tool
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Derivative Visualization",
+      labelContent: tools.derivativeHeadingStringProperty,
       descriptionTagName: "p",
-      descriptionContent: new DerivedProperty([showPropertyInternal], (enabled) =>
-        enabled
-          ? "Showing first derivative dψ/dx (slope) of the wavefunction. " +
-            "The tangent line shows the rate of change at the selected position."
-          : "Derivative visualization disabled.",
+      descriptionContent: new DerivedProperty(
+        [showPropertyInternal, tools.derivativeDescriptionStringProperty, tools.derivativeDisabledStringProperty],
+        (enabled, description, disabled) => (enabled ? description : disabled),
       ),
     });
 
@@ -82,8 +83,8 @@ export class DerivativeTool extends Node {
       tagName: "div",
       ariaRole: "slider",
       focusable: true,
-      accessibleName: "Derivative Measurement Position",
-      labelContent: "Position for derivative and slope display",
+      accessibleName: tools.derivativeMarkerStringProperty,
+      labelContent: tools.derivativeMarkerLabelStringProperty,
       pdomAttributes: [
         { attribute: "aria-valuemin", value: -5 },
         { attribute: "aria-valuemax", value: 5 },
@@ -93,21 +94,25 @@ export class DerivativeTool extends Node {
         },
         {
           attribute: "aria-valuetext",
-          value: `Position: ${this.markerXProperty.value.toFixed(2)} nanometers`,
+          value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
+            position: this.markerXProperty.value.toFixed(2),
+          }),
         },
       ],
-      accessibleHelpText:
-        "Use Left/Right arrow keys to move marker. " +
-        "Shift+Arrow for fine control. " +
-        "Page Up/Down for large steps. " +
-        "Shows first derivative (slope) at selected position.",
+      accessibleHelpText: new DerivedProperty(
+        [tools.markerHelpStringProperty, tools.derivativeMarkerHelpStringProperty],
+        (help, shows) => `${help} ${shows}`,
+      ),
     });
     this.container.addChild(this.marker);
 
     // Update aria-valuetext when position changes
     this.markerXProperty.link((position) => {
       this.marker.setPDOMAttribute("aria-valuenow", position.toFixed(2));
-      this.marker.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
+      this.marker.setPDOMAttribute(
+        "aria-valuetext",
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+      );
     });
 
     // Create position tracking circle (shows position on wavefunction)
@@ -194,9 +199,10 @@ export class DerivativeTool extends Node {
         const derivativeData = this.calculateFirstDerivative(position, "waveFunction");
 
         if (derivativeData !== null) {
-          const message =
-            `Marker at ${position.toFixed(2)} nanometers. ` +
-            `First derivative: ${derivativeData.firstDerivative.toFixed(3)}.`;
+          const message = StringUtils.fillIn(tools.derivativeReadoutPatternStringProperty, {
+            position: position.toFixed(2),
+            value: derivativeData.firstDerivative.toFixed(3),
+          });
           utteranceQueue.addToBack(new Utterance({ alert: message }));
         }
       },

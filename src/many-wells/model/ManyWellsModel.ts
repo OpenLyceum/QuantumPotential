@@ -7,6 +7,7 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
@@ -128,16 +129,17 @@ export class ManyWellsModel extends BaseModel {
   public readonly electricFieldProperty: NumberProperty;
 
   public constructor() {
-    super();
-
-    // Override potential type to default to multi-square well
-    this.potentialTypeProperty.value = PotentialType.MULTI_SQUARE_WELL;
-
-    // Override well width range for multi-square well
-    this.wellWidthProperty.setValueAndRange(
-      ManyWellsModel.DEFAULT_WELL_WIDTH,
-      new Range(ManyWellsModel.MANY_WELL_WIDTH_MIN, ManyWellsModel.MANY_WELL_WIDTH_MAX),
-    );
+    super({
+      potentialType: PotentialType.MULTI_SQUARE_WELL,
+      wellWidth: ManyWellsModel.DEFAULT_WELL_WIDTH,
+      wellWidthRange: new Range(ManyWellsModel.MANY_WELL_WIDTH_MIN, ManyWellsModel.MANY_WELL_WIDTH_MAX),
+      // Default to an equal superposition of the first two states
+      superpositionConfig: {
+        type: SuperpositionType.PSI_I_PSI_J,
+        amplitudes: [ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE],
+        phases: [0, 0],
+      },
+    });
 
     // Initialize number of wells
     this.numberOfWellsProperty = new NumberProperty(ManyWellsModel.DEFAULT_NUMBER_OF_WELLS, {
@@ -153,13 +155,6 @@ export class ManyWellsModel extends BaseModel {
     this.electricFieldProperty = new NumberProperty(ManyWellsModel.DEFAULT_ELECTRIC_FIELD, {
       range: new Range(ManyWellsModel.ELECTRIC_FIELD_MIN, ManyWellsModel.ELECTRIC_FIELD_MAX),
     }); // in eV/nm
-
-    // Override superposition config default
-    this.superpositionConfigProperty.value = {
-      type: SuperpositionType.PSI_I_PSI_J,
-      amplitudes: [ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE], // Default to equal superposition
-      phases: [0, 0],
-    };
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -266,16 +261,12 @@ export class ManyWellsModel extends BaseModel {
 
       // Solve using the analytical (or numerical) solution
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
     } catch (error) {
-      Logger.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }

@@ -5,6 +5,7 @@
 
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
@@ -33,6 +34,8 @@ export type AreaMeasurementToolOptions = {
   parentNode: Node; // Reference to parent chart node for coordinate conversions
 };
 
+const tools = stringManager.getA11yStrings().tools;
+
 export class AreaMeasurementTool extends Node {
   private readonly model: ScreenModel;
   private readonly options: AreaMeasurementToolOptions;
@@ -57,10 +60,9 @@ export class AreaMeasurementTool extends Node {
       // pdom - container for the entire measurement tool
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Area Measurement Tool",
+      labelContent: tools.areaHeadingStringProperty,
       descriptionTagName: "p",
-      descriptionContent:
-        "Drag markers to measure probability between two positions. Use keyboard to fine-tune marker positions.",
+      descriptionContent: tools.areaDescriptionStringProperty,
     });
 
     this.model = model;
@@ -118,8 +120,8 @@ export class AreaMeasurementTool extends Node {
       tagName: "div",
       ariaRole: "slider",
       focusable: true,
-      accessibleName: "Left Measurement Marker",
-      labelContent: "Left boundary for probability integration",
+      accessibleName: tools.leftMarkerStringProperty,
+      labelContent: tools.leftMarkerLabelStringProperty,
       pdomAttributes: [
         { attribute: "aria-valuemin", value: -5 },
         { attribute: "aria-valuemax", value: 5 },
@@ -129,21 +131,22 @@ export class AreaMeasurementTool extends Node {
         },
         {
           attribute: "aria-valuetext",
-          value: `Position: ${this.leftMarkerXProperty.value.toFixed(2)} nanometers`,
+          value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
+            position: this.leftMarkerXProperty.value.toFixed(2),
+          }),
         },
       ],
-      accessibleHelpText:
-        "Use Left/Right arrow keys to move marker. " +
-        "Shift+Arrow for fine control (0.01 nm steps). " +
-        "Page Up/Down for large steps (0.5 nm). " +
-        "Home/End for range limits.",
+      accessibleHelpText: tools.areaMarkerHelpStringProperty,
     });
     this.container.addChild(this.leftMarkerHandle);
 
     // Update aria-valuetext when left marker position changes
     this.leftMarkerXProperty.link((position) => {
       this.leftMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
-      this.leftMarkerHandle.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
+      this.leftMarkerHandle.setPDOMAttribute(
+        "aria-valuetext",
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+      );
     });
 
     // Create right marker handle (draggable circle at top)
@@ -157,8 +160,8 @@ export class AreaMeasurementTool extends Node {
       tagName: "div",
       ariaRole: "slider",
       focusable: true,
-      accessibleName: "Right Measurement Marker",
-      labelContent: "Right boundary for probability integration",
+      accessibleName: tools.rightMarkerStringProperty,
+      labelContent: tools.rightMarkerLabelStringProperty,
       pdomAttributes: [
         { attribute: "aria-valuemin", value: -5 },
         { attribute: "aria-valuemax", value: 5 },
@@ -168,21 +171,22 @@ export class AreaMeasurementTool extends Node {
         },
         {
           attribute: "aria-valuetext",
-          value: `Position: ${this.rightMarkerXProperty.value.toFixed(2)} nanometers`,
+          value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
+            position: this.rightMarkerXProperty.value.toFixed(2),
+          }),
         },
       ],
-      accessibleHelpText:
-        "Use Left/Right arrow keys to move marker. " +
-        "Shift+Arrow for fine control (0.01 nm steps). " +
-        "Page Up/Down for large steps (0.5 nm). " +
-        "Home/End for range limits.",
+      accessibleHelpText: tools.areaMarkerHelpStringProperty,
     });
     this.container.addChild(this.rightMarkerHandle);
 
     // Update aria-valuetext when right marker position changes
     this.rightMarkerXProperty.link((position) => {
       this.rightMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
-      this.rightMarkerHandle.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
+      this.rightMarkerHandle.setPDOMAttribute(
+        "aria-valuetext",
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+      );
     });
 
     // Create area percentage label
@@ -207,7 +211,11 @@ export class AreaMeasurementTool extends Node {
           const displayMode = getEffectiveDisplayMode();
           const probability = this.calculateProbabilityInRegion(left, right, displayMode);
           if (probability !== null) {
-            return `Measuring from ${left.toFixed(2)} to ${right.toFixed(2)} nanometers. Integrated probability: ${probability.toFixed(1)} percent.`;
+            return StringUtils.fillIn(tools.measuringPatternStringProperty, {
+              left: left.toFixed(2),
+              right: right.toFixed(2),
+              probability: probability.toFixed(1),
+            });
           }
           return "";
         },
@@ -295,9 +303,12 @@ export class AreaMeasurementTool extends Node {
           }
 
           this.alertTimeout = setTimeout(() => {
-            let message = `Left marker at ${position.toFixed(2)} nanometers.`;
+            let message = StringUtils.fillIn(tools.leftMarkerMovedPatternStringProperty, {
+              position: position.toFixed(2),
+            });
             if (probability !== null) {
-              message += ` Integrated probability: ${(probability * 100).toFixed(1)} percent.`;
+              // getProbabilityInRegion already returns a percentage (0–100)
+              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: probability.toFixed(1) })}`;
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;
@@ -351,9 +362,12 @@ export class AreaMeasurementTool extends Node {
           }
 
           this.alertTimeout = setTimeout(() => {
-            let message = `Right marker at ${position.toFixed(2)} nanometers.`;
+            let message = StringUtils.fillIn(tools.rightMarkerMovedPatternStringProperty, {
+              position: position.toFixed(2),
+            });
             if (probability !== null) {
-              message += ` Integrated probability: ${(probability * 100).toFixed(1)} percent.`;
+              // getProbabilityInRegion already returns a percentage (0–100)
+              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: probability.toFixed(1) })}`;
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;

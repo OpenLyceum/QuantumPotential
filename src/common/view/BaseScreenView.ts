@@ -3,10 +3,12 @@
  * It provides common functionality including standard layout for quantum well simulations.
  */
 
-import { DerivedProperty, Property, type TReadOnlyProperty } from "scenerystack/axon";
+import { DerivedProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Node, RichText, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
 import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
+import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
@@ -37,8 +39,8 @@ export type ScreenStringProperties = {
  * Options for screen summary content.
  */
 export type ScreenSummaryOptions = {
-  screenName: string;
-  screenDescription: string;
+  // What this screen is for; read first in the screen summary's play-area paragraph
+  screenDescriptionStringProperty: TReadOnlyProperty<string>;
 };
 
 export abstract class BaseScreenView extends ScreenView {
@@ -89,7 +91,7 @@ export abstract class BaseScreenView extends ScreenView {
       bottom: this.layoutBounds.maxY - 10,
 
       // PDOM
-      innerContent: "Reset All",
+      innerContent: stringManager.getA11yStrings().controls.resetAllStringProperty,
       // TODO: Add helpText when PhET accessibility is fully configured
       // helpText: "Return all parameters to their initial values. Keyboard shortcut: Alt+R.",
     });
@@ -293,45 +295,48 @@ export abstract class BaseScreenView extends ScreenView {
    */
   private static createScreenSummaryContent(
     model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
-    _options: ScreenSummaryOptions,
+    options: ScreenSummaryOptions,
   ): ScreenSummaryContent {
-    // Create dynamic description of current state
-    const currentStateProperty = new DerivedProperty(
-      [model.potentialTypeProperty, model.selectedEnergyLevelIndexProperty],
-      (potentialType, levelIndex) => {
-        const energyLevels = model.getEnergyLevels();
-        const potentialName = QPPWDescriber.getPotentialTypeName(potentialType);
+    const summaryStrings = stringManager.getA11yStrings().screenSummary;
 
-        if (energyLevels.length === 0) {
-          return `Currently exploring a ${potentialName} potential well. No bound states found.`;
+    // Live description of the current state. The locale string Properties are dependencies so the
+    // sentence is rebuilt on a language change as well as on a model change.
+    const currentStateProperty = new DerivedProperty(
+      [
+        model.potentialTypeProperty,
+        model.selectedEnergyLevelIndexProperty,
+        summaryStrings.currentStatePatternStringProperty,
+        summaryStrings.currentStateNoStatesPatternStringProperty,
+      ],
+      (potentialType, levelIndex, currentStatePattern, noStatesPattern) => {
+        const energyLevels = model.getEnergyLevels();
+        const potential = QPPWDescriber.getPotentialTypeName(potentialType);
+
+        // The selection can briefly exceed the level count until the model clamps it on its next step
+        const energy = energyLevels[levelIndex];
+        if (energy === undefined) {
+          return StringUtils.fillIn(noStatesPattern, { potential: potential });
         }
 
-        const energy = energyLevels[levelIndex]!;
-        const levelNumber = levelIndex + 1;
-        const totalLevels = energyLevels.length;
-
-        return (
-          `Currently exploring a ${potentialName} potential well. ` +
-          `Selected energy level ${levelNumber} of ${totalLevels} ` +
-          `with energy ${energy.toFixed(3)} electron volts.`
-        );
+        return StringUtils.fillIn(currentStatePattern, {
+          potential: potential,
+          level: levelIndex + 1,
+          total: energyLevels.length,
+          energy: energy.toFixed(3),
+        });
       },
     );
 
-    // Create dynamic description of parameters
     const parametersProperty = new DerivedProperty(
-      [model.particleMassProperty, model.wellWidthProperty],
-      (mass, width) => {
-        return `Particle mass: ${mass.toFixed(2)} electron masses. Well width: ${width.toFixed(2)} nanometers.`;
-      },
+      [model.particleMassProperty, model.wellWidthProperty, summaryStrings.parametersPatternStringProperty],
+      (mass, width, pattern) => StringUtils.fillIn(pattern, { mass: mass.toFixed(2), width: width.toFixed(2) }),
     );
 
-    // Create the ScreenSummaryContent with our dynamic properties
     return new ScreenSummaryContent({
-      playAreaContent: [currentStateProperty, parametersProperty],
-      controlAreaContent: new Property(
-        "Use controls to adjust potential type, particle mass, well dimensions, and other parameters.",
-      ),
+      playAreaContent: options.screenDescriptionStringProperty,
+      controlAreaContent: summaryStrings.controlAreaStringProperty,
+      currentDetailsContent: [currentStateProperty, parametersProperty],
+      interactionHintContent: summaryStrings.interactionHintStringProperty,
     });
   }
 

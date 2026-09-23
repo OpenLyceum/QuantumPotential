@@ -19,6 +19,7 @@ import {
   createInfiniteWellPotential,
 } from "../../common/model/analytical-solutions/infinite-square-well.js";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
@@ -265,6 +266,9 @@ export class OneWellModel extends BaseModel {
     this.barrierHeightProperty.reset();
     this.potentialOffsetProperty.reset();
     this.coherentDisplacementProperty.reset();
+
+    // The superposition config is derived from the superposition type; rebuild it for the reset state
+    this.updateSuperpositionCoefficients();
   }
 
   /**
@@ -607,16 +611,12 @@ export class OneWellModel extends BaseModel {
 
       // Attempt analytical solution first
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
     } catch (error) {
-      Logger.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }

@@ -23,7 +23,7 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 | Closed-form solutions | `src/common/model/analytical-solutions/` (one file per potential) + `potentials/` class wrappers, built by `PotentialFactory` |
 | Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/` |
 | Control panels | `src/common/view/ControlPanelNode.ts` (One/Two/Many Wells), `src/intro/view/IntroControlPanelNode.ts` (Intro) |
-| A11y | `src/common/view/accessibility/` (`ScreenSummaryNode`, `QPPWDescriber`, `QPPWAlerter`), `src/common/view/QPPWKeyboardHelpContent.ts` |
+| A11y | `src/common/view/accessibility/` (`QPPWDescriber`, `QPPWAlerter`); screen summary in `BaseScreenView`, `src/common/view/QPPWKeyboardHelpContent.ts` |
 | Preferences | `src/preferences/` — `QPPWPreferencesModel` (numerical method, grid points, …), `QPPWPreferencesNode`, `qppwQueryParameters` |
 | Colors / namespace | `src/QPPWColors.ts`, `src/QPPWNamespace.ts` |
 | Logging | `src/common/utils/Logger.ts` — the **only** place in `src/` allowed to use `console` |
@@ -40,6 +40,18 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 - **`BaseModel.dispose()`** unlinks the model's listeners on the global `QPPWPreferences`
   properties. Any new link to a global/preferences Property must be unlinked there, or
   `tests/memory-leak.test.ts` fails.
+- **Per-screen defaults go through the `BaseModel` constructor** (`BaseModelOptions`: potential type,
+  well width + range, superposition config) so every Property's `reset()` returns to the screen's own
+  default. Don't assign defaults after `super()`.
+- **Selected-level clamping happens in `step()`**, not while computing bound states (that re-entered
+  `selectedEnergyLevelIndexProperty`'s own notification). Views must treat an index ≥ the number of
+  states as "nothing selected" for up to one frame.
+- **"No bound states" is not an error.** Analytical solvers throw `NoBoundStatesError`; models log it
+  at debug level and show no levels.
+- **Numerical solvers see cell-averaged potentials** (`Schrodinger1DSolver.solveNumerical`), so square
+  wells converge smoothly with grid size; all matrix solvers re-normalize after spline upsampling.
+- **Energy tolerances are relative.** Energies are ~1e-19 J: an absolute tolerance such as `1e-12` stops
+  a bisection before it starts (this bug existed in Numerov, QuantumBound and the double well).
 
 ### Hard-won gotchas
 
@@ -55,12 +67,15 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 
 ## Accessibility
 
-Ships the three required layers: PDOM names on interactive nodes, a screen summary
-(`ScreenSummaryNode`), and keyboard support — arrow/Home/End energy-level navigation on the energy
+Ships the three required layers: PDOM names on interactive nodes (combo-box items and radio buttons
+included), a screen summary (`ScreenSummaryContent` built in `BaseScreenView` with live
+`currentDetailsContent`), and keyboard support — arrow/Home/End energy-level navigation on the energy
 chart, `KeyboardDragListener`s on the chart tools, and `QPPWKeyboardHelpContent` wired through each
-Screen's `createKeyboardHelpNode`. Known gap: several accessible descriptions in views (e.g.
-`BaseScreenView`, `ScreenSummaryNode`, `WavenumberChartNode`) are still hardcoded English template
-strings rather than `StringManager` entries. Full convention:
+Screen's `createKeyboardHelpNode`. All accessible text lives under the `a11y` group of the locale
+files (`StringManager.getA11yStrings()`); `QPPWDescriber` turns model state into sentences
+(`*Pattern` strings + `StringUtils.fillIn`), and description `DerivedProperty`s depend on
+`localeProperty` so they follow language changes. Voicing is not offered (no voicing responses yet;
+deferred fleet-wide). Full convention:
 [Baton/ACCESSIBILITY.md](https://github.com/OpenLyceum/Baton/blob/main/ACCESSIBILITY.md).
 
 ## Compliance carve-outs
@@ -71,13 +86,11 @@ strings rather than `StringManager` entries. Full convention:
 - **Biome `style.noNonNullAssertion: off`:** the solvers and charts index dense numeric arrays in
   tight loops; under `noUncheckedIndexedAccess` those reads carry intentional `!` assertions
   (same carve-out as OscillationsAndChaos).
-- **Legacy accuracy harness (`tests/accuracy/`):** hand-run solver-vs-analytical diagnostics that
-  predate the fleet setup. They are type-checked by `tsconfig.accuracy.json`, which relaxes
-  `noUncheckedIndexedAccess` / `exactOptionalPropertyTypes`, and are not run by CI.
-  `test-wavefunction-comprehensive.ts` is stale against the current analytical-solver signatures
-  (it was already crashing before the fleet migration) and is excluded from type-checking until
-  repaired. The accuracy report (`npm run test:accuracy`) still flags some solver/potential
-  combinations, and `test:multi-square-well` / `test:multi-coulomb-1d` run for minutes.
+- **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
+  by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
+  `exactOptionalPropertyTypes`. All pass except `test:multi-coulomb-1d`, whose lowest state is
+  grid-limited because a bare 1D Coulomb potential has no finite ground state (see
+  `tests/accuracy/README.md`).
 
 ### `package.json` overrides
 
@@ -91,8 +104,12 @@ Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expo
 | Path | Purpose |
 |---|---|
 | `tests/memory-leak.test.ts` | Every screen model is collected after `dispose()` |
+| `tests/screen-models.test.ts` | Screen defaults, `reset()`, deferred selection clamp |
+| `tests/solver-robustness.test.ts` | Random settings × potentials × methods give finite, normalized states |
 | `tests/common/model/analytical-solutions.test.ts` | Closed-form energies/normalization vs textbook formulas |
-| `tests/accuracy/` | Legacy manual accuracy harness (see carve-outs) |
+| `tests/common/model/analytical-vs-numerical.test.ts` | Pöschl–Teller, Rosen–Morse, Eckart spectra vs fine-grid DVR |
+| `tests/common/model/{numerov-shooting,wavefunction-derivatives,uncertainty,fft}.test.ts` | Solver regressions |
+| `tests/accuracy/` | Hand-run accuracy scripts (see carve-outs) |
 
 ## Commands
 
@@ -107,5 +124,5 @@ npm run lint && npm run check && npm run build && npm test
 | `npm run check` | TypeScript: app, scripts, tests, accuracy harness |
 | `npm run lint` / `npm run fix` | Biome check / auto-fix |
 | `npm test` | Vitest unit tests |
-| `npm run test:accuracy` | Manual solver accuracy report |
+| `npm run test:accuracy` | Manual solver accuracy suite (see `tests/accuracy/README.md`) |
 | `npm run icons` | Regenerate PWA icons |

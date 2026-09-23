@@ -4,7 +4,9 @@
  */
 
 import { BooleanProperty, DerivedProperty, Property } from "scenerystack/axon";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, Node } from "scenerystack/scenery";
+import stringManager from "../../../i18n/StringManager.js";
 import QPPWColors from "../../../QPPWColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 
@@ -12,6 +14,8 @@ export type ZerosVisualizationOptions = {
   dataToViewX: (x: number) => number;
   dataToViewY: (y: number) => number;
 };
+
+const tools = stringManager.getA11yStrings().tools;
 
 export class ZerosVisualization extends Node {
   private readonly options: ZerosVisualizationOptions;
@@ -25,7 +29,7 @@ export class ZerosVisualization extends Node {
       // pdom - container for zeros visualization
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Wavefunction Zeros",
+      labelContent: tools.zerosHeadingStringProperty,
     });
 
     this.options = options;
@@ -42,11 +46,9 @@ export class ZerosVisualization extends Node {
           return "";
         }
         const positions = zeros.map((z) => z.toFixed(2)).join(", ");
-        return (
-          `Wavefunction has ${zeros.length} node${zeros.length !== 1 ? "s" : ""} ` +
-          `(zero crossing${zeros.length !== 1 ? "s" : ""}) ` +
-          `at positions: ${positions} nanometers.`
-        );
+        return zeros.length === 1
+          ? StringUtils.fillIn(tools.zerosOnePatternStringProperty, { positions: positions })
+          : StringUtils.fillIn(tools.zerosPatternStringProperty, { count: zeros.length, positions: positions });
       }),
     });
     this.addChild(this.accessibleDescription);

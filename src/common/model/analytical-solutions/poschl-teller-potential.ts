@@ -33,11 +33,21 @@
  *   where α = λ - n - 1/2 and P_n^(α,α) are Jacobi polynomials
  */
 
+import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { factorial, jacobiPolynomial } from "./math-utilities.js";
+
+/**
+ * The Pöschl-Teller index s, defined by s(s + 1) = λ² with λ = a√(2mV₀)/ℏ. Energies are
+ * E_n = -(ℏ²/2ma²)(s - n)² and ψ_n ∝ sech^(s-n)(x/a) · P_n^(s-n, s-n)(tanh(x/a)).
+ * (s ≈ λ - ½ only for deep wells; using that approximation put shallow-well energies off by several %.)
+ */
+function poschlTellerS(lambda: number): number {
+  return (Math.sqrt(1 + 4 * lambda * lambda) - 1) / 2;
+}
 
 /**
  * Class-based implementation of Pöschl-Teller potential analytical solution.
@@ -171,19 +181,20 @@ export function solvePoschlTellerPotential(
   // (Note: with x/a substitution, a_old = 1/a_new, so λ_new = λ_old)
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
 
-  // Maximum number of bound states
-  const nMax = Math.floor(lambda - 0.5);
+  // Bound states are n = 0, 1, … with n < s (n = s would sit exactly at E = 0, which is not bound;
+  // the tolerance keeps round-off in s from admitting that state when s is an integer)
+  const nMax = Math.ceil(poschlTellerS(lambda) - 1e-9) - 1;
   const actualNumStates = Math.min(numStates, nMax + 1);
 
   if (actualNumStates <= 0) {
-    throw new Error("Pöschl-Teller potential too shallow to support bound states");
+    throw new NoBoundStatesError("Pöschl-Teller potential too shallow to support bound states");
   }
 
-  // Calculate energies: E_n = -V_0 * [(λ - n - 1/2)/λ]²
+  // Calculate energies: E_n = -V_0 * [(s - n)/λ]² = -(ℏ²/2ma²)(s - n)²
   // Ground state (n=0) has lowest energy, excited states have higher energy
   const energies: number[] = [];
   for (let n = 0; n < actualNumStates; n++) {
-    const term = lambda - n - 0.5;
+    const term = poschlTellerS(lambda) - n;
     const energy = (-V0 * (term * term)) / (lambda * lambda);
     energies.push(energy);
   }
@@ -203,7 +214,7 @@ export function solvePoschlTellerPotential(
 
   for (let n = 0; n < actualNumStates; n++) {
     const psiRaw: number[] = [];
-    const alpha = lambda - n - 0.5;
+    const alpha = poschlTellerS(lambda) - n;
 
     // First, calculate unnormalized wavefunction
     for (const x of xGrid) {
@@ -374,7 +385,7 @@ export function calculatePoschlTellerWavefunctionZeros(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const alpha = lambda - n - 0.5;
+  const alpha = poschlTellerS(lambda) - n;
   const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
 
   // Ground state has no zeros
@@ -465,7 +476,7 @@ function computePoschlTellerNormalization(
   xMax: number,
   numSamples: number = 1000,
 ): number {
-  const alpha = lambda - n - 0.5;
+  const alpha = poschlTellerS(lambda) - n;
 
   // If xMin and xMax are too close (e.g., single point evaluation),
   // use a default integration range that covers the wavefunction
@@ -505,7 +516,7 @@ export function calculatePoschlTellerWavefunctionFirstDerivative(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const alpha = lambda - n - 0.5;
+  const alpha = poschlTellerS(lambda) - n;
 
   // Use numerical normalization to match the wavefunction normalization
   const xMin = xGrid[0]!;
@@ -574,7 +585,7 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const alpha = lambda - n - 0.5;
+  const alpha = poschlTellerS(lambda) - n;
 
   // Use numerical normalization to match the wavefunction normalization
   const xMin = xGrid[0]!;
@@ -582,7 +593,7 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
   const normalization = computePoschlTellerNormalization(a, lambda, n, xMin, xMax);
 
   // Calculate energy for this state: E_n = -V_0 * [(λ - n - 1/2)/λ]²
-  const term = lambda - n - 0.5;
+  const term = poschlTellerS(lambda) - n;
   const energy = (-V0 * (term * term)) / (lambda * lambda);
 
   const secondDerivative: number[] = [];
@@ -636,7 +647,7 @@ export function calculatePoschlTellerWavefunctionMinMax(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const alpha = lambda - n - 0.5;
+  const alpha = poschlTellerS(lambda) - n;
   const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
 
   let min = Infinity;
@@ -748,7 +759,7 @@ export function calculatePoschlTellerSuperpositionMinMax(
       const energy = energies[n]!;
 
       // Calculate wavefunction value
-      const alpha = lambda - n - 0.5;
+      const alpha = poschlTellerS(lambda) - n;
       const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
       const tanhVal = Math.tanh(x / a);
       const sechVal = 1.0 / Math.cosh(x / a);
@@ -762,7 +773,8 @@ export function calculatePoschlTellerSuperpositionMinMax(
 
       // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
       // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
     if (realPart < min) {

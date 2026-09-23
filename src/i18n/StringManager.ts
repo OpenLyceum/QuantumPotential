@@ -706,6 +706,27 @@ export class StringManager {
   }
 
   /**
+   * Accessibility strings (PDOM names, descriptions, help text and live alerts), plus the visible
+   * chart/tool labels that sit alongside them. Nested exactly like the `a11y` group in the locale
+   * files; `*Pattern` strings take `{{placeholders}}` for StringUtils.fillIn.
+   */
+  public getA11yStrings(): typeof this.stringProperties.a11y {
+    return this.stringProperties.a11y;
+  }
+
+  /**
+   * Screen-summary descriptions, one per screen.
+   */
+  public getScreenSummaryDescriptions() {
+    return {
+      introStringProperty: this.stringProperties.introDescriptionStringProperty,
+      oneWellStringProperty: this.stringProperties.oneWellScreenSummaryStringProperty,
+      twoWellsStringProperty: this.stringProperties.twoWellsScreenSummaryStringProperty,
+      manyWellsStringProperty: this.stringProperties.manyWellsScreenSummaryStringProperty,
+    };
+  }
+
+  /**
    * Get all raw string properties
    * This can be used if direct access is needed to a specific string property
    */

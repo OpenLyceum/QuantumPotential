@@ -34,6 +34,7 @@
  *   where z = 2λ exp(-(x-x_e)/a), λ = a√(2mD_e)/ℏ
  */
 
+import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
@@ -211,7 +212,7 @@ export function solveMorsePotential(
   const actualNumStates = Math.min(numStates, nMax + 1);
 
   if (actualNumStates <= 0) {
-    throw new Error("Morse potential too shallow to support bound states");
+    throw new NoBoundStatesError("Morse potential too shallow to support bound states");
   }
 
   // Calculate the characteristic frequency
@@ -809,7 +810,8 @@ export function calculateMorsePotentialSuperpositionMinMax(
 
       // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
       // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
     if (realPart < min) {

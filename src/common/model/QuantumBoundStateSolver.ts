@@ -33,7 +33,7 @@ import QuantumConstants from "./QuantumConstants.js";
 // Numerical method constants
 const DEFAULT_MAX_ITERATIONS = 100;
 const DEFAULT_CONVERGENCE_TOLERANCE = 1e-10;
-const DEFAULT_ENERGY_TOLERANCE = 1e-12;
+const DEFAULT_ENERGY_TOLERANCE = 1e-12; // relative to |E|
 const DEFAULT_WAVE_FUNCTION_TOLERANCE = 1e-8;
 
 // Integration constants
@@ -60,7 +60,7 @@ const CACHE_SIZE_LIMIT = 100;
 type SolverConfig = {
   maxIterations?: number;
   convergenceTolerance?: number;
-  energyTolerance?: number;
+  energyTolerance?: number; // relative to |E|
   waveFunctionTolerance?: number;
   adaptiveMatching?: boolean;
   useRichardsonExtrapolation?: boolean;
@@ -668,7 +668,8 @@ export class QuantumBoundStateSolver {
         lower = energy;
       }
 
-      if (Math.abs(upper - lower) < this.energyTolerance) {
+      // Relative: energies are ~1e-19 J, so an absolute tolerance stopped after one bisection step
+      if (Math.abs(upper - lower) < this.energyTolerance * Math.max(Math.abs(upper), Math.abs(lower))) {
         break;
       }
     }
@@ -1269,8 +1270,11 @@ export class QuantumBoundStateSolver {
       }
     }
 
-    // Use middle turning point or default
-    if (turningPoints.length >= 2) {
+    // Match at a classical turning point, where ψ is still large and both integrations are stable
+    // (the middle one when there are several wells). A single well has exactly one such point; it
+    // used to fall through to the fixed 45 % fraction, which for an asymmetric well such as Morse lies
+    // deep in the forbidden region and made the matched wavefunctions of different states identical.
+    if (turningPoints.length >= 1) {
       return turningPoints[Math.floor(turningPoints.length / 2)]!;
     }
 

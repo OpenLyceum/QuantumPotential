@@ -698,7 +698,8 @@ export function calculateAsymmetricTriangleSuperpositionMinMax(
       const sinPhase = Math.sin(phase);
 
       // Complex multiplication: real part
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
     if (realPart < min) {

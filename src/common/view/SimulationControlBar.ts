@@ -10,6 +10,8 @@ import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { BaseModel } from "../model/BaseModel.js";
 
+const a11y = stringManager.getA11yStrings();
+
 export class SimulationControlBar extends Node {
   private readonly model: BaseModel;
   private readonly timeText: Text;
@@ -65,7 +67,7 @@ export class SimulationControlBar extends Node {
           radius: 15, // Smaller than play/pause button
 
           // PDOM
-          innerContent: "Step Forward",
+          innerContent: a11y.controls.stepForwardStringProperty,
           // TODO: Add helpText when PhET accessibility is fully configured
           // helpText:
           //   "Step forward one frame in time. Advances wavefunction by small time increment.",
@@ -79,15 +81,16 @@ export class SimulationControlBar extends Node {
           radius: 15, // Smaller than play/pause button
 
           // PDOM
-          innerContent: "Step Backward",
+          innerContent: a11y.controls.stepBackwardStringProperty,
           // TODO: Add helpText when PhET accessibility is fully configured
           // helpText:
           //   "Step backward one frame in time. Reverses wavefunction by small time increment.",
         },
         playPauseButtonOptions: {
           // PDOM
-          innerContent: new DerivedProperty([this.model.isPlayingProperty], (isPlaying) =>
-            isPlaying ? "Pause" : "Play",
+          innerContent: new DerivedProperty(
+            [this.model.isPlayingProperty, a11y.controls.pauseStringProperty, a11y.controls.playStringProperty],
+            (isPlaying, pause, play) => (isPlaying ? pause : play),
           ),
           // TODO: Add helpText when PhET accessibility is fully configured
           // helpText:
@@ -101,7 +104,7 @@ export class SimulationControlBar extends Node {
         },
 
         // PDOM
-        accessibleName: "Animation Speed",
+        accessibleName: a11y.controls.animationSpeedStringProperty,
         // TODO: Add helpText when PhET accessibility is fully configured
         // helpText:
         //   "Control time evolution speed. Use arrow keys to navigate options, Space or Enter to select.",

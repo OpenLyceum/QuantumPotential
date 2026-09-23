@@ -9,8 +9,10 @@
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
+import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
@@ -20,6 +22,8 @@ import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { calculateRMSStatistics, createDoubleArrowShape } from "./RMSIndicatorUtils.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
+
+const a11y = stringManager.getA11yStrings();
 
 export class WavenumberChartNode extends Node {
   private readonly model: ScreenModel;
@@ -67,7 +71,7 @@ export class WavenumberChartNode extends Node {
       // PDOM - make wavenumber chart accessible
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Momentum Distribution",
+      labelContent: a11y.wavenumberChart.headingStringProperty,
       descriptionTagName: "p",
     });
 
@@ -76,7 +80,12 @@ export class WavenumberChartNode extends Node {
 
     // Set up accessible description after this.model is initialized
     this.descriptionContent = new DerivedProperty(
-      [model.selectedEnergyLevelIndexProperty, model.potentialTypeProperty, model.wellWidthProperty],
+      [
+        model.selectedEnergyLevelIndexProperty,
+        model.potentialTypeProperty,
+        model.wellWidthProperty,
+        localeProperty, // rebuild the sentences on a language change
+      ],
       (selectedIndex: number, potentialType: PotentialType, width: number) => {
         return this.createWavenumberDescription(selectedIndex, potentialType, width);
       },
@@ -112,7 +121,7 @@ export class WavenumberChartNode extends Node {
     this.addChild(this.backgroundRect);
 
     // Create title label
-    this.titleLabel = new Text("Wavenumber Distribution", {
+    this.titleLabel = new Text(a11y.visible.wavenumberDistributionStringProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
       fill: QPPWColors.labelFillProperty,
       centerX: this.chartWidth / 2,
@@ -186,51 +195,51 @@ export class WavenumberChartNode extends Node {
    * This provides screen reader users with meaningful information about the momentum distribution.
    */
   private createWavenumberDescription(selectedIndex: number, _potentialType: PotentialType, _width: number): string {
+    const strings = a11y.wavenumberChart;
     const wavenumberResult = this.model.getWavenumberTransform();
-    if (!wavenumberResult || selectedIndex < 0 || selectedIndex >= wavenumberResult.wavenumberWavefunctions.length) {
-      return "No momentum distribution data available.";
+    const phiK = wavenumberResult?.wavenumberWavefunctions[selectedIndex];
+    if (!(wavenumberResult && phiK)) {
+      return strings.noDataStringProperty.value;
     }
 
-    const kGrid = wavenumberResult.kGrid;
-    const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex]!;
-
     // Convert k from rad/m to nm^-1
-    const kGridNm = kGrid.map((k) => k / (2 * Math.PI * 1e9));
+    const kGridNm = wavenumberResult.kGrid.map((k) => k / (2 * Math.PI * 1e9));
+    const stats = calculateRMSStatistics(
+      kGridNm,
+      phiK.map((value) => value * value),
+    );
+    if (!stats) {
+      return strings.noDataStringProperty.value;
+    }
 
-    // Calculate |φ(k)|²
-    const phiKSquared = phiK.map((value) => value * value);
+    // Average momentum p = ℏk
+    const avgMomentum = stats.avg * (2 * Math.PI * 1e9) * QuantumConstants.HBAR;
+    const paragraphs = [
+      strings.introductionStringProperty.value,
+      StringUtils.fillIn(strings.statisticsPatternStringProperty, {
+        average: stats.avg.toFixed(3),
+        rms: stats.rms.toFixed(3),
+      }),
+      StringUtils.fillIn(strings.momentumPatternStringProperty, { momentum: avgMomentum.toExponential(2) }),
+    ];
 
-    // Calculate statistics
-    const { avg, rms } = calculateRMSStatistics(kGridNm, phiKSquared);
-
-    let description = `Momentum space representation showing |φ(k)|². `;
-    description += `This is the Fourier transform of the position wavefunction. `;
-    description += `\n\n`;
-
-    description += `Average wavenumber: ${avg.toFixed(3)} inverse nanometers. `;
-    description += `Wavenumber uncertainty (Δk): ${rms.toFixed(3)} nm⁻¹. `;
-
-    // Calculate average momentum (p = ℏk)
-    const avgMomentum = avg * (2 * Math.PI * 1e9) * QuantumConstants.HBAR;
-    description += `\n\n`;
-    description += `Average momentum: ${avgMomentum.toExponential(2)} kg·m/s. `;
-
-    // Get position uncertainty from wavefunction chart if available
+    // Uncertainty product with the position spread, when available
     const nmData = this.model.getWavefunctionInNmUnits(selectedIndex + 1);
-    if (nmData) {
-      const boundStates = this.model.getBoundStates();
-      if (boundStates) {
-        const xGrid = boundStates.xGrid.map((x) => x * 1e9);
-        const { rms: positionRms } = calculateRMSStatistics(xGrid, nmData.probabilityDensity);
-
-        // Uncertainty product in dimensionless units
-        const uncertaintyProduct = positionRms * rms;
-        description += `\n\nPosition-momentum uncertainty: Δx·Δk = ${uncertaintyProduct.toFixed(2)}. `;
-        description += `Heisenberg minimum: 0.5 (dimensionless). `;
+    const boundStates = this.model.getBoundStates();
+    if (nmData && boundStates) {
+      const xGridNm = boundStates.xGrid.map((x) => x * 1e9);
+      const positionStats = calculateRMSStatistics(xGridNm, nmData.probabilityDensity);
+      if (positionStats) {
+        paragraphs.push(
+          StringUtils.fillIn(strings.uncertaintyPatternStringProperty, {
+            // Heisenberg's Δx·Δk ≥ ½ holds for angular wavenumber, so convert the plotted 1/λ (nm⁻¹) back to rad/nm
+            product: (positionStats.rms * stats.rms * 2 * Math.PI).toFixed(2),
+          }),
+        );
       }
     }
 
-    return description;
+    return paragraphs.join("\n\n");
   }
 
   /**
@@ -305,7 +314,7 @@ export class WavenumberChartNode extends Node {
     axesNode.addChild(yAxisLabel);
 
     // X-axis label
-    const xLabelText = new Text("Wavenumber k (nm⁻¹)", {
+    const xLabelText = new Text(a11y.visible.wavenumberAxisStringProperty, {
       font: new PhetFont(14),
       fill: QPPWColors.labelFillProperty,
       centerX: this.chartWidth / 2,
@@ -401,10 +410,11 @@ export class WavenumberChartNode extends Node {
       this.plotWavenumberDistribution(kGridNm, phiKSquared);
 
       // Calculate and display average and RMS wavenumber
-      const { avg, rms } = calculateRMSStatistics(kGridNm, phiKSquared);
+      const stats = calculateRMSStatistics(kGridNm, phiKSquared);
 
-      // Only show indicators if showRMSIndicatorProperty is true
-      if (this.shouldShowRMSIndicators()) {
+      // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
+      if (stats && this.shouldShowRMSIndicators()) {
+        const { avg, rms } = stats;
         this.avgWavenumberLabel.string = stringManager.averageWavenumberLabelStringProperty.value.replace(
           "{{value}}",
           avg.toFixed(2),
@@ -438,7 +448,10 @@ export class WavenumberChartNode extends Node {
    */
   private updateViewRange(kGrid: number[], phiKSquared: number[]): void {
     // Find the range where |φ(k)|² is significant (> 1% of max)
-    const maxValue = Math.max(...phiKSquared);
+    const maxValue = phiKSquared.reduce((max, value) => (value > max ? value : max), 0);
+    if (kGrid.length < 2 || !(maxValue > 0) || !Number.isFinite(maxValue)) {
+      return; // Nothing to show; keep the previous view range
+    }
     const threshold = maxValue * 0.01;
 
     let minK = kGrid[0]!;
@@ -460,9 +473,9 @@ export class WavenumberChartNode extends Node {
       }
     }
 
-    // Add 20% margin
+    // Add 20% margin (a single significant point still gets a non-degenerate range)
     const range = maxK - minK;
-    const margin = range * 0.2;
+    const margin = range > 0 ? range * 0.2 : Math.abs(kGrid[1]! - kGrid[0]!) || 1;
     this.kMinProperty.value = minK - margin;
     this.kMaxProperty.value = maxK + margin;
 

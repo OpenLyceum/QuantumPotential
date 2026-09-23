@@ -18,9 +18,7 @@ export class TwoWellsScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "Two Wells",
-        screenDescription:
-          "Two Wells screen for exploring quantum tunneling and energy level splitting in double potential wells.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().twoWellsStringProperty,
       },
       options,
     );

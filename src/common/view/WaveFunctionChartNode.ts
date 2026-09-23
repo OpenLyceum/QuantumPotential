@@ -6,8 +6,10 @@
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
+import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Line, Node, Path, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
@@ -20,6 +22,7 @@ import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
 import Logger from "../utils/Logger.js";
+import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { AreaMeasurementTool } from "./chart-tools/AreaMeasurementTool.js";
 import { ClassicalProbabilityOverlay } from "./chart-tools/ClassicalProbabilityOverlay.js";
 import { CurvatureTool } from "./chart-tools/CurvatureTool.js";
@@ -31,6 +34,23 @@ import type { ScreenViewState } from "./ScreenViewStates.js";
 
 // Chart axis range constant (shared with EnergyChartNode)
 const X_AXIS_RANGE_NM = 4; // X-axis extends from -X_AXIS_RANGE_NM to +X_AXIS_RANGE_NM
+
+const a11y = stringManager.getA11yStrings();
+
+/**
+ * Largest |value| among the finite entries (0 when there are none), so a stray NaN or ∞ in solver
+ * output can never reach the chart's y range (NumberProperty rejects NaN).
+ */
+function maxFiniteAbs(values: readonly number[]): number {
+  let max = 0;
+  for (const value of values) {
+    const abs = Math.abs(value);
+    if (abs > max && Number.isFinite(abs)) {
+      max = abs;
+    }
+  }
+  return max;
+}
 
 export class WaveFunctionChartNode extends Node {
   private readonly model: ScreenModel;
@@ -111,7 +131,7 @@ export class WaveFunctionChartNode extends Node {
       // PDOM - make wavefunction chart accessible
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Wavefunction Visualization",
+      labelContent: a11y.waveFunctionChart.headingStringProperty,
       descriptionTagName: "p",
     });
 
@@ -120,7 +140,12 @@ export class WaveFunctionChartNode extends Node {
 
     // Set up accessible description after this.model is initialized
     this.descriptionContent = new DerivedProperty(
-      [model.selectedEnergyLevelIndexProperty, model.potentialTypeProperty, model.superpositionTypeProperty],
+      [
+        model.selectedEnergyLevelIndexProperty,
+        model.potentialTypeProperty,
+        model.superpositionTypeProperty,
+        localeProperty, // rebuild the sentences on a language change
+      ],
       (selectedIndex: number, potentialType: PotentialType, superpositionType: SuperpositionType) => {
         return this.createWavefunctionDescription(selectedIndex, potentialType, superpositionType);
       },
@@ -295,7 +320,7 @@ export class WaveFunctionChartNode extends Node {
     if (options?.showToolCheckboxes) {
       const curvatureCheckbox = new Checkbox(
         this.curvatureTool.showProperty,
-        new Text("Show Curvature", {
+        new Text(a11y.visible.showCurvatureStringProperty, {
           font: new PhetFont(12),
           fill: QPPWColors.textFillProperty,
         }),
@@ -304,7 +329,7 @@ export class WaveFunctionChartNode extends Node {
 
       const derivativeCheckbox = new Checkbox(
         this.derivativeTool.showProperty,
-        new Text("Show Derivative", {
+        new Text(a11y.visible.showDerivativeStringProperty, {
           font: new PhetFont(12),
           fill: QPPWColors.textFillProperty,
         }),
@@ -347,55 +372,49 @@ export class WaveFunctionChartNode extends Node {
     _potentialType: PotentialType,
     superpositionType: SuperpositionType,
   ): string {
+    const strings = a11y.waveFunctionChart;
     const boundStates = this.model.getBoundStates();
     if (!boundStates || boundStates.energies.length === 0) {
-      return "No wavefunction data available.";
+      return strings.noDataStringProperty.value;
     }
 
     const displayMode = this.getEffectiveDisplayMode();
     const isSuperposition = superpositionType !== SuperpositionType.SINGLE;
 
-    let description = "";
+    // What is being shown, and how
+    const shown = [
+      isSuperposition
+        ? strings.superpositionStringProperty.value
+        : StringUtils.fillIn(strings.eigenstatePatternStringProperty, { level: selectedIndex + 1 }),
+      displayMode === "probabilityDensity"
+        ? strings.probabilityDensityStringProperty.value
+        : displayMode === "phaseColor"
+          ? strings.phaseColorStringProperty.value
+          : strings.waveFunctionStringProperty.value,
+    ];
+    const paragraphs = [shown.join(" ")];
 
-    // Describe what is being shown
-    if (isSuperposition) {
-      description += `Superposition state wavefunction. `;
-    } else {
-      description += `Wavefunction for energy level ${selectedIndex + 1}. `;
-    }
-
-    // Display mode description
-    if (displayMode === "probabilityDensity") {
-      description += `Showing probability density |ψ(x)|². `;
-      description += `This indicates where the particle is most likely to be found. `;
-    } else if (displayMode === "phaseColor") {
-      description += `Showing phase angle of complex wavefunction with color coding. `;
-    } else {
-      description += `Showing real and imaginary components of ψ(x). `;
-    }
-
-    // Get statistical properties if available
+    // Position statistics, when the distribution has a mean and spread
     const nmData = isSuperposition
       ? this.model.getTimeEvolvedSuperpositionInNmUnits(this.model.timeProperty.value * 1e-15)
       : this.model.getWavefunctionInNmUnits(selectedIndex + 1);
-
-    if (nmData) {
-      const xGrid = boundStates.xGrid.map((x) => x * 1e9); // Convert to nm
-      const { avg, rms } = calculateRMSStatistics(xGrid, nmData.probabilityDensity);
-
-      description += `\n\nPosition statistics: `;
-      description += `Average position: ${avg.toFixed(2)} nanometers. `;
-      description += `Position uncertainty (RMS, Δx): ${rms.toFixed(2)} nm. `;
+    const xGridNm = boundStates.xGrid.map((x) => x * 1e9); // Convert to nm
+    const stats = nmData ? calculateRMSStatistics(xGridNm, nmData.probabilityDensity) : null;
+    if (stats) {
+      paragraphs.push(
+        StringUtils.fillIn(strings.positionStatisticsPatternStringProperty, {
+          average: stats.avg.toFixed(2),
+          rms: stats.rms.toFixed(2),
+        }),
+      );
     }
 
-    // Node count for single eigenstates
-    if (!isSuperposition && selectedIndex >= 0) {
-      const nodes = selectedIndex; // Quantum number n-1
-      description += `\n\nWavefunction has ${nodes} node${nodes !== 1 ? "s" : ""} `;
-      description += `(zero crossing${nodes !== 1 ? "s" : ""}). `;
+    // Node count for single eigenstates (the n-th state, 0-indexed, has n nodes)
+    if (!isSuperposition && selectedIndex >= 0 && selectedIndex < boundStates.energies.length) {
+      paragraphs.push(QPPWDescriber.describeNodes(selectedIndex));
     }
 
-    return description;
+    return paragraphs.join("\n\n");
   }
 
   /**
@@ -514,7 +533,7 @@ export class WaveFunctionChartNode extends Node {
     axesNode.addChild(this.yAxisLabel);
 
     // X-axis label
-    const xLabelText = new Text("Position (nm)", {
+    const xLabelText = new Text(stringManager.positionNmStringProperty, {
       font: new PhetFont(14),
       fill: QPPWColors.labelFillProperty,
       centerX: this.chartWidth / 2,
@@ -689,11 +708,11 @@ export class WaveFunctionChartNode extends Node {
   private updateYAxisLabel(): void {
     const displayMode = this.getEffectiveDisplayMode();
     if (displayMode === "probabilityDensity") {
-      this.yAxisLabel.string = "Probability Density (nm⁻¹)";
+      this.yAxisLabel.string = a11y.visible.probabilityDensityAxisStringProperty.value;
     } else if (displayMode === "phaseColor") {
-      this.yAxisLabel.string = "Wave Function Magnitude (nm⁻¹ᐟ²)";
+      this.yAxisLabel.string = a11y.visible.waveFunctionMagnitudeAxisStringProperty.value;
     } else {
-      this.yAxisLabel.string = "Wave Function (nm⁻¹ᐟ²)";
+      this.yAxisLabel.string = a11y.visible.waveFunctionAxisStringProperty.value;
     }
   }
 
@@ -889,11 +908,11 @@ export class WaveFunctionChartNode extends Node {
 
     if (displayMode === "probabilityDensity" || displayMode === "phaseColor") {
       // For probability density, always start at 0 and find the max (in nm^-1)
-      yMax = Math.max(...nmData.probabilityDensity);
+      yMax = maxFiniteAbs(nmData.probabilityDensity);
       yMin = 0;
     } else {
       // For wave function, use symmetric range around zero (in nm^-1/2)
-      const maxAbs = Math.max(...nmData.wavefunction.map(Math.abs));
+      const maxAbs = maxFiniteAbs(nmData.wavefunction);
       yMin = -maxAbs;
       yMax = maxAbs;
     }
@@ -949,14 +968,11 @@ export class WaveFunctionChartNode extends Node {
 
     if (displayMode === "probabilityDensity" || displayMode === "phaseColor") {
       // For probability density or phase color, find max of probability density (in nm^-1)
-      yMax = Math.max(...nmData.probabilityDensity);
+      yMax = maxFiniteAbs(nmData.probabilityDensity);
       yMin = 0;
     } else {
       // For wave function components, use symmetric range (in nm^-1/2)
-      const maxReal = Math.max(...nmData.realPart.map(Math.abs));
-      const maxImag = Math.max(...nmData.imagPart.map(Math.abs));
-      const maxMagnitude = nmData.maxMagnitude;
-      const maxAbs = Math.max(maxReal, maxImag, maxMagnitude);
+      const maxAbs = maxFiniteAbs([...nmData.realPart, ...nmData.imagPart, nmData.maxMagnitude]);
       yMin = -maxAbs;
       yMax = maxAbs;
     }
@@ -1024,10 +1040,11 @@ export class WaveFunctionChartNode extends Node {
       // Calculate and display average and RMS position
       // Convert xGrid from meters to nanometers for calculations
       const xGridNm = xGrid.map((x) => x * 1e9);
-      const { avg, rms } = calculateRMSStatistics(xGridNm, probabilityDensityNm);
+      const stats = calculateRMSStatistics(xGridNm, probabilityDensityNm);
 
-      // Only show indicators if showRMSIndicatorProperty is true
-      if (this.shouldShowRMSIndicators()) {
+      // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
+      if (stats && this.shouldShowRMSIndicators()) {
+        const { avg, rms } = stats;
         this.avgPositionLabel.string = stringManager.averagePositionLabelStringProperty.value.replace(
           "{{value}}",
           avg.toFixed(2),
@@ -1151,10 +1168,11 @@ export class WaveFunctionChartNode extends Node {
       // Calculate and display average and RMS position
       // Convert xGrid from meters to nanometers for calculations
       const xGridNm = xGrid.map((x) => x * 1e9);
-      const { avg, rms } = calculateRMSStatistics(xGridNm, probabilityDensityNm);
+      const stats = calculateRMSStatistics(xGridNm, probabilityDensityNm);
 
-      // Only show indicators if showRMSIndicatorProperty is true
-      if (this.shouldShowRMSIndicators()) {
+      // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
+      if (stats && this.shouldShowRMSIndicators()) {
+        const { avg, rms } = stats;
         this.avgPositionLabel.string = stringManager.averagePositionLabelStringProperty.value.replace(
           "{{value}}",
           avg.toFixed(2),
@@ -1201,7 +1219,8 @@ export class WaveFunctionChartNode extends Node {
       }
     } else if (displayMode === "phaseColor") {
       // Calculate global time evolution phase
-      const energy = boundStates.energies[selectedIndex]!;
+      // nmData above is only non-null for an in-range selection
+      const energy = boundStates.energies[selectedIndex] ?? 0;
       const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
       const globalPhase = -(energy * time) / QuantumConstants.HBAR;
 
@@ -1251,7 +1270,10 @@ export class WaveFunctionChartNode extends Node {
    * Plots the wave function components (real, imaginary, magnitude) for waveFunction display mode.
    */
   private plotWaveFunctionComponents(xGrid: number[], wavefunction: number[]): void {
-    const energy = this.model.getBoundStates()!.energies[this.model.selectedEnergyLevelIndexProperty.value]!;
+    const energy = this.model.getBoundStates()?.energies[this.model.selectedEnergyLevelIndexProperty.value];
+    if (energy === undefined) {
+      return; // Selection not (yet) within the current states
+    }
     const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
 
     // Calculate time evolution phase for the eigenstate: -E_n*t/ℏ

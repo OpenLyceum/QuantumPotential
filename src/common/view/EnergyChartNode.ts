@@ -6,8 +6,10 @@
 import { DerivedProperty } from "scenerystack/axon";
 import { AxisLine, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
+import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Line, Node, Path, Rectangle, type SceneryEvent, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
@@ -25,6 +27,7 @@ import {
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
+import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
 
@@ -80,11 +83,15 @@ function getEnergyAxisRange(potentialType: PotentialType): {
   }
 }
 
+const a11y = stringManager.getA11yStrings();
+
 export class EnergyChartNode extends BaseChartNode {
   // Visual elements specific to energy chart
   private readonly potentialPath: Path;
   private readonly energyLevelNodes: Map<number, Line>;
   private readonly energyLabelNodes: Map<number, Text>;
+  // Selectable hit areas over each level, with the aria-checked listener each one links to the model
+  private readonly energyLevelHitAreas: Array<{ hitArea: Rectangle; listener: () => void }> = [];
   private readonly totalEnergyLine: Line;
   private readonly legendNode: Node;
 
@@ -114,7 +121,7 @@ export class EnergyChartNode extends BaseChartNode {
     // PDOM - make energy chart accessible with dynamic description
     this.tagName = "div";
     this.labelTagName = "h3";
-    this.labelContent = "Energy Level Diagram";
+    this.labelContent = a11y.energyChart.headingStringProperty;
     this.descriptionTagName = "p";
     this.descriptionContent = new DerivedProperty(
       [
@@ -122,6 +129,7 @@ export class EnergyChartNode extends BaseChartNode {
         model.wellWidthProperty,
         model.wellDepthProperty,
         model.selectedEnergyLevelIndexProperty,
+        localeProperty, // rebuild the sentences on a language change
       ],
       (potentialType: PotentialType, width: number, depth: number, selectedIndex: number) => {
         return this.createEnergyChartDescription(potentialType, width, depth, selectedIndex);
@@ -197,53 +205,67 @@ export class EnergyChartNode extends BaseChartNode {
     depth: number,
     selectedIndex: number,
   ): string {
+    const strings = a11y.energyChart;
     const boundStates = this.model.getBoundStates();
     if (!boundStates || boundStates.energies.length === 0) {
-      return "No bound states found for current potential configuration.";
+      return strings.noBoundStatesStringProperty.value;
     }
 
     const numLevels = boundStates.energies.length;
     const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
     const groundEnergy = energies[0]!;
 
-    let description = `${potentialType} potential well. `;
-    description += `Width: ${width.toFixed(2)} nanometers. `;
-
-    // Add depth information if applicable
+    const well = [
+      StringUtils.fillIn(strings.wellPatternStringProperty, {
+        potential: QPPWDescriber.getPotentialTypeName(potentialType),
+        width: width.toFixed(2),
+      }),
+    ];
+    // Depth only means something for potentials that have one
     if (potentialType !== PotentialType.INFINITE_WELL && potentialType !== PotentialType.HARMONIC_OSCILLATOR) {
-      description += `Depth: ${depth.toFixed(2)} electron volts. `;
+      well.push(StringUtils.fillIn(strings.depthPatternStringProperty, { depth: depth.toFixed(2) }));
     }
 
-    description += `\n\n`;
-    description += `Found ${numLevels} bound state${numLevels !== 1 ? "s" : ""}. `;
-    description += `Ground state energy: ${groundEnergy.toFixed(3)} eV. `;
-
+    const levels = [
+      QPPWDescriber.describeBoundStateCount(numLevels),
+      StringUtils.fillIn(strings.groundStatePatternStringProperty, { energy: groundEnergy.toFixed(3) }),
+    ];
     if (numLevels > 1) {
       const firstExcited = energies[1]!;
-      const spacing = firstExcited - groundEnergy;
-      description += `First excited state: ${firstExcited.toFixed(3)} eV. `;
-      description += `Energy spacing: ${spacing.toFixed(3)} eV. `;
+      levels.push(
+        StringUtils.fillIn(strings.firstExcitedPatternStringProperty, {
+          energy: firstExcited.toFixed(3),
+          spacing: (firstExcited - groundEnergy).toFixed(3),
+        }),
+      );
     }
 
-    // Selected level information
-    if (selectedIndex >= 0 && selectedIndex < numLevels) {
-      const selectedEnergy = energies[selectedIndex]!;
-      description += `\n\n`;
-      description += `Currently viewing level ${selectedIndex + 1} `;
-      description += `with energy ${selectedEnergy.toFixed(3)} eV.`;
+    const paragraphs = [well.join(" "), levels.join(" ")];
 
-      // Classical turning points if available
+    // Selected level information
+    const selectedEnergy = energies[selectedIndex];
+    if (selectedEnergy !== undefined) {
+      const selected = [
+        StringUtils.fillIn(strings.viewingLevelPatternStringProperty, {
+          level: selectedIndex + 1,
+          energy: selectedEnergy.toFixed(3),
+        }),
+      ];
       if (hasClassicalTurningPoints(this.model)) {
         const turningPoints = this.model.getClassicalTurningPoints(selectedIndex);
         if (turningPoints) {
-          description += ` Classical turning points at `;
-          description += `${turningPoints.left.toFixed(2)} nm and `;
-          description += `${turningPoints.right.toFixed(2)} nm.`;
+          selected.push(
+            StringUtils.fillIn(strings.turningPointsPatternStringProperty, {
+              left: turningPoints.left.toFixed(2),
+              right: turningPoints.right.toFixed(2),
+            }),
+          );
         }
       }
+      paragraphs.push(selected.join(" "));
     }
 
-    return description;
+    return paragraphs.join("\n\n");
   }
 
   /**
@@ -659,6 +681,8 @@ export class EnergyChartNode extends BaseChartNode {
       this.removeChild(label);
     });
     this.energyLabelNodes.clear();
+
+    this.removeEnergyLevelHitAreas();
 
     // Hide total energy line
     this.totalEnergyLine.visible = false;
@@ -1136,6 +1160,19 @@ export class EnergyChartNode extends BaseChartNode {
   }
 
   /**
+   * Removes and disposes the per-level hit areas and unlinks their selection listeners, so stale
+   * hit areas (with out-of-range indices) never outlive the levels they were drawn for.
+   */
+  private removeEnergyLevelHitAreas(): void {
+    for (const { hitArea, listener } of this.energyLevelHitAreas) {
+      this.model.selectedEnergyLevelIndexProperty.unlink(listener);
+      this.plotContentNode.removeChild(hitArea);
+      hitArea.dispose();
+    }
+    this.energyLevelHitAreas.length = 0;
+  }
+
+  /**
    * Updates the energy level lines.
    */
   private updateEnergyLevels(boundStates: BoundStateResult): void {
@@ -1150,6 +1187,8 @@ export class EnergyChartNode extends BaseChartNode {
       this.removeChild(label);
     });
     this.energyLabelNodes.clear();
+
+    this.removeEnergyLevelHitAreas();
 
     // Create new energy level lines
     const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
@@ -1177,9 +1216,12 @@ export class EnergyChartNode extends BaseChartNode {
         // PDOM - make energy level selection keyboard accessible
         tagName: "button",
         ariaRole: "radio",
-        innerContent: `Level ${index + 1}`,
-        accessibleName: `Energy Level ${index + 1}`,
-        descriptionContent: `Energy: ${energy.toFixed(3)} electron volts. ${index} node${index !== 1 ? "s" : ""}.`,
+        innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
+        accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
+        descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
+          energy: energy.toFixed(3),
+          nodes: QPPWDescriber.describeNodes(index),
+        }),
         focusable: true,
       });
 
@@ -1192,8 +1234,9 @@ export class EnergyChartNode extends BaseChartNode {
       // Set initial state
       updateAriaChecked();
 
-      // Update when selection changes
+      // Update when selection changes (unlinked in removeEnergyLevelHitAreas when the levels are redrawn)
       this.model.selectedEnergyLevelIndexProperty.link(updateAriaChecked);
+      this.energyLevelHitAreas.push({ hitArea, listener: updateAriaChecked });
 
       // Add click handler to hit area
       hitArea.addInputListener({

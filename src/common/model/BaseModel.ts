@@ -13,6 +13,17 @@ import QuantumConstants from "./QuantumConstants.js";
 import Schrodinger1DSolver, { type NumericalMethod } from "./Schrodinger1DSolver.js";
 import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType.js";
 
+/**
+ * Per-screen initial values. They are passed to the constructor (rather than assigned after
+ * super()) so that each Property's reset() returns to the screen's own default.
+ */
+export type BaseModelOptions = {
+  potentialType?: PotentialType;
+  wellWidth?: number; // nm
+  wellWidthRange?: Range; // nm
+  superpositionConfig?: SuperpositionConfig;
+};
+
 export abstract class BaseModel {
   // ==================== CONSTANTS ====================
 
@@ -139,18 +150,18 @@ export abstract class BaseModel {
   private readonly numericalMethodListener: (method: NumericalMethod) => void;
   private readonly gridPointsListener: () => void;
 
-  protected constructor() {
+  protected constructor(options?: BaseModelOptions) {
     // Initialize simulation state
     this.isPlayingProperty = new Property<boolean>(false);
     this.timeProperty = new NumberProperty(0); // in femtoseconds
     this.timeSpeedProperty = new EnumerationProperty(TimeSpeed.NORMAL);
 
     // Initialize potential type
-    this.potentialTypeProperty = new Property<PotentialType>(PotentialType.INFINITE_WELL);
+    this.potentialTypeProperty = new Property<PotentialType>(options?.potentialType ?? PotentialType.INFINITE_WELL);
 
     // Initialize well parameters with default values
-    this.wellWidthProperty = new NumberProperty(4.0, {
-      range: new Range(BaseModel.WELL_WIDTH_MIN, BaseModel.WELL_WIDTH_MAX),
+    this.wellWidthProperty = new NumberProperty(options?.wellWidth ?? 4.0, {
+      range: options?.wellWidthRange ?? new Range(BaseModel.WELL_WIDTH_MIN, BaseModel.WELL_WIDTH_MAX),
     }); // in nanometers
     this.wellDepthProperty = new NumberProperty(5.0, {
       range: new Range(BaseModel.WELL_DEPTH_MIN, BaseModel.WELL_DEPTH_MAX),
@@ -171,11 +182,13 @@ export abstract class BaseModel {
 
     // Initialize superposition state
     this.superpositionTypeProperty = new Property<SuperpositionType>(SuperpositionType.SINGLE);
-    this.superpositionConfigProperty = new Property<SuperpositionConfig>({
-      type: SuperpositionType.SINGLE,
-      amplitudes: [1.0],
-      phases: [0],
-    });
+    this.superpositionConfigProperty = new Property<SuperpositionConfig>(
+      options?.superpositionConfig ?? {
+        type: SuperpositionType.SINGLE,
+        amplitudes: [1.0],
+        phases: [0],
+      },
+    );
 
     // Initialize solver with user's preferred method
     this.solver = new Schrodinger1DSolver();
@@ -265,6 +278,8 @@ export abstract class BaseModel {
 
     this.isStepping = true;
     try {
+      this.clampSelectedEnergyLevel();
+
       if (this.isPlayingProperty.value || forced) {
         // Convert dt to femtoseconds and apply speed multiplier (only when playing normally)
         const speedMultiplier = forced
@@ -278,6 +293,22 @@ export abstract class BaseModel {
       }
     } finally {
       this.isStepping = false;
+    }
+  }
+
+  /**
+   * Keeps the selected energy level within the current bound states. Bound states are computed
+   * lazily, often from inside a listener of selectedEnergyLevelIndexProperty itself, so the
+   * calculation must not write the selection (that re-enters the Property's notification).
+   * Instead the selection is clamped here, at the start of each step(); until then views treat an
+   * out-of-range index as "no level selected".
+   */
+  private clampSelectedEnergyLevel(): void {
+    if (this.boundStateResult) {
+      const maxIndex = Math.max(0, this.boundStateResult.energies.length - 1);
+      if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
+        this.selectedEnergyLevelIndexProperty.value = maxIndex;
+      }
     }
   }
 
@@ -1003,17 +1034,23 @@ export abstract class BaseModel {
       // d²ψ/dx² → (d²ψ/dx²) / [sqrt(M_TO_NM) × M_TO_NM²] = (d²ψ/dx²) / M_TO_NM^(5/2)
       secondDerivativeInNm = secondDerivativeInM / QuantumConstants.M_TO_NM ** 2.5;
     } else {
-      // Fall back to finite difference for second derivative
-      // f''(x) ≈ (f(x-h) - 2f(x) + f(x+h)) / h²
+      // Fall back to finite differences for second derivative: central differences
+      // f''(x_i) ≈ (f(x_{i-1}) - 2f(x_i) + f(x_{i+1})) / h² at the two grid points bracketing x,
+      // linearly interpolated to x (i1 ≥ 1 and i1 + 2 < length are guaranteed above)
       const h = xGrid[1]! - xGrid[0]!;
-      const psiLeft = wavefunction[i1]!;
-      const psiRight = wavefunction[i1 + 1]!;
-      const secondDerivativeInM = (psiLeft - 2 * valueInM + psiRight) / (h * h);
+      const secondDerivativeAt = (i: number): number =>
+        (wavefunction[i - 1]! - 2 * wavefunction[i]! + wavefunction[i + 1]!) / (h * h);
+      const secondDerivativeInM = secondDerivativeAt(i1) * (1 - t) + secondDerivativeAt(i1 + 1) * t;
 
       // Convert second derivative: d²ψ/dx² from [m^-5/2] to [nm^-5/2]
       // ψ → ψ / sqrt(M_TO_NM), x → x × M_TO_NM
       // d²ψ/dx² → (d²ψ/dx²) / [sqrt(M_TO_NM) × M_TO_NM²] = (d²ψ/dx²) / M_TO_NM^(5/2)
       secondDerivativeInNm = secondDerivativeInM / QuantumConstants.M_TO_NM ** 2.5;
+    }
+
+    // A degenerate solution (e.g. a collapsed grid) can yield non-finite values; report "unavailable"
+    if (!(Number.isFinite(value) && Number.isFinite(firstDerivativeInNm) && Number.isFinite(secondDerivativeInNm))) {
+      return null;
     }
 
     return {

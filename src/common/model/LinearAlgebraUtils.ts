@@ -521,6 +521,20 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
 }
 
 /**
+ * Normalize a wavefunction sampled on an arbitrary (possibly non-uniform) grid, using the trapezoidal
+ * rule over the actual abscissae. Used after interpolating to a finer display grid: a cubic spline
+ * does not preserve ∫|ψ|² dx (by ~10 % near a Coulomb cusp).
+ */
+export function normalizeOnGrid(psi: number[], xGrid: number[]): number[] {
+  let integral = 0;
+  for (let i = 0; i < psi.length - 1; i++) {
+    integral += ((psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2) * (xGrid[i + 1]! - xGrid[i]!);
+  }
+  const normalization = Math.sqrt(integral);
+  return normalization < 1e-30 ? psi : psi.map((val) => val / normalization);
+}
+
+/**
  * Normalize a wavefunction using Clenshaw-Curtis quadrature.
  * Used for Chebyshev spectral methods where the grid is non-uniform.
  *
@@ -598,11 +612,31 @@ function complexMultiply(a: Complex, b: Complex): Complex {
 }
 
 /**
+ * Direct discrete Fourier transform, X_k = Σ_n x_n e^(−2πikn/N). O(N²); used by fft() for lengths
+ * that are not a power of 2.
+ */
+function dft(x: Complex[]): Complex[] {
+  const N = x.length;
+  const result: Complex[] = [];
+  for (let k = 0; k < N; k++) {
+    let real = 0;
+    let imaginary = 0;
+    for (let n = 0; n < N; n++) {
+      const angle = (-2 * Math.PI * ((k * n) % N)) / N;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      real += x[n]!.real * cos - x[n]!.imaginary * sin;
+      imaginary += x[n]!.real * sin + x[n]!.imaginary * cos;
+    }
+    result.push({ real, imaginary });
+  }
+  return result;
+}
+
+/**
  * Fast Fourier Transform (FFT)
- * Cooley-Tukey radix-2 decimation-in-time algorithm
- *
- * NOTE: This implementation requires input length to be a power of 2.
- *
+ * Cooley-Tukey radix-2 decimation-in-time for power-of-2 lengths; other lengths use the direct DFT
+ * (the radix-2 split previously read past the end of the arrays and threw for them).
  *
  * @param x - Input array of complex numbers
  * @returns FFT of input
@@ -614,8 +648,10 @@ export function fft(x: Complex[]): Complex[] {
   if (N <= 1) {
     return x;
   }
+  if ((N & (N - 1)) !== 0) {
+    return dft(x);
+  }
 
-  // TODO : Add check for power of 2 length
   // Divide
   const even: Complex[] = [];
   const odd: Complex[] = [];

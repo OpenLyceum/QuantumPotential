@@ -70,7 +70,8 @@ function solveDoubleWell(
 
   const halfSeparation = wellSeparation / 2;
   const outerEdge = halfSeparation + wellWidth;
-  const margin = 3.0 * NM_TO_M;
+  // Near-threshold states decay over ~2 nm, so they need more than 3 nm of margin to vanish at the edges
+  const margin = 8.0 * NM_TO_M;
   const gridRange = outerEdge + margin;
 
   const gridConfig = {
@@ -119,9 +120,11 @@ function detectParity(x: number[], psi: number[]): "even" | "odd" | "mixed" {
   let antiDiff = 0;
   let count = 0;
 
+  // Pair each sample with its mirror image about the grid centre: index j ↔ N − 1 − j. (Pairing
+  // midIndex ± i is off by one sample on an even-length grid and misreads the upper states.)
   for (let i = 1; i < Math.min(100, midIndex); i++) {
-    const leftIdx = midIndex - i;
     const rightIdx = midIndex + i;
+    const leftIdx = psi.length - 1 - rightIdx;
 
     if (leftIdx >= 0 && rightIdx < psi.length) {
       symDiff += Math.abs(psi[leftIdx] - psi[rightIdx]);

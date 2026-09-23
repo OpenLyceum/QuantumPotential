@@ -28,7 +28,7 @@
  *   or: npm run test:multi-square-well
  */
 
-import { solveMultiSquareWell } from "../../src/common/model/analytical-solutions/index.js";
+import { solveFiniteSquareWell, solveMultiSquareWell } from "../../src/common/model/analytical-solutions/index.js";
 import QuantumConstants from "../../src/common/model/QuantumConstants.js";
 import Schrodinger1DSolver from "../../src/common/model/Schrodinger1DSolver.js";
 
@@ -41,7 +41,8 @@ let passedTests = 0;
 let failedTests = 0;
 
 // Stringent tolerances
-const DEFAULT_GRID_POINTS = 2000;
+// 400 points resolve these spans to ~0.03 nm; 2000 made every dense diagonalization take minutes
+const DEFAULT_GRID_POINTS = 400;
 const NORMALIZATION_TOLERANCE = 0.01; // 1.0% (stringent but accounts for numerical errors)
 const ORTHOGONALITY_TOLERANCE = 0.01; // 1.0%
 const EDGE_TOLERANCE = 0.01; // 1.0%
@@ -66,7 +67,9 @@ function solveMultiWell(
 
   // Calculate grid range to include all wells plus margins
   const totalSpan = numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
-  const margin = 4.0 * NM_TO_M;
+  // 4.1 nm makes the default 3-well span (3.4 nm + margins = 11.6 nm = 58 × 0.2 nm) a multiple of the
+  // barrier width, so the grid-convergence sizes below can put every step edge midway between samples
+  const margin = 4.1 * NM_TO_M;
   const gridRange = totalSpan / 2 + margin;
 
   const gridConfig = {
@@ -143,10 +146,19 @@ function checkOrthogonality(x: number[], psi1: number[], psi2: number[]): number
  * Count nodes (sign changes) in wavefunction
  */
 function countNodes(psi: number[]): number {
+  // A node is a sign change between consecutive *significant* samples (|ψ| above 1e-3 of the peak):
+  // round-off flips the sign of the negligible far tails freely, while a genuine node between two
+  // lobes is still counted even if ψ is tiny across a barrier in between.
+  const threshold = 1e-3 * Math.max(...psi.map(Math.abs));
   let nodes = 0;
-  for (let i = 1; i < psi.length; i++) {
-    if (psi[i] * psi[i - 1] < 0) {
-      nodes++;
+  let lastSign = 0;
+  for (const value of psi) {
+    if (Math.abs(value) > threshold) {
+      const sign = Math.sign(value);
+      if (lastSign !== 0 && sign !== lastSign) {
+        nodes++;
+      }
+      lastSign = sign;
     }
   }
   return nodes;
@@ -266,7 +278,15 @@ function testVaryingWellCount() {
     const { energies, wavefunctions } = result;
 
     // Basic validation
-    assert(energies.length >= 10, `${nWells} wells: Expected at least 10 states, got ${energies.length}`);
+    // Each 1 nm, 5 eV well binds ⌈L√(2mV₀)/(πℏ)⌉ = 4 states and N wells form bands of N states each;
+    // allow the top band to be partly unbound. (The old fixed "≥ 10" failed for a single well, which
+    // correctly has 4.)
+    const perWell = Math.ceil((1.0 * NM_TO_M * Math.sqrt(2 * ELECTRON_MASS * 5.0 * EV_TO_JOULES)) / (Math.PI * HBAR));
+    const expectedMin = Math.min(20, nWells * (perWell - 1));
+    assert(
+      energies.length >= expectedMin,
+      `${nWells} wells: Expected at least ${expectedMin} states, got ${energies.length}`,
+    );
 
     // Check ground state normalization
     const norm = checkNormalization(result.xGrid, wavefunctions[0]);
@@ -375,23 +395,24 @@ function testVaryingWellSeparation() {
 function testSingleWellLimit() {
   console.log("\n=== Test 8: Single Well Limit ===");
 
-  // Single well should behave like an infinite square well
-  const result = solveMultiWell(1, 1.0, 20.0, 0.0, 1.0, 10); // High depth approximates infinite
+  // A single 20 eV well is compared with the exact finite-square-well spectrum. (It used to be compared
+  // with the infinite well, whose levels are ~15 % higher for these parameters.)
+  const result = solveMultiWell(1, 1.0, 20.0, 0.0, 1.0, 10);
   const { energies, wavefunctions } = result;
 
-  // For an infinite square well: E_n = (n²π²ℏ²)/(2mL²)
-  // With L = 1.0 nm, m = electron mass
   const L = 1.0 * NM_TO_M;
-  const m = ELECTRON_MASS;
+  const V0 = 20.0 * EV_TO_JOULES;
+  const exact = solveFiniteSquareWell(L, V0, ELECTRON_MASS, 5, { xMin: -2 * L, xMax: 2 * L, numPoints: 11 });
 
   for (let n = 1; n <= 5; n++) {
-    const expectedEnergy = (n * n * Math.PI * Math.PI * HBAR * HBAR) / (2 * m * L * L) / EV_TO_JOULES;
+    // The multi-well potential is 0 inside and V₀ outside; solveFiniteSquareWell uses −V₀ and 0
+    const expectedEnergy = (exact.energies[n - 1]! + V0) / EV_TO_JOULES;
     const actualEnergy = energies[n - 1];
     const relError = Math.abs((actualEnergy - expectedEnergy) / expectedEnergy);
 
-    // Allow 10% error due to finite well depth approximation
+    // 2 %: the step edges are sampled on the grid, which shifts the effective width by up to dx
     assert(
-      relError < 0.1,
+      relError < 0.02,
       `State n=${n}: Energy error ${(relError * 100).toFixed(2)}% (expected ${expectedEnergy.toFixed(3)}, got ${actualEnergy.toFixed(3)} eV)`,
     );
   }
@@ -402,7 +423,7 @@ function testSingleWellLimit() {
     assert(nodes === i, `State ${i}: Expected ${i} nodes, found ${nodes}`);
   }
 
-  console.log("  ✓ Single well energies match infinite square well (within 10%)");
+  console.log("  ✓ Single well energies match the exact finite square well (within 2%)");
 }
 
 /**
@@ -436,7 +457,11 @@ function testManyWellsExtreme() {
 function testGridConvergence() {
   console.log("\n=== Test 10: Grid Convergence ===");
 
-  const gridSizes = [1000, 1500, 2000, 2500];
+  // A step potential is only sampled at grid points, so arbitrary N makes the effective barrier widths
+  // (and E₀) jump around. With DVR spacing dx = 11.6 nm/(N − 1), N − 1 = 29(2k + 1) puts every well
+  // and barrier edge midway between samples, and the energies converge smoothly. (Dense
+  // diagonalization is O(N³); the old 1000–2500 points took tens of minutes.)
+  const gridSizes = [204, 320, 436, 610];
   const energies: number[][] = [];
 
   for (const gridSize of gridSizes) {

@@ -57,7 +57,6 @@ QPPW/
 │   │   │   ├── NumerovSolver.ts         # Shooting Numerov solver
 │   │   │   ├── SpectralSolver.ts        # Chebyshev spectral solver
 │   │   │   ├── QuantumBoundSolver.ts    # Advanced bound state solver
-│   │   │   ├── AccuracyTests.ts         # Validation test suite
 │   │   │   ├── analytical-solutions/    # Exact solutions for specific potentials
 │   │   │   │   ├── infinite-square-well.ts
 │   │   │   │   ├── finite-square-well.ts
@@ -99,11 +98,8 @@ QPPW/
 │       ├── model/ManyWellsModel.ts
 │       └── view/ManyWellsScreenView.ts
 ├── tests/
-│   ├── accuracy-tests.html              # Browser-based test runner
-│   ├── run-terminal-tests.js            # Terminal test runner
-│   ├── test-wavefunction-comprehensive.ts
-│   ├── test-double-well.ts
-│   └── ... (other test files)
+│   ├── *.test.ts, common/model/*.test.ts  # Vitest unit tests (run by CI)
+│   └── accuracy/                          # Hand-run solver accuracy scripts (npm run test:accuracy, …)
 └── doc/
     ├── model.md                         # Educational resource for instructors
     ├── implementation-notes.md          # This file
@@ -663,17 +659,6 @@ npm run test:multi-square-well # Test multi-well systems
 - Multiple grid sizes (32, 64, 128 points)
 - Accuracy tolerances: 0.1% - 1.0% depending on potential
 - Double well stringent tests: 23 tests including orthogonality, continuity, tunneling
-
-### Browser Tests
-
-Interactive test interface:
-
-```bash
-npm run build
-open tests/accuracy-tests.html
-```
-
-Provides visual test results with pass/fail indicators and error percentages.
 
 ### Validation Approach
 

@@ -18,6 +18,7 @@ import {
   diagonalize,
   extractInteriorMatrix,
   matrixToArray,
+  normalizeOnGrid,
   normalizeWavefunctionChebyshev,
   symmetrizeMatrix,
 } from "./LinearAlgebraUtils.js";
@@ -123,14 +124,19 @@ export function solveSpectral(
   // Extract the lowest numStates bound states
   const energies: number[] = [];
 
-  // For spectral method with Dirichlet boundary conditions (ψ=0 at boundaries),
-  // all eigenvalues correspond to bound states confined by the boundary conditions.
-  // We simply take the lowest numStates eigenvalues.
+  // The Dirichlet box makes every eigenvalue discrete, but only those below the potential at the box
+  // edges are bound states of the physical problem; the rest are box-quantized continuum states.
+  // (Same criterion as the DVR and matrix-Numerov solvers.)
   const interiorSize = HInterior.getRowDimension();
-  for (let i = 0; i < Math.min(numStates, interiorSize); i++) {
+  const VBoundary = Math.max(potential(xMin), potential(xMax));
+  const boundIndices: number[] = [];
+  for (let i = 0; i < interiorSize && boundIndices.length < numStates; i++) {
     const idx = sortedIndices[i]!;
     const energy = eigen.eigenvalues[idx]!;
-    energies.push(energy);
+    if (energy < VBoundary && Number.isFinite(energy)) {
+      energies.push(energy);
+      boundIndices.push(idx);
+    }
   }
 
   // If only energies requested, return early without computing wavefunctions
@@ -143,9 +149,7 @@ export function solveSpectral(
 
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
-  for (let i = 0; i < Math.min(numStates, interiorSize); i++) {
-    const idx = sortedIndices[i]!;
-
+  for (const idx of boundIndices) {
     // Reconstruct full wavefunction with boundary conditions
     const psiInterior = eigen.eigenvectors[idx]!;
     const psiFull = [0, ...psiInterior, 0]; // Add zeros at boundaries
@@ -173,7 +177,8 @@ export function solveSpectral(
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
     const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
-    fineWavefunctions.push(fineYValues);
+    // Re-normalize on the fine grid: spline interpolation does not preserve ∫|ψ|² dx
+    fineWavefunctions.push(normalizeOnGrid(fineYValues, fineXGrid));
   }
 
   return {

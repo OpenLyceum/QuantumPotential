@@ -245,20 +245,16 @@ function targetedEigenvalueSearch(
       const numerator = -k * coshKL * Math.sin(k * L) + kappa * sinhKL * Math.cos(k * L);
       const denominator = coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
 
-      if (Math.abs(denominator) < 1e-15) {
-        return Infinity;
-      }
-      return numerator / denominator + alpha;
+      // Pole-free form of ψ'/ψ + α (see findEvenParityDoubleWell)
+      return (numerator + alpha * denominator) / k;
     } else {
       const sinhKL = Math.sinh(kappa * Linner);
       const coshKL = Math.cosh(kappa * Linner);
       const numerator = -k * sinhKL * Math.sin(k * L) + kappa * coshKL * Math.cos(k * L);
       const denominator = sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
 
-      if (Math.abs(denominator) < 1e-15) {
-        return Infinity;
-      }
-      return numerator / denominator + alpha;
+      // Pole-free form of ψ'/ψ + α (see findEvenParityDoubleWell)
+      return (numerator + alpha * denominator) / k;
     }
   };
 
@@ -283,7 +279,7 @@ function targetedEigenvalueSearch(
 
         if (nodeCount === expectedNodeCount) {
           // Check if this is truly a new state
-          const isNew = foundStates.every((s) => Math.abs(s.energy - root) > 1e-11);
+          const isNew = foundStates.every((s) => Math.abs(s.energy - root) > 1e-9 * Math.abs(root));
           if (isNew) {
             Logger.debug(`  ✓ Found missing ${parity} state: E = ${root.toExponential(6)} J, ${nodeCount} nodes`);
             foundStates.push({ energy: root, parity });
@@ -673,7 +669,7 @@ function searchInInterval(
       const root = solveBisection(transcendentalEq, E1, E2, 1e-12, 100);
       if (root !== null && validator(root)) {
         // Check if this root is new (not already found)
-        const isNew = roots.every((existingRoot) => Math.abs(root - existingRoot) > 1e-10);
+        const isNew = roots.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           roots.push(root);
           if (roots.length >= maxRoots) {
@@ -742,15 +738,10 @@ function findEvenParityDoubleWell(
     const numerator = -k * coshKL * Math.sin(k * L) + k * (kappa / k) * sinhKL * Math.cos(k * L);
     const denominator = coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
 
-    if (Math.abs(denominator) < 1e-15) {
-      return Infinity;
-    }
-
-    const lhs = numerator / denominator;
-    const rhs = alpha;
-
-    // Matching condition: ψ'_well / ψ_well = ψ'_outside / ψ_outside = -α
-    return lhs + rhs;
+    // Matching condition ψ'_well/ψ_well = −α, multiplied through by ψ_well (= denominator) so the
+    // function has no poles: the ratio form changes sign at poles too, and those spurious brackets
+    // (rejected later) could hide a neighbouring true root. Divided by k to keep it O(κ).
+    return (numerator + alpha * denominator) / k;
   };
 
   // Search for roots in energy range
@@ -776,7 +767,7 @@ function findEvenParityDoubleWell(
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
       if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "even")) {
         // Check if this root is new (not already found)
-        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-11);
+        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           energies.push(root);
         }
@@ -888,15 +879,10 @@ function findOddParityDoubleWell(
     const numerator = -k * sinhKL * Math.sin(k * L) + k * (kappa / k) * coshKL * Math.cos(k * L);
     const denominator = sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
 
-    if (Math.abs(denominator) < 1e-15) {
-      return Infinity;
-    }
-
-    const lhs = numerator / denominator;
-    const rhs = alpha;
-
-    // Matching condition: ψ'_well / ψ_well = ψ'_outside / ψ_outside = -α
-    return lhs + rhs;
+    // Matching condition ψ'_well/ψ_well = −α, multiplied through by ψ_well (= denominator) so the
+    // function has no poles: the ratio form changes sign at poles too, and those spurious brackets
+    // (rejected later) could hide a neighbouring true root. Divided by k to keep it O(κ).
+    return (numerator + alpha * denominator) / k;
   };
 
   // Search for roots in energy range
@@ -922,7 +908,7 @@ function findOddParityDoubleWell(
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
       if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "odd")) {
         // Check if this root is new (not already found)
-        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-11);
+        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           energies.push(root);
         }
@@ -1110,7 +1096,7 @@ function solveBisection(
   f: (x: number) => number,
   xMin: number,
   xMax: number,
-  tolerance: number,
+  tolerance: number, // relative to |x|
   maxIterations: number,
 ): number | null {
   let a = xMin;
@@ -1129,8 +1115,9 @@ function solveBisection(
     const c = (a + b) / 2;
     const fc = f(c);
 
-    // Check convergence
-    if (Math.abs(fc) < tolerance || (b - a) / 2 < tolerance) {
+    // Converged once the bracket is small relative to the energy (~1e-19 J). The old absolute test
+    // (b − a)/2 < 1e-12 J held immediately, so "roots" were just midpoints of the scan brackets.
+    if (fc === 0 || (b - a) / 2 <= tolerance * Math.max(Math.abs(a), Math.abs(b))) {
       return c;
     }
 
@@ -1142,11 +1129,6 @@ function solveBisection(
     }
   }
 
-  // Return best approximation even if not fully converged
-  const c = (a + b) / 2;
-  if (Math.abs(f(c)) < tolerance * 10) {
-    return c;
-  }
-
-  return null;
+  // The bracket still contains the sign change; return its midpoint
+  return (a + b) / 2;
 }

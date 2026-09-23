@@ -47,7 +47,8 @@ let passedTests = 0;
 let failedTests = 0;
 
 // Stringent tolerances
-const DEFAULT_GRID_POINTS = 2000;
+// 400 points resolve these spans to ~0.03 nm; 2000 made every dense diagonalization take minutes
+const DEFAULT_GRID_POINTS = 400;
 const NORMALIZATION_TOLERANCE = 0.01; // 1.0% (stringent but accounts for numerical errors)
 const ORTHOGONALITY_TOLERANCE = 0.01; // 1.0%
 const DECAY_CHECK_TOLERANCE = 0.05; // 5% for asymptotic decay detection
@@ -152,10 +153,19 @@ function checkOrthogonality(x: number[], psi1: number[], psi2: number[]): number
  * Count nodes (sign changes) in wavefunction
  */
 function countNodes(psi: number[]): number {
+  // A node is a sign change between consecutive *significant* samples (|ψ| above 1e-3 of the peak):
+  // round-off flips the sign of the negligible far tails freely, while a genuine node between two
+  // lobes is still counted even if ψ is tiny across a barrier in between.
+  const threshold = 1e-3 * Math.max(...psi.map(Math.abs));
   let nodes = 0;
-  for (let i = 1; i < psi.length; i++) {
-    if (psi[i] * psi[i - 1] < 0) {
-      nodes++;
+  let lastSign = 0;
+  for (const value of psi) {
+    if (Math.abs(value) > threshold) {
+      const sign = Math.sign(value);
+      if (lastSign !== 0 && sign !== lastSign) {
+        nodes++;
+      }
+      lastSign = sign;
     }
   }
   return nodes;
@@ -460,7 +470,8 @@ function testWellSeparatedCenters() {
 function testGridConvergence() {
   console.log("\n=== Test 10: Grid Convergence ===");
 
-  const gridSizes = [1000, 1500, 2000, 2500];
+  // Dense diagonalization is O(N³); these sizes show convergence in seconds rather than tens of minutes
+  const gridSizes = [200, 300, 400, 600];
   const energies: number[][] = [];
 
   for (const gridSize of gridSizes) {

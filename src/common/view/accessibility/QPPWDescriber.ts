@@ -1,188 +1,146 @@
 /**
- * QPPWDescriber provides accessible descriptions for quantum potential concepts.
- * This helps screen reader users understand the physics behind different potential types
- * and simulation states.
+ * QPPWDescriber turns simulation state into localized accessible text: names and physics
+ * descriptions of potentials and superpositions, slider help text, and the sentences used by the
+ * screen summary, chart descriptions and live alerts. All wording comes from the `a11y` group of
+ * the locale files (StringManager.getA11yStrings()).
+ *
+ * Methods returning a TReadOnlyProperty are for static PDOM content (they follow locale changes);
+ * methods returning a string fill a pattern with the current locale's text, for content that is
+ * rebuilt whenever the model changes.
  */
 
-import { PotentialType } from "../../model/PotentialFunction.js";
+import { PatternStringProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { StringUtils } from "scenerystack/phetcommon";
+import stringManager from "../../../i18n/StringManager.js";
+import type { PotentialType } from "../../model/PotentialFunction.js";
 import { SuperpositionType } from "../../model/SuperpositionType.js";
 
+const a11y = stringManager.getA11yStrings();
+
+/** Adjustable model parameters that have a localized name and effect description. */
+export type QPPWParameter = keyof typeof a11y.parameters extends `${infer K}StringProperty` ? K : never;
+
+/** Units spoken in parameter-change alerts. */
+export type QPPWUnit = keyof typeof a11y.units extends `${infer K}StringProperty` ? K : never;
+
+export type DisplayMode = "probabilityDensity" | "waveFunction" | "phaseColor";
+
+// SuperpositionType.SINGLE's value ("eigenfunction") predates the string key ("single")
+const SUPERPOSITION_KEYS: Record<
+  SuperpositionType,
+  keyof typeof a11y.superpositionNames extends `${infer K}StringProperty` ? K : never
+> = {
+  [SuperpositionType.SINGLE]: "single",
+  [SuperpositionType.PSI_I_PSI_J]: "psiIPsiJ",
+  [SuperpositionType.LOCALIZED_NARROW]: "localizedNarrow",
+  [SuperpositionType.LOCALIZED_WIDE]: "localizedWide",
+  [SuperpositionType.COHERENT]: "coherent",
+  [SuperpositionType.CUSTOM]: "custom",
+};
+
+/** Fixed-precision number formatting shared by every spoken value. */
+const format = (value: number, decimals: number): string => value.toFixed(decimals);
+
 export const QPPWDescriber = {
-  /**
-   * Get a simple name for a potential type.
-   */
+  getPotentialTypeNameProperty(potentialType: PotentialType): TReadOnlyProperty<string> {
+    return a11y.potentialNames[`${potentialType}StringProperty`];
+  },
+
   getPotentialTypeName(potentialType: PotentialType): string {
-    const names: Record<PotentialType, string> = {
-      [PotentialType.INFINITE_WELL]: "Infinite Well",
-      [PotentialType.FINITE_WELL]: "Finite Well",
-      [PotentialType.HARMONIC_OSCILLATOR]: "Harmonic Oscillator",
-      [PotentialType.MORSE]: "Morse Potential",
-      [PotentialType.POSCHL_TELLER]: "Pöschl-Teller Potential",
-      [PotentialType.ROSEN_MORSE]: "Rosen-Morse Potential",
-      [PotentialType.ECKART]: "Eckart Potential",
-      [PotentialType.ASYMMETRIC_TRIANGLE]: "Asymmetric Triangle",
-      [PotentialType.TRIANGULAR]: "Triangular Well",
-      [PotentialType.COULOMB_1D]: "1D Coulomb Potential",
-      [PotentialType.COULOMB_3D]: "3D Coulomb Potential",
-      [PotentialType.DOUBLE_SQUARE_WELL]: "Double Square Well",
-      [PotentialType.MULTI_SQUARE_WELL]: "Multiple Square Wells",
-      [PotentialType.MULTI_COULOMB_1D]: "Multiple Coulomb Centers",
-      [PotentialType.CUSTOM]: "Custom Potential",
-    };
+    return QPPWDescriber.getPotentialTypeNameProperty(potentialType).value;
+  },
 
-    return names[potentialType] || "Unknown Potential";
+  getPotentialTypeDescriptionProperty(potentialType: PotentialType): TReadOnlyProperty<string> {
+    return a11y.potentialDescriptions[`${potentialType}StringProperty`];
+  },
+
+  getSuperpositionTypeNameProperty(superpositionType: SuperpositionType): TReadOnlyProperty<string> {
+    return a11y.superpositionNames[`${SUPERPOSITION_KEYS[superpositionType]}StringProperty`];
+  },
+
+  getSuperpositionTypeDescriptionProperty(superpositionType: SuperpositionType): TReadOnlyProperty<string> {
+    return a11y.superpositionDescriptions[`${SUPERPOSITION_KEYS[superpositionType]}StringProperty`];
+  },
+
+  getDisplayModeDescriptionProperty(displayMode: DisplayMode): TReadOnlyProperty<string> {
+    return a11y.displayModeDescriptions[`${displayMode}StringProperty`];
+  },
+
+  getParameterNameProperty(parameter: QPPWParameter): TReadOnlyProperty<string> {
+    return a11y.parameters[`${parameter}StringProperty`];
   },
 
   /**
-   * Get a physics description for a potential type.
+   * Help text for a parameter slider: what the parameter does, then the keyboard controls.
    */
-  getPotentialTypeDescription(potentialType: PotentialType): string {
-    const descriptions: Record<PotentialType, string> = {
-      [PotentialType.INFINITE_WELL]:
-        "Particle confined in rigid box with infinite barriers. Exactly solvable with uniform energy spacing.",
+  getSliderHelpText(parameter: QPPWParameter): TReadOnlyProperty<string> {
+    return new PatternStringProperty(a11y.sliderHelpPatternStringProperty, {
+      parameter: a11y.parameters[`${parameter}StringProperty`],
+      effect: a11y.parameterEffects[`${parameter}StringProperty`],
+    });
+  },
 
-      [PotentialType.FINITE_WELL]:
-        "Square well with finite barrier height. " +
-        "Realistic model with exponentially decaying wavefunctions outside well.",
+  /** "Wavefunction has N nodes (zero crossings)." */
+  describeNodes(count: number): string {
+    return count === 1
+      ? a11y.nodesOneStringProperty.value
+      : StringUtils.fillIn(a11y.nodesPatternStringProperty, { count: count });
+  },
 
-      [PotentialType.HARMONIC_OSCILLATOR]:
-        "Quadratic potential resembling mass on spring. Energy levels uniformly spaced.",
-
-      [PotentialType.MORSE]:
-        "Models molecular vibrations with anharmonic oscillations. Energy spacing decreases at higher levels.",
-
-      [PotentialType.POSCHL_TELLER]:
-        "Exactly solvable hyperbolic secant potential. Important in quantum scattering theory.",
-
-      [PotentialType.ROSEN_MORSE]: "Variant of Pöschl-Teller with different asymptotic behavior.",
-
-      [PotentialType.ECKART]: "Barrier potential used in molecular physics. Models quantum tunneling through barriers.",
-
-      [PotentialType.ASYMMETRIC_TRIANGLE]:
-        "Tilted potential well with linear slope. Models particle in electric field.",
-
-      [PotentialType.TRIANGULAR]: "V-shaped potential well. Related to Airy functions.",
-
-      [PotentialType.COULOMB_1D]:
-        "One-dimensional hydrogen-like attractive potential. Energy levels follow 1/n² pattern.",
-
-      [PotentialType.COULOMB_3D]:
-        "Three-dimensional hydrogen atom potential. Includes angular momentum quantum numbers.",
-
-      [PotentialType.DOUBLE_SQUARE_WELL]:
-        "Two square wells separated by barrier. Demonstrates quantum tunneling and energy level splitting.",
-
-      [PotentialType.MULTI_SQUARE_WELL]:
-        "Multiple square wells forming a periodic structure. Models solid state physics and band structure.",
-
-      [PotentialType.MULTI_COULOMB_1D]: "Multiple Coulomb centers in one dimension. Models molecular ion systems.",
-
-      [PotentialType.CUSTOM]: "Custom quantum potential defined by user parameters.",
-    };
-
-    return descriptions[potentialType] || "Custom quantum potential.";
+  /** "Found N bound states." or "No bound states found …" */
+  describeBoundStateCount(count: number): string {
+    if (count === 0) {
+      return a11y.noBoundStatesStringProperty.value;
+    }
+    return count === 1
+      ? a11y.boundStatesOneStringProperty.value
+      : StringUtils.fillIn(a11y.boundStatesPatternStringProperty, { count: count });
   },
 
   /**
-   * Get a description for a superposition type.
-   */
-  getSuperpositionTypeDescription(superpositionType: SuperpositionType): string {
-    const descriptions: Record<SuperpositionType, string> = {
-      [SuperpositionType.SINGLE]: "Single eigenstate selected. Stationary state with no time evolution.",
-
-      [SuperpositionType.PSI_I_PSI_J]: "Superposition of two eigenstates. Wavefunction oscillates between states.",
-
-      [SuperpositionType.LOCALIZED_NARROW]:
-        "Narrow Gaussian wavepacket. Localized particle with large momentum uncertainty.",
-
-      [SuperpositionType.LOCALIZED_WIDE]:
-        "Wide Gaussian wavepacket. Spread out particle with small momentum uncertainty.",
-
-      [SuperpositionType.COHERENT]: "Coherent state superposition. Minimal uncertainty wavepacket that oscillates.",
-
-      [SuperpositionType.CUSTOM]:
-        "Custom superposition configured by user. Arbitrary linear combination of eigenstates.",
-    };
-
-    return descriptions[superpositionType] || "Superposition state.";
-  },
-
-  /**
-   * Get a description for a display mode.
-   */
-  getDisplayModeDescription(displayMode: string): string {
-    const descriptions: Record<string, string> = {
-      probabilityDensity:
-        "Showing probability density |ψ(x)|². Indicates where the particle is most likely to be found.",
-
-      waveFunction: "Showing wavefunction components. Real and imaginary parts of the complex quantum state.",
-
-      phaseColor: "Showing phase angle of complex wavefunction. Color-coded visualization of quantum phase.",
-    };
-
-    return descriptions[displayMode] || "Visualization mode.";
-  },
-
-  /**
-   * Create an announcement for energy level selection.
+   * Announcement for selecting an energy level (0-indexed `level`, energy in eV).
    */
   createEnergyLevelAnnouncement(level: number, energy: number, totalLevels: number): string {
-    const levelNumber = level + 1; // Convert to 1-indexed
-    const nodes = level; // Number of nodes equals n-1
-
-    return (
-      `Selected energy level ${levelNumber} of ${totalLevels}. ` +
-      `Energy: ${energy.toFixed(3)} electron volts. ` +
-      `Wavefunction has ${nodes} node${nodes !== 1 ? "s" : ""}.`
-    );
+    const selected = StringUtils.fillIn(a11y.energyLevelSelectedPatternStringProperty, {
+      level: level + 1,
+      total: totalLevels,
+      energy: format(energy, 3),
+    });
+    // The n-th eigenstate (0-indexed) has n nodes
+    return `${selected} ${QPPWDescriber.describeNodes(level)}`;
   },
 
   /**
-   * Create an announcement for potential type change.
+   * Announcement for a change of potential type (ground-state energy in eV, when there are states).
    */
   createPotentialTypeAnnouncement(
-    _potentialType: PotentialType,
-    potentialName: string,
+    potentialType: PotentialType,
     numBoundStates: number,
     groundStateEnergy?: number,
   ): string {
-    let announcement = `Potential changed to ${potentialName}. `;
-
-    if (numBoundStates === 0) {
-      announcement += "No bound states found for current configuration.";
-    } else {
-      announcement += `Found ${numBoundStates} bound state${numBoundStates !== 1 ? "s" : ""}. `;
-      if (groundStateEnergy !== undefined) {
-        announcement += `Ground state energy: ${groundStateEnergy.toFixed(3)} electron volts.`;
-      }
+    const parts = [
+      StringUtils.fillIn(a11y.potentialChangedPatternStringProperty, {
+        potential: QPPWDescriber.getPotentialTypeName(potentialType),
+      }),
+      QPPWDescriber.describeBoundStateCount(numBoundStates),
+    ];
+    if (numBoundStates > 0 && groundStateEnergy !== undefined) {
+      parts.push(
+        StringUtils.fillIn(a11y.groundStateEnergyPatternStringProperty, { energy: format(groundStateEnergy, 3) }),
+      );
     }
-
-    return announcement;
+    return parts.join(" ");
   },
 
   /**
-   * Create an announcement for parameter changes (debounced).
+   * Announcement for a (debounced) parameter change, optionally followed by its consequence.
    */
-  createParameterChangeAnnouncement(parameterName: string, value: number, unit: string, effect?: string): string {
-    let announcement = `${parameterName} changed to ${value.toFixed(2)} ${unit}.`;
-
-    if (effect) {
-      announcement += ` ${effect}`;
-    }
-
-    return announcement;
-  },
-
-  /**
-   * Get help text for a slider control.
-   */
-  getSliderHelpText(parameterName: string, effect: string): string {
-    return (
-      `Adjust ${parameterName}. ${effect} ` +
-      `Use Left/Right arrow keys for small changes, ` +
-      `Shift+Arrow for fine control, ` +
-      `Page Up/Down for large steps, ` +
-      `Home for minimum, End for maximum.`
-    );
+  createParameterChangeAnnouncement(parameter: QPPWParameter, value: number, unit: QPPWUnit, effect?: string): string {
+    const announcement = StringUtils.fillIn(a11y.parameterChangedPatternStringProperty, {
+      parameter: a11y.parameters[`${parameter}StringProperty`],
+      value: format(value, 2),
+      unit: a11y.units[`${unit}StringProperty`],
+    });
+    return effect ? `${announcement} ${effect}` : announcement;
   },
 };

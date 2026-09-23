@@ -60,7 +60,8 @@ onReadyToLaunch(() => {
         supportsInteractiveHighlights: true,
       },
       audioOptions: {
-        supportsVoicing: true,
+        // Stock UI sounds only. Voicing is deferred fleet-wide (Baton/ACCESSIBILITY.md) and this sim
+        // has no voicing responses, so the Voicing toolbar is not offered.
         supportsSound: true,
       },
       simulationOptions: {

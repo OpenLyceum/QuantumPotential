@@ -53,7 +53,7 @@ Useful query parameters: `?numericalMethod=dvr` (one of `numerov`, `matrix_numer
 | `npm run check` | TypeScript across app, scripts, tests and the accuracy harness |
 | `npm run lint` / `npm run fix` | Biome check / auto-fix |
 | `npm test` | Vitest unit tests (run by CI) |
-| `npm run test:accuracy` | Solver-vs-analytical accuracy report (manual; see `tests/accuracy/README.md`) |
+| `npm run test:accuracy` | Exhaustive solver-vs-exact accuracy suite (manual; see `tests/accuracy/README.md`) |
 | `npm run test:double-well` / `test:coulomb` / `test:multi-square-well` / `test:multi-coulomb-1d` | Focused accuracy diagnostics (manual) |
 | `npm run icons` | Regenerate PWA icons |
 | `npm run clean` | Remove `dist/` |

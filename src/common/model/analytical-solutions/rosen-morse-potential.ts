@@ -1,58 +1,126 @@
 /**
- * Analytical solution for the Rosen-Morse potential.
+ * Analytical solution for the (hyperbolic) Rosen-Morse potential.
  * V(x) = -V_0 / cosh²(x/a) + V_1 * tanh(x/a)
- *
- * This potential is useful for modeling molecular interactions and has exact solutions.
  *
  * REFERENCES:
  * - Rosen, N., & Morse, P. M. (1932). "On the Vibrations of Polyatomic Molecules"
- *   Physical Review, 42(2), 210-217.
- *   https://doi.org/10.1103/PhysRev.42.210
- *   ORIGINAL PAPER: Introduced this potential for molecular vibrations, pages 213-216.
- *
- * - Flügge, S. (1999). "Practical Quantum Mechanics". Springer.
- *   Problem 41, pp. 99-100. https://doi.org/10.1007/978-3-642-61995-3
- *   Detailed solution using hypergeometric functions.
- *
+ *   Physical Review, 42(2), 210-217. https://doi.org/10.1103/PhysRev.42.210
  * - Cooper, F., Khare, A., & Sukhatme, U. (1995). "Supersymmetry and quantum mechanics"
- *   Physics Reports, 251(5-6), 267-385.
- *   https://doi.org/10.1016/0370-1573(94)00080-M
- *   Section 3.4, pp. 285-286: Rosen-Morse as a shape-invariant potential.
+ *   Physics Reports, 251(5-6), 267-385. Section 3.4 (Rosen-Morse II as a shape-invariant potential).
  *
- * - Gendenshtein, L. E. (1983). "Derivation of exact spectra of the Schrödinger equation by means
- *   of supersymmetry". JETP Letters, 38(6), 356-359.
- *   Supersymmetric approach to Rosen-Morse and related potentials.
+ * With the energy unit ε₀ = ℏ²/(2ma²) and the dimensionless parameters
+ *   s(s + 1) = V_0/ε₀      (well strength)
+ *   v = V_1/ε₀             (tilt)
+ * the bound states are, for n = 0, 1, … with κ_n = s − n,
+ *   E_n = −ε₀ [κ_n² + v²/(4κ_n²)]
+ *   ψ_n(x) = N_n (1 − y)^(α_n/2) (1 + y)^(β_n/2) P_n^(α_n, β_n)(y),   y = tanh(x/a)
+ *   α_n = κ_n + v/(2κ_n)   (decay rate towards +∞, where V → +V_1)
+ *   β_n = κ_n − v/(2κ_n)   (decay rate towards −∞, where V → −V_1)
+ * A state is bound while both decay rates are positive, i.e. κ_n² > |v|/2.
  *
- * - Dong, S. H. (2007). "Factorization Method in Quantum Mechanics". Springer.
- *   Chapter 4, pp. 85-98. https://doi.org/10.1007/978-1-4020-5796-0
- *   Algebraic solution methods for the Rosen-Morse potential.
+ * (An earlier version used E_n = −ε₀(√(λ² − μ²) − n − ½)² with ψ ∝ sech^s · exp(μ tanh); that is
+ * not an eigenfunction of this potential and was off by up to ~150 % for shallow wells.)
  *
- * ENERGY EIGENVALUES:
- *   E_n = -(ℏ²/2ma²)(λ_eff - n - 1/2)²,  n = 0, 1, 2, ..., n_max
- *   where λ_eff = √(λ² - μ²), λ = a√(2mV_0)/ℏ, μ = V_1·a√(2m)/(2ℏ√V_0)
- *   Condition for bound states: λ > |μ|
- *
- * WAVEFUNCTIONS:
- *   ψ_n(x) = N_n · sech^s(x/a) · exp(μ·tanh(x/a)) · P_n^(α,β)(tanh(x/a))
- *   where s = λ_eff - n - 1/2, α = s - μ, β = s + μ, and P_n^(α,β) are Jacobi polynomials
+ * The Eckart potential used by the sim is this potential with mapped parameters plus a constant —
+ * see eckart-potential.ts.
  */
 
-import Logger from "../../utils/Logger.js";
+import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { jacobiPolynomial } from "./math-utilities.js";
 
+/** Parameters of one Rosen-Morse problem, in the dimensionless form used by every formula here. */
+type RosenMorseSpectrum = {
+  a: number; // width (m)
+  energyUnit: number; // ε₀ = ℏ²/(2ma²) (J)
+  s: number; // s(s + 1) = V_0/ε₀
+  v: number; // V_1/ε₀
+  numBound: number; // number of bound states
+};
+
+/** Per-state quantities. */
+type RosenMorseState = {
+  energy: number; // J
+  alpha: number; // decay rate towards +∞ (in units of 1/a)
+  beta: number; // decay rate towards −∞ (in units of 1/a)
+  normalization: number; // N_n, so that ∫|ψ_n|² dx = 1 (1/√m)
+};
+
+function rosenMorseSpectrum(
+  potentialDepth: number,
+  barrierHeight: number,
+  wellWidth: number,
+  mass: number,
+): RosenMorseSpectrum {
+  const a = wellWidth;
+  const energyUnit = (QuantumConstants.HBAR * QuantumConstants.HBAR) / (2 * mass * a * a);
+  const strength = Math.max(0, potentialDepth / energyUnit);
+  const s = (Math.sqrt(1 + 4 * strength) - 1) / 2;
+  const v = barrierHeight / energyUnit;
+
+  let numBound = 0;
+  while (numBound < s && (s - numBound) ** 2 > Math.abs(v) / 2) {
+    numBound++;
+  }
+  return { a, energyUnit, s, v, numBound };
+}
+
+/** Unnormalized ψ_n at u = x/a. Written with 1 ∓ tanh u = 2/(1 + e^(±2u)) to stay accurate far out. */
+function rawWavefunction(n: number, alpha: number, beta: number, u: number): number {
+  const oneMinusY = 2 / (1 + Math.exp(2 * u));
+  const onePlusY = 2 / (1 + Math.exp(-2 * u));
+  return oneMinusY ** (alpha / 2) * onePlusY ** (beta / 2) * jacobiPolynomial(n, alpha, beta, Math.tanh(u));
+}
+
+/** |u| beyond which every bound state has decayed by at least e^-20. */
+function integrationHalfWidth(alpha: number, beta: number): number {
+  return 20 / Math.min(alpha, beta) + 5;
+}
+
+function rosenMorseState(spectrum: RosenMorseSpectrum, n: number): RosenMorseState {
+  const kappa = spectrum.s - n;
+  const tilt = spectrum.v / (2 * kappa);
+  const alpha = kappa + tilt;
+  const beta = kappa - tilt;
+  const energy = -spectrum.energyUnit * (kappa * kappa + tilt * tilt);
+
+  // Normalize on a grid wide and fine enough for this state, independent of any display grid
+  const halfWidth = integrationHalfWidth(alpha, beta);
+  const samples = 4000;
+  const du = (2 * halfWidth) / samples;
+  let sum = 0;
+  for (let i = 0; i <= samples; i++) {
+    const psi = rawWavefunction(n, alpha, beta, -halfWidth + i * du);
+    sum += (i === 0 || i === samples ? 0.5 : 1) * psi * psi;
+  }
+  const normalization = 1 / Math.sqrt(sum * du * spectrum.a);
+
+  return { energy, alpha, beta, normalization };
+}
+
+function wavefunctionAt(spectrum: RosenMorseSpectrum, state: RosenMorseState, n: number, x: number): number {
+  return state.normalization * rawWavefunction(n, state.alpha, state.beta, x / spectrum.a);
+}
+
+function requireBoundState(spectrum: RosenMorseSpectrum, n: number): void {
+  if (n < 0 || n >= spectrum.numBound) {
+    throw new NoBoundStatesError(`Rosen-Morse potential has no bound state n = ${n}`);
+  }
+}
+
 /**
- * Class-based implementation of Rosen-Morse potential analytical solution.
- * Extends the AnalyticalSolution abstract base class.
+ * Class-based implementation of the Rosen-Morse analytical solution.
  */
 export class RosenMorsePotentialSolution extends AnalyticalSolution {
-  private potentialDepth: number;
-  private barrierHeight: number;
-  private wellWidth: number;
-  private mass: number;
+  private readonly potentialDepth: number;
+  private readonly barrierHeight: number;
+  private readonly wellWidth: number;
+  private readonly mass: number;
+  private readonly spectrum: RosenMorseSpectrum;
+  private readonly states = new Map<number, RosenMorseState>();
 
   constructor(potentialDepth: number, barrierHeight: number, wellWidth: number, mass: number) {
     super();
@@ -60,6 +128,23 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     this.barrierHeight = barrierHeight;
     this.wellWidth = wellWidth;
     this.mass = mass;
+    this.spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  }
+
+  private state(n: number): RosenMorseState {
+    requireBoundState(this.spectrum, n);
+    let state = this.states.get(n);
+    if (!state) {
+      state = rosenMorseState(this.spectrum, n);
+      this.states.set(n, state);
+    }
+    return state;
+  }
+
+  /** ψ_n(x) (1/√m) at each x (m). */
+  public wavefunction(n: number, xGrid: number[]): number[] {
+    const state = this.state(n);
+    return xGrid.map((x) => wavefunctionAt(this.spectrum, state, n, x));
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
@@ -99,13 +184,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
   }
 
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
-    const points = calculateRosenMorsePotentialTurningPoints(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-      energy,
-    );
-    return [points]; // Return as array with single element for simple single-well potential
+    return [calculateRosenMorsePotentialTurningPoints(this.potentialDepth, this.barrierHeight, this.wellWidth, energy)];
   }
 
   calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
@@ -169,6 +248,7 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
       numPoints,
     );
   }
+
   calculateFourierTransform(
     boundStateResult: BoundStateResult,
     mass: number,
@@ -180,13 +260,10 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
 }
 
 /**
- * Analytical solution for the Rosen-Morse potential.
- * V(x) = -V_0 / cosh²(x/a) + V_1 * tanh(x/a)
- *
- * This potential is useful for modeling molecular interactions and has exact solutions.
+ * Bound states of V(x) = -V_0/cosh²(x/a) + V_1·tanh(x/a).
  *
  * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
+ * @param barrierHeight - Tilt V_1 in Joules (either sign)
  * @param wellWidth - Width parameter a in meters
  * @param mass - Particle mass in kg
  * @param numStates - Number of energy levels to calculate
@@ -201,121 +278,33 @@ export function solveRosenMorsePotential(
   numStates: number,
   gridConfig: GridConfig,
 ): BoundStateResult {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
-
-  // Calculate dimensionless parameters (with x/a substitution)
-  // λ = a * sqrt(2*m*V_0) / ℏ
-  // μ = V_1 / (2 * sqrt(V_0 * ℏ²/(2*m*a²)))
-  // The correct formula for μ should make it dimensionless and scale as V1/sqrt(V0)
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-
-  // Corrected formula: mu should be dimensionless and proportional to V1/sqrt(V0)
-  // mu = (a * sqrt(2m) / (2*hbar)) * V1 / sqrt(V0)
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-
-  Logger.debug(
-    `Rosen-Morse parameters: lambda=${lambda.toFixed(3)}, mu=${mu.toFixed(3)}, |mu|=${Math.abs(mu).toFixed(3)}`,
-  );
-  Logger.debug(`V0=${(V0 * 6.242e18).toFixed(3)} eV, V1=${(V1 * 6.242e18).toFixed(3)} eV`);
-
-  // For bound states, we need λ > |μ|
-  if (lambda <= Math.abs(mu)) {
-    throw new Error(
-      `Rosen-Morse potential: λ=${lambda.toFixed(3)} ≤ |μ|=${Math.abs(mu).toFixed(3)}. Increase well depth or decrease barrier height.`,
-    );
-  }
-
-  // Calculate the effective parameter for bound states
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
-
-  // Maximum number of bound states
-  const nMax = Math.floor(lambdaEff - 0.5);
-  const actualNumStates = Math.min(numStates, nMax + 1);
-
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  const actualNumStates = Math.min(numStates, spectrum.numBound);
   if (actualNumStates <= 0) {
-    throw new Error(
-      "Rosen-Morse potential: No bound states available. Increase well depth or decrease barrier height.",
+    throw new NoBoundStatesError(
+      "Rosen-Morse potential: no bound states. Increase the well depth or decrease the barrier height.",
     );
   }
 
-  // Calculate energies
-  // Standard Rosen-Morse energy formula from original 1932 Rosen & Morse paper (Phys. Rev. 42, 210)
-  // For hyperbolic potential V(x) = -V₀/cosh²(x/a) + V₁·tanh(x/a)
-  // Energy eigenvalues: E_n = -(ℏ²/2ma²) * (λ_eff - n - 1/2)²
-  // where λ_eff = √(λ² - μ²), λ = a√(2mV₀)/ℏ, μ = aV₁√(2m)/(2ℏ√V₀)
-  // Ground state (n=0) has lowest energy, all states have E < 0 for the symmetric case
-  const energies: number[] = [];
-  const energyFactor = (HBAR * HBAR) / (2 * mass * a * a);
-
-  for (let n = 0; n < actualNumStates; n++) {
-    const sN = lambdaEff - n - 0.5;
-    // Standard formula: E_n = -(ℏ²/2ma²) * s_n²
-    const energy = -energyFactor * sN * sN;
-
-    energies.push(energy);
-  }
-
-  // Generate grid
-  const numPoints = gridConfig.numPoints;
   const xGrid: number[] = [];
-  const dx = (gridConfig.xMax - gridConfig.xMin) / (numPoints - 1);
-  for (let i = 0; i < numPoints; i++) {
+  const dx = (gridConfig.xMax - gridConfig.xMin) / (gridConfig.numPoints - 1);
+  for (let i = 0; i < gridConfig.numPoints; i++) {
     xGrid.push(gridConfig.xMin + i * dx);
   }
 
-  // Calculate wavefunctions
-  // ψ_n(x) = N_n * sech^(λ_eff-n-1/2)(x/a) * exp(μ*tanh(x/a)) * P_n^(α,β)(tanh(x/a))
-  // where α = λ_eff - n - 1/2 - μ, β = λ_eff - n - 1/2 + μ
+  const energies: number[] = [];
   const wavefunctions: number[][] = [];
-
   for (let n = 0; n < actualNumStates; n++) {
-    const psiRaw: number[] = [];
-    const s = lambdaEff - n - 0.5;
-    const alphaJac = s - mu;
-    const betaJac = s + mu;
-
-    // First, calculate unnormalized wavefunction
-    for (const x of xGrid) {
-      const tanhVal = Math.tanh(x / a);
-      const sechVal = 1.0 / Math.cosh(x / a);
-
-      // Calculate wavefunction without normalization
-      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
-      const value = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
-
-      psiRaw.push(value);
-    }
-
-    // Normalize wavefunction numerically to ensure ∫|ψ|² dx = 1
-    let normSq = 0;
-    for (let i = 0; i < psiRaw.length; i++) {
-      normSq += psiRaw[i]! * psiRaw[i]! * dx;
-    }
-    const norm = 1 / Math.sqrt(normSq);
-    const wavefunction = psiRaw.map((psi) => norm * psi);
-
-    wavefunctions.push(wavefunction);
+    const state = rosenMorseState(spectrum, n);
+    energies.push(state.energy);
+    wavefunctions.push(xGrid.map((x) => wavefunctionAt(spectrum, state, n, x)));
   }
 
-  return {
-    energies,
-    wavefunctions,
-    xGrid,
-    method: "analytical",
-  };
+  return { energies, wavefunctions, xGrid, method: "analytical" };
 }
 
 /**
- * Create the potential function for a Rosen-Morse potential.
- * V(x) = -V_0 / cosh²(x/a) + V_1 * tanh(x/a)
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @returns Potential function V(x) in Joules
+ * Create the potential function V(x) = -V_0/cosh²(x/a) + V_1·tanh(x/a) (Joules; x in meters).
  */
 export function createRosenMorsePotential(
   potentialDepth: number,
@@ -328,22 +317,13 @@ export function createRosenMorsePotential(
 
   return (x: number) => {
     const coshVal = Math.cosh(x / a);
-    const tanhVal = Math.tanh(x / a);
-    return -V0 / (coshVal * coshVal) + V1 * tanhVal;
+    return -V0 / (coshVal * coshVal) + V1 * Math.tanh(x / a);
   };
 }
 
 /**
- * Calculate classical probability density for a Rosen-Morse potential.
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m]
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param energy - Energy of the particle in Joules
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
+ * Classical probability density P(x) ∝ 1/v(x) = 1/√[2(E − V(x))/m], normalized over xGrid.
+ * Turning-point singularities are regularized with a relative epsilon (1 % of the maximum kinetic energy).
  */
 export function calculateRosenMorsePotentialClassicalProbability(
   potentialDepth: number,
@@ -355,59 +335,28 @@ export function calculateRosenMorsePotentialClassicalProbability(
 ): number[] {
   const potentialFn = createRosenMorsePotential(potentialDepth, barrierHeight, wellWidth);
 
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
-  for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]!);
-    if (ke > maxKE) {
-      maxKE = ke;
-    }
+  for (const x of xGrid) {
+    maxKE = Math.max(maxKE, energy - potentialFn(x));
   }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
   const epsilon = 0.01 * maxKE;
 
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]!);
+  const classicalProbability = xGrid.map((x) => {
+    const kineticEnergy = energy - potentialFn(x);
+    return kineticEnergy <= 0 ? 0 : 1 / Math.sqrt((2 * Math.max(kineticEnergy, epsilon)) / mass);
+  });
 
-    if (kineticEnergy <= 0) {
-      classicalProbability.push(0);
-    } else {
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
+  let integral = 0;
+  for (let i = 1; i < xGrid.length; i++) {
+    integral += ((classicalProbability[i]! + classicalProbability[i - 1]!) * (xGrid[i]! - xGrid[i - 1]!)) / 2;
   }
-
-  // Normalize
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
+  return integral > 0 ? classicalProbability.map((p) => p / integral) : classicalProbability;
 }
 
 /**
- * Calculate the classical turning points for a Rosen-Morse potential.
- * Solve E = -V_0 / cosh²(x/a) + V_1 * tanh(x/a) for x numerically
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param energy - Energy of the particle in Joules
- * @returns Object with left and right turning point positions (in meters)
+ * Classical turning points: the two solutions of V(x) = E around the minimum of the potential.
+ * On a side where E lies above the asymptote the particle is not reflected; that side's point is
+ * reported at the edge of the search range (±40a).
  */
 export function calculateRosenMorsePotentialTurningPoints(
   potentialDepth: number,
@@ -416,110 +365,46 @@ export function calculateRosenMorsePotentialTurningPoints(
   energy: number,
 ): { left: number; right: number } {
   const potentialFn = createRosenMorsePotential(potentialDepth, barrierHeight, wellWidth);
-  const a = wellWidth;
+  const range = 40 * wellWidth;
 
-  // Search for turning points using bisection
-  // Start from a wide range and narrow down
-  const searchRange = 20 * a;
-
-  // Find left turning point (negative x)
-  let leftLow = -searchRange;
-  let leftHigh = 0;
-
-  for (let iter = 0; iter < 50; iter++) {
-    const mid = (leftLow + leftHigh) / 2;
-    const diff = potentialFn(mid) - energy;
-
-    if (Math.abs(diff) < 1e-14 * Math.abs(energy)) {
-      leftLow = mid;
-      break;
-    }
-
-    if (diff > 0) {
-      leftLow = mid;
+  // Locate the minimum of V by golden-section search (V is unimodal for a bound well)
+  let lo = -range;
+  let hi = range;
+  const ratio = (Math.sqrt(5) - 1) / 2;
+  for (let i = 0; i < 200; i++) {
+    const m1 = hi - ratio * (hi - lo);
+    const m2 = lo + ratio * (hi - lo);
+    if (potentialFn(m1) < potentialFn(m2)) {
+      hi = m2;
     } else {
-      leftHigh = mid;
+      lo = m1;
     }
   }
+  const xMin = (lo + hi) / 2;
 
-  // Find right turning point (positive x)
-  let rightLow = 0;
-  let rightHigh = searchRange;
-
-  for (let iter = 0; iter < 50; iter++) {
-    const mid = (rightLow + rightHigh) / 2;
-    const diff = potentialFn(mid) - energy;
-
-    if (Math.abs(diff) < 1e-14 * Math.abs(energy)) {
-      rightHigh = mid;
-      break;
+  // Bisection for V(x) = E between the minimum (V < E) and an outer point (V > E)
+  const crossing = (inner: number, outer: number): number => {
+    if (potentialFn(outer) <= energy) {
+      return outer;
     }
-
-    if (diff > 0) {
-      rightHigh = mid;
-    } else {
-      rightLow = mid;
+    let below = inner;
+    let above = outer;
+    for (let i = 0; i < 100; i++) {
+      const mid = (below + above) / 2;
+      if (potentialFn(mid) < energy) {
+        below = mid;
+      } else {
+        above = mid;
+      }
     }
-  }
-
-  return {
-    left: (leftLow + leftHigh) / 2,
-    right: (rightLow + rightHigh) / 2,
+    return (below + above) / 2;
   };
+
+  return { left: crossing(xMin, -range), right: crossing(xMin, range) };
 }
 
 /**
- * Helper function to compute normalization constant for a Rosen-Morse wavefunction.
- * Uses numerical integration to ensure ∫|ψ|² dx = 1.
- *
- * @param a - Well width parameter in meters
- * @param s - Wavefunction parameter (λ_eff - n - 1/2)
- * @param mu - Asymmetry parameter
- * @param n - State index
- * @param alpha_jac - Jacobi polynomial alpha parameter
- * @param beta_jac - Jacobi polynomial beta parameter
- * @param xMin - Left boundary for integration
- * @param xMax - Right boundary for integration
- * @param numPoints - Number of points for integration (default: 1000)
- * @returns Normalization constant
- */
-function computeRosenMorseNormalization(
-  a: number,
-  s: number,
-  mu: number,
-  n: number,
-  alphaJac: number,
-  betaJac: number,
-  xMin: number = -20e-9,
-  xMax: number = 20e-9,
-  numPoints: number = 1000,
-): number {
-  const dx = (xMax - xMin) / (numPoints - 1);
-  let normSq = 0;
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-    const tanhVal = Math.tanh(x / a);
-    const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
-    const psi = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
-    normSq += psi * psi * dx;
-  }
-
-  return 1 / Math.sqrt(normSq);
-}
-
-/**
- * Calculate wavefunction zeros for Rosen-Morse potential (numerical approach).
- * Finds zeros by detecting sign changes in the wavefunction.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param searchRange - Range to search for zeros (in meters)
- * @returns Array of x positions (in meters) where wavefunction is zero
+ * Positions (m) of the n nodes of ψ_n, found as sign changes on a fine grid and refined by bisection.
  */
 export function calculateRosenMorsePotentialWavefunctionZeros(
   potentialDepth: number,
@@ -527,91 +412,52 @@ export function calculateRosenMorsePotentialWavefunctionZeros(
   wellWidth: number,
   mass: number,
   stateIndex: number,
-  searchRange: number = 20e-9,
 ): number[] {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
   const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
-
-  const s = lambdaEff - n - 0.5;
-  const alphaJac = s - mu;
-  const betaJac = s + mu;
-
-  // Ground state has no zeros
+  requireBoundState(spectrum, n);
   if (n === 0) {
     return [];
   }
+  const state = rosenMorseState(spectrum, n);
+  const psi = (x: number): number => wavefunctionAt(spectrum, state, n, x);
 
+  // Nodes lie within the classically allowed region, well inside the decay length
+  const halfWidth = integrationHalfWidth(state.alpha, state.beta) * wellWidth;
+  const samples = 4000;
+  const dx = (2 * halfWidth) / samples;
   const zeros: number[] = [];
-  const numSamples = 1000;
-  const dx = (2 * searchRange) / numSamples;
-
-  let prevX = -searchRange;
-  const prevTanh = Math.tanh(prevX / a);
-  const prevSech = 1.0 / Math.cosh(prevX / a);
-  const prevJacobi = jacobiPolynomial(n, alphaJac, betaJac, prevTanh);
-  let prevVal = prevSech ** s * Math.exp(mu * prevTanh) * prevJacobi;
-
-  for (let i = 1; i <= numSamples; i++) {
-    const x = -searchRange + i * dx;
-    const tanhVal = Math.tanh(x / a);
-    const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
-    const val = sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
-
-    // Sign change detected
-    if (prevVal * val < 0) {
-      // Use bisection to refine
+  let prevX = -halfWidth;
+  let prevPsi = psi(prevX);
+  for (let i = 1; i <= samples && zeros.length < n; i++) {
+    const x = -halfWidth + i * dx;
+    const value = psi(x);
+    if (prevPsi !== 0 && value !== 0 && Math.sign(value) !== Math.sign(prevPsi)) {
       let left = prevX;
       let right = x;
-      for (let iter = 0; iter < 20; iter++) {
+      for (let iter = 0; iter < 60; iter++) {
         const mid = (left + right) / 2;
-        const midTanh = Math.tanh(mid / a);
-        const midSech = 1.0 / Math.cosh(mid / a);
-        const midJacobi = jacobiPolynomial(n, alphaJac, betaJac, midTanh);
-        const valMid = midSech ** s * Math.exp(mu * midTanh) * midJacobi;
-
-        if (Math.abs(valMid) < 1e-12) {
-          zeros.push(mid);
-          break;
-        }
-
-        if (valMid * prevVal < 0) {
-          right = mid;
-        } else {
+        if (Math.sign(psi(mid)) === Math.sign(psi(left))) {
           left = mid;
-        }
-
-        if (iter === 19) {
-          zeros.push((left + right) / 2);
+        } else {
+          right = mid;
         }
       }
+      zeros.push((left + right) / 2);
     }
-
     prevX = x;
-    prevVal = val;
+    prevPsi = value;
   }
-
   return zeros;
 }
 
+/** Central-difference step for derivatives: small against a, large against round-off. */
+function derivativeStep(wellWidth: number): number {
+  return wellWidth * 1e-4;
+}
+
 /**
- * Calculate the first derivative of the wavefunction for a Rosen-Morse potential.
- * Uses numerical differentiation on the analytical wavefunction.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param xGrid - Array of x positions in meters where derivatives should be evaluated
- * @returns Array of first derivative values
+ * dψ_n/dx (1/m^(3/2)) at each x (m), by central differences of the exact ψ_n.
  */
 export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
   potentialDepth: number,
@@ -621,62 +467,19 @@ export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
   stateIndex: number,
   xGrid: number[],
 ): number[] {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
-  const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
-
-  const s = lambdaEff - n - 0.5;
-  const alphaJac = s - mu;
-  const betaJac = s + mu;
-
-  // Compute normalization constant
-  const xMin = Math.min(...xGrid);
-  const xMax = Math.max(...xGrid);
-  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, 1000);
-
-  const firstDerivative: number[] = [];
-  const h = 1e-12; // Small step for numerical differentiation
-
-  for (const x of xGrid) {
-    // Evaluate at x-h, x+h
-    const xMinus = x - h;
-    const xPlus = x + h;
-
-    const tanhMinus = Math.tanh(xMinus / a);
-    const sechMinus = 1.0 / Math.cosh(xMinus / a);
-    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
-    const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
-
-    const tanhPlus = Math.tanh(xPlus / a);
-    const sechPlus = 1.0 / Math.cosh(xPlus / a);
-    const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
-    const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
-
-    // First derivative using central difference
-    const firstDeriv = (psiPlus - psiMinus) / (2 * h);
-    firstDerivative.push(firstDeriv);
-  }
-
-  return firstDerivative;
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  requireBoundState(spectrum, stateIndex);
+  const state = rosenMorseState(spectrum, stateIndex);
+  const h = derivativeStep(wellWidth);
+  return xGrid.map(
+    (x) =>
+      (wavefunctionAt(spectrum, state, stateIndex, x + h) - wavefunctionAt(spectrum, state, stateIndex, x - h)) /
+      (2 * h),
+  );
 }
 
 /**
- * Calculate the second derivative of the wavefunction for a Rosen-Morse potential.
- * Uses numerical differentiation on the analytical wavefunction.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param xGrid - Array of x positions in meters where derivatives should be evaluated
- * @returns Array of second derivative values
+ * d²ψ_n/dx² (1/m^(5/2)) at each x (m), by central differences of the exact ψ_n.
  */
 export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
   potentialDepth: number,
@@ -686,68 +489,21 @@ export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
   stateIndex: number,
   xGrid: number[],
 ): number[] {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
-  const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
-
-  const s = lambdaEff - n - 0.5;
-  const alphaJac = s - mu;
-  const betaJac = s + mu;
-
-  // Compute normalization constant
-  const xMin = Math.min(...xGrid);
-  const xMax = Math.max(...xGrid);
-  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, 1000);
-
-  const secondDerivative: number[] = [];
-  const h = 1e-12; // Small step for numerical differentiation
-
-  for (const x of xGrid) {
-    // Evaluate at x-h, x, x+h
-    const xMinus = x - h;
-    const xPlus = x + h;
-
-    const tanhMinus = Math.tanh(xMinus / a);
-    const sechMinus = 1.0 / Math.cosh(xMinus / a);
-    const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
-    const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
-
-    const tanh = Math.tanh(x / a);
-    const sech = 1.0 / Math.cosh(x / a);
-    const jacobi = jacobiPolynomial(n, alphaJac, betaJac, tanh);
-    const psi = normalization * sech ** s * Math.exp(mu * tanh) * jacobi;
-
-    const tanhPlus = Math.tanh(xPlus / a);
-    const sechPlus = 1.0 / Math.cosh(xPlus / a);
-    const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
-    const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
-
-    // Second derivative using central difference
-    const secondDeriv = (psiPlus - 2 * psi + psiMinus) / (h * h);
-    secondDerivative.push(secondDeriv);
-  }
-
-  return secondDerivative;
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  requireBoundState(spectrum, stateIndex);
+  const state = rosenMorseState(spectrum, stateIndex);
+  const h = derivativeStep(wellWidth);
+  return xGrid.map(
+    (x) =>
+      (wavefunctionAt(spectrum, state, stateIndex, x + h) -
+        2 * wavefunctionAt(spectrum, state, stateIndex, x) +
+        wavefunctionAt(spectrum, state, stateIndex, x - h)) /
+      (h * h),
+  );
 }
 
 /**
- * Calculate the minimum and maximum values of the wavefunction for a Rosen-Morse potential.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min/max values and x-positions of all extrema
+ * Minimum and maximum of ψ_n on [xMin, xMax], and the positions of its interior extrema.
  */
 export function calculateRosenMorsePotentialWavefunctionMinMax(
   potentialDepth: number,
@@ -759,99 +515,30 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
   xMax: number,
   numPoints: number = 1000,
 ): { min: number; max: number; extremaPositions: number[] } {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
-  const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
-
-  const s = lambdaEff - n - 0.5;
-  const alphaJac = s - mu;
-  const betaJac = s + mu;
-
-  // Compute normalization constant
-  const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, numPoints);
-
-  let min = Infinity;
-  let max = -Infinity;
-  const extremaPositions: number[] = [];
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  requireBoundState(spectrum, stateIndex);
+  const state = rosenMorseState(spectrum, stateIndex);
 
   const dx = (xMax - xMin) / (numPoints - 1);
-  const h = 1e-12; // Small step for numerical derivative
-  let prevDerivativeSign: number | null = null;
-
+  const values: number[] = [];
   for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-
-    const tanhVal = Math.tanh(x / a);
-    const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
-    const psi = normalization * sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
-
-    // Calculate derivative using central difference for extrema detection
-    let derivative = 0;
-    if (i > 0 && i < numPoints - 1) {
-      const xMinus = x - h;
-      const xPlus = x + h;
-
-      const tanhMinus = Math.tanh(xMinus / a);
-      const sechMinus = 1.0 / Math.cosh(xMinus / a);
-      const jacobiMinus = jacobiPolynomial(n, alphaJac, betaJac, tanhMinus);
-      const psiMinus = normalization * sechMinus ** s * Math.exp(mu * tanhMinus) * jacobiMinus;
-
-      const tanhPlus = Math.tanh(xPlus / a);
-      const sechPlus = 1.0 / Math.cosh(xPlus / a);
-      const jacobiPlus = jacobiPolynomial(n, alphaJac, betaJac, tanhPlus);
-      const psiPlus = normalization * sechPlus ** s * Math.exp(mu * tanhPlus) * jacobiPlus;
-
-      derivative = (psiPlus - psiMinus) / (2 * h);
-    }
-
-    if (psi < min) {
-      min = psi;
-    }
-    if (psi > max) {
-      max = psi;
-    }
-
-    // Detect extrema by sign change in derivative
-    const currentDerivativeSign = Math.sign(derivative);
-    if (
-      prevDerivativeSign !== null &&
-      currentDerivativeSign !== prevDerivativeSign &&
-      prevDerivativeSign !== 0 &&
-      Math.abs(derivative) > 1e-10 // Avoid numerical noise
-    ) {
-      extremaPositions.push(x);
-    }
-    prevDerivativeSign = currentDerivativeSign;
+    values.push(wavefunctionAt(spectrum, state, stateIndex, xMin + i * dx));
   }
 
-  return { min, max, extremaPositions };
+  const extremaPositions: number[] = [];
+  for (let i = 1; i < numPoints - 1; i++) {
+    const rising = values[i]! - values[i - 1]!;
+    const falling = values[i + 1]! - values[i]!;
+    if (rising * falling < 0) {
+      extremaPositions.push(xMin + i * dx);
+    }
+  }
+
+  return { min: Math.min(...values), max: Math.max(...values), extremaPositions };
 }
 
 /**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a Rosen-Morse potential.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param barrierHeight - Barrier height V_1 in Joules
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
+ * Minimum and maximum of Re Ψ(x, t) on [xMin, xMax] for Ψ = Σ cₙ ψₙ(x) exp(−iEₙt/ℏ).
  */
 export function calculateRosenMorsePotentialSuperpositionMinMax(
   potentialDepth: number,
@@ -865,55 +552,28 @@ export function calculateRosenMorsePotentialSuperpositionMinMax(
   xMax: number,
   numPoints: number = 1000,
 ): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const V1 = barrierHeight;
-  const a = wellWidth;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const mu = (a * Math.sqrt(2 * mass) * V1) / (2 * HBAR * Math.sqrt(V0));
-  const lambdaEff = Math.sqrt(lambda * lambda - mu * mu);
+  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
+  const count = Math.min(coefficients.length, energies.length, spectrum.numBound);
+  const states: RosenMorseState[] = [];
+  for (let n = 0; n < count; n++) {
+    states.push(rosenMorseState(spectrum, n));
+  }
 
   let min = Infinity;
   let max = -Infinity;
-
   const dx = (xMax - xMin) / (numPoints - 1);
-
   for (let i = 0; i < numPoints; i++) {
     const x = xMin + i * dx;
     let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
+    for (let n = 0; n < count; n++) {
       const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      const s = lambdaEff - n - 0.5;
-      const alphaJac = s - mu;
-      const betaJac = s + mu;
-
-      // Compute normalization constant for this state
-      const normalization = computeRosenMorseNormalization(a, s, mu, n, alphaJac, betaJac, xMin, xMax, numPoints);
-
-      const tanhVal = Math.tanh(x / a);
-      const sechVal = 1.0 / Math.cosh(x / a);
-      const jacobiPoly = jacobiPolynomial(n, alphaJac, betaJac, tanhVal);
-      const psi = normalization * sechVal ** s * Math.exp(mu * tanhVal) * jacobiPoly;
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: real part
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      const psi = wavefunctionAt(spectrum, states[n]!, n, x);
+      // Re[(c_r + i c_i) ψ (cos φ + i sin φ)] with φ = −E t/ℏ
+      const phase = (-energies[n]! * time) / QuantumConstants.HBAR;
+      realPart += psi * (cReal * Math.cos(phase) - cImag * Math.sin(phase));
     }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
+    min = Math.min(min, realPart);
+    max = Math.max(max, realPart);
   }
 
   return { min, max };

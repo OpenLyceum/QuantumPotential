@@ -5,6 +5,7 @@
 
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
+import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
@@ -26,6 +27,8 @@ export type CurvatureToolOptions = {
   viewToDataX: (x: number) => number;
   parentNode: Node; // Reference to parent chart node for coordinate conversions
 };
+
+const tools = stringManager.getA11yStrings().tools;
 
 export class CurvatureTool extends Node {
   private readonly model: ScreenModel;
@@ -52,13 +55,11 @@ export class CurvatureTool extends Node {
       // pdom - container for the curvature tool
       tagName: "div",
       labelTagName: "h3",
-      labelContent: "Curvature Visualization",
+      labelContent: tools.curvatureHeadingStringProperty,
       descriptionTagName: "p",
-      descriptionContent: new DerivedProperty([showPropertyInternal], (enabled) =>
-        enabled
-          ? "Showing second derivative d²ψ/dx². Curvature is proportional to (V(x) - E)ψ(x) " +
-            "according to the Schrödinger equation. Positive curvature where V > E, negative where V < E."
-          : "Curvature visualization disabled.",
+      descriptionContent: new DerivedProperty(
+        [showPropertyInternal, tools.curvatureDescriptionStringProperty, tools.curvatureDisabledStringProperty],
+        (enabled, description, disabled) => (enabled ? description : disabled),
       ),
     });
 
@@ -86,8 +87,8 @@ export class CurvatureTool extends Node {
       tagName: "div",
       ariaRole: "slider",
       focusable: true,
-      accessibleName: "Curvature Measurement Position",
-      labelContent: "Position for curvature and second derivative display",
+      accessibleName: tools.curvatureMarkerStringProperty,
+      labelContent: tools.curvatureMarkerLabelStringProperty,
       pdomAttributes: [
         { attribute: "aria-valuemin", value: -5 },
         { attribute: "aria-valuemax", value: 5 },
@@ -97,21 +98,25 @@ export class CurvatureTool extends Node {
         },
         {
           attribute: "aria-valuetext",
-          value: `Position: ${this.markerXProperty.value.toFixed(2)} nanometers`,
+          value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
+            position: this.markerXProperty.value.toFixed(2),
+          }),
         },
       ],
-      accessibleHelpText:
-        "Use Left/Right arrow keys to move marker. " +
-        "Shift+Arrow for fine control. " +
-        "Page Up/Down for large steps. " +
-        "Shows second derivative (curvature) at selected position.",
+      accessibleHelpText: new DerivedProperty(
+        [tools.markerHelpStringProperty, tools.curvatureMarkerHelpStringProperty],
+        (help, shows) => `${help} ${shows}`,
+      ),
     });
     this.container.addChild(this.marker);
 
     // Update aria-valuetext when position changes
     this.markerXProperty.link((position) => {
       this.marker.setPDOMAttribute("aria-valuenow", position.toFixed(2));
-      this.marker.setPDOMAttribute("aria-valuetext", `Position: ${position.toFixed(2)} nanometers`);
+      this.marker.setPDOMAttribute(
+        "aria-valuetext",
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+      );
     });
 
     // Create position tracking circle (shows position on wavefunction)
@@ -225,9 +230,10 @@ export class CurvatureTool extends Node {
         const derivatives = this.calculateDerivatives(position, "waveFunction");
 
         if (derivatives !== null) {
-          const message =
-            `Marker at ${position.toFixed(2)} nanometers. ` +
-            `Second derivative: ${derivatives.secondDerivative.toFixed(3)}.`;
+          const message = StringUtils.fillIn(tools.curvatureReadoutPatternStringProperty, {
+            position: position.toFixed(2),
+            value: derivatives.secondDerivative.toFixed(3),
+          });
           utteranceQueue.addToBack(new Utterance({ alert: message }));
         }
       },

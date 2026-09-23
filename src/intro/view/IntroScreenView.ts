@@ -25,8 +25,7 @@ export class IntroScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "Intro",
-        screenDescription: "Intro screen for exploring basic quantum bound states with simplified controls.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().introStringProperty,
       },
       options,
     );

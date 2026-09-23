@@ -52,7 +52,7 @@ export function createDoubleArrowShape(x1: number, x2: number, y: number): Shape
  * @param density - Array of probability density values ρ(x)
  * @returns Object containing average and RMS values (standard deviation)
  */
-export function calculateRMSStatistics(grid: number[], density: number[]): { avg: number; rms: number } {
+export function calculateRMSStatistics(grid: number[], density: number[]): { avg: number; rms: number } | null {
   // Normalize the distribution first using trapezoidal integration
   let totalProbability = 0;
   for (let i = 0; i < grid.length - 1; i++) {
@@ -69,6 +69,10 @@ export function calculateRMSStatistics(grid: number[], density: number[]): { avg
     const avgX = (grid[i]! + grid[i + 1]!) / 2;
     avg += avgX * avgDensity * dx;
   }
+  // An empty (or non-finite) distribution has no mean or spread
+  if (!(totalProbability > 0 && Number.isFinite(totalProbability))) {
+    return null;
+  }
   avg /= totalProbability;
 
   // Calculate RMS: sqrt(<x²> - <x>²) where <x²> = ∫ x² * ρ(x) dx
@@ -80,7 +84,8 @@ export function calculateRMSStatistics(grid: number[], density: number[]): { avg
     avgSquared += avgX * avgX * avgDensity * dx;
   }
   avgSquared /= totalProbability;
-  const rms = Math.sqrt(avgSquared - avg * avg);
+  // Round-off can make the variance slightly negative for very narrow distributions
+  const rms = Math.sqrt(Math.max(0, avgSquared - avg * avg));
 
-  return { avg, rms };
+  return Number.isFinite(avg) && Number.isFinite(rms) ? { avg, rms } : null;
 }

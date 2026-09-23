@@ -42,6 +42,23 @@ export type { WellParameters };
 // Re-export NumericalMethod for backward compatibility
 export { NumericalMethod };
 
+/** Samples per cell for cellAveragedPotential (midpoint rule). */
+const CELL_AVERAGE_SAMPLES = 16;
+
+/**
+ * The potential averaged over a cell of the given width centred on x (midpoint rule). Used for the
+ * numerical solvers so a discontinuous potential is represented by its correct weight in every cell.
+ */
+function cellAveragedPotential(potential: PotentialFunction, cellWidth: number): PotentialFunction {
+  return (x: number) => {
+    let sum = 0;
+    for (let k = 0; k < CELL_AVERAGE_SAMPLES; k++) {
+      sum += potential(x + ((k + 0.5) / CELL_AVERAGE_SAMPLES - 0.5) * cellWidth);
+    }
+    return sum / CELL_AVERAGE_SAMPLES;
+  };
+}
+
 /**
  * Main class for solving the 1D time-independent Schrödinger equation.
  */
@@ -218,7 +235,7 @@ export class Schrodinger1DSolver {
    * @returns Bound state results with energies and wavefunctions
    */
   public solveNumerical(
-    potential: PotentialFunction,
+    pointPotential: PotentialFunction,
     mass: number,
     numStates: number,
     gridConfig: GridConfig,
@@ -238,6 +255,14 @@ export class Schrodinger1DSolver {
       xMax,
       numPoints: coarseNumPoints,
     };
+
+    // Evaluate the potential as its average over each grid cell rather than at the grid point. For a
+    // step potential (square wells) point sampling makes the effective well and barrier widths depend on
+    // where the edges fall between samples, so levels jumped by several % as the grid size changed;
+    // the cell average weights each edge exactly. For smooth potentials it differs from point sampling
+    // only at O(dx²).
+    const cellWidth = (xMax - xMin) / Math.max(1, coarseNumPoints - 1);
+    const potential = cellAveragedPotential(pointPotential, cellWidth);
 
     let result: BoundStateResult;
 
