@@ -458,6 +458,18 @@ export class StringManager {
     return this.stringProperties.superpositionInstructionsStringProperty;
   }
 
+  get stateStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.stateStringProperty;
+  }
+
+  get probabilityColumnStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.probabilityColumnStringProperty;
+  }
+
+  get noBoundStatesForSuperpositionStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.noBoundStatesForSuperpositionStringProperty;
+  }
+
   get normalizationSumStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.normalizationSumStringProperty;
   }
