@@ -437,10 +437,13 @@ export class WaveFunctionChartNode extends Node {
       }
     }
 
-    // X-axis line at the bottom
-    const xAxis = new AxisLine(this.chartTransform, Orientation.HORIZONTAL);
+    // Horizontal axis follows y=0 as the displayed range changes.
+    const xAxis = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
+      stroke: QPPWColors.axisProperty,
+      value: 0,
+    });
     xAxis.x = this.chartMargins.left;
-    xAxis.y = this.chartMargins.top + this.plotHeight;
+    xAxis.y = this.chartMargins.top;
     axesNode.addChild(xAxis);
 
     // X-axis tick marks
@@ -477,8 +480,11 @@ export class WaveFunctionChartNode extends Node {
     xTickLabelSet.y = this.chartMargins.top + this.plotHeight;
     axesNode.addChild(xTickLabelSet);
 
-    // Y-axis line on the left
-    const yAxis = new AxisLine(this.chartTransform, Orientation.VERTICAL);
+    // Vertical axis follows x=0, centered in the shared position range.
+    const yAxis = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
+      stroke: QPPWColors.axisProperty,
+      value: 0,
+    });
     yAxis.x = this.chartMargins.left;
     yAxis.y = this.chartMargins.top;
     axesNode.addChild(yAxis);
@@ -518,16 +524,11 @@ export class WaveFunctionChartNode extends Node {
     yTickLabelSet.y = this.chartMargins.top;
     axesNode.addChild(yTickLabelSet);
 
-    // Y-axis label - centered on the visual center of the plot area
-    // Account for labels at top of chart (state label, avg/rms labels take ~40px)
-    const labelAreaHeight = 40;
-    const visualTop = this.chartMargins.top + labelAreaHeight;
-    const visualBottom = this.chartMargins.top + this.plotHeight;
+    // Position this after setting its text, since the rotated text changes its bounds.
     this.yAxisLabel = new Text("", {
       font: new PhetFont(14),
       fill: QPPWColors.labelFillProperty,
       centerX: 15,
-      centerY: (visualTop + visualBottom) / 2,
       rotation: -Math.PI / 2,
     });
     axesNode.addChild(this.yAxisLabel);
@@ -725,6 +726,8 @@ export class WaveFunctionChartNode extends Node {
     } else {
       this.yAxisLabel.string = a11y.visible.waveFunctionAxisStringProperty.value;
     }
+    // Leave room for the state and indicator labels at the top of the plot.
+    this.yAxisLabel.centerY = this.chartMargins.top + this.plotHeight / 2 + 30;
   }
 
   /**

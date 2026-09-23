@@ -74,13 +74,14 @@ export class IntroScreenView extends BaseScreenView {
     });
 
     // Position charts stacked vertically
-    this.energyChart.left = margin;
+    // Use each chart's local origin: visible bounds vary with axis labels, but the plot coordinates match.
+    this.energyChart.x = margin;
     this.energyChart.top = 10;
 
-    this.probabilityChart.left = margin;
+    this.probabilityChart.x = margin;
     this.probabilityChart.top = this.energyChart.top + energyChartHeight + chartSpacing;
 
-    this.waveFunctionChart.left = margin;
+    this.waveFunctionChart.x = margin;
     this.waveFunctionChart.top = this.probabilityChart.top + probabilityChartHeight + chartSpacing;
 
     this.wavenumberChart.left = 600;
