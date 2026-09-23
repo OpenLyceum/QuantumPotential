@@ -39,7 +39,6 @@ export class OneWellScreenView extends BaseScreenView {
       PotentialType.ASYMMETRIC_TRIANGLE,
       PotentialType.TRIANGULAR,
       PotentialType.COULOMB_1D,
-      PotentialType.COULOMB_3D,
     ];
 
     this.createStandardLayout(model, this.viewState, {

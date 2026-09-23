@@ -127,6 +127,11 @@ const QPPWColors = {
     projector: new Color(100, 100, 140), // Darker for projector
   }),
 
+  disabledButtonColorProperty: new ProfileColorProperty(qppw, "disabledButton", {
+    default: new Color(55, 55, 75),
+    projector: new Color(220, 220, 230),
+  }),
+
   // Forbidden region colors (for classically forbidden areas)
   forbiddenRegionLightProperty: new ProfileColorProperty(qppw, "forbiddenRegionLight", {
     default: new Color(255, 200, 200, 0.1), // Very faint red

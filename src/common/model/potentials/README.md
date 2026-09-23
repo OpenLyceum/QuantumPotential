@@ -35,7 +35,6 @@ The following potentials have exact analytical solutions:
 7. **EckartPotential** - Barrier potential
 8. **AsymmetricTrianglePotential** - Linear wall and barrier
 9. **Coulomb1DPotential** - 1D Coulomb potential
-10. **Coulomb3DPotential** - Hydrogen-like atom (radial)
 11. **TriangularPotential** - Triangular well
 
 ## Usage

@@ -85,6 +85,23 @@ export class SuperpositionDialog {
     this.dialog.hide();
   }
 
+  private isAllStatesEqually(config: SuperpositionConfig, numStates: number): boolean {
+    if (numStates === 0 || config.amplitudes.length !== numStates) {
+      return false;
+    }
+    const amplitude = 1 / Math.sqrt(numStates);
+    return config.amplitudes.every(
+      (value, index) => Math.abs(value - amplitude) < 1e-6 && Math.abs(config.phases[index] ?? 0) < 1e-6,
+    );
+  }
+
+  private getInitialPreset(config: SuperpositionConfig, numStates: number): SuperpositionType | "all" {
+    return this.model.superpositionTypeProperty.value === SuperpositionType.CUSTOM &&
+      this.isAllStatesEqually(config, numStates)
+      ? "all"
+      : this.model.superpositionTypeProperty.value;
+  }
+
   private createContent(boundStates: BoundStateResult | null): Node {
     const numStates = boundStates?.energies.length ?? 0;
     const model = this.model;
@@ -95,6 +112,20 @@ export class SuperpositionDialog {
     const pageCount = Math.ceil(numStates / SuperpositionDialog.PAGE_SIZE);
     let pageIndex = 0;
     let syncingCoefficients = false;
+    let selectedPreset: SuperpositionType | "all" | null = this.getInitialPreset(config, numStates);
+    const presetIndicators = new Map<SuperpositionType | "all", Text>();
+    const setSelectedPreset = (preset: SuperpositionType | "all" | null) => {
+      selectedPreset = preset;
+      presetIndicators.forEach((indicator, key) => {
+        indicator.opacity = key === preset ? 1 : 0;
+      });
+    };
+    const presetButton = (label: TReadOnlyProperty<string>, type: SuperpositionType | "all", listener: () => void) => {
+      const indicator = new Text("●", { font: new PhetFont(12), fill: QPPWColors.energyLevelSelectedProperty });
+      indicator.opacity = selectedPreset === type ? 1 : 0;
+      presetIndicators.set(type, indicator);
+      return new HBox({ spacing: 4, children: [indicator, this.createButton(label, listener)] });
+    };
 
     const preview = this.createPreview(boundStates);
     const updatePreview = preview.update;
@@ -114,6 +145,8 @@ export class SuperpositionDialog {
       movingRow.visible = false;
       twoLobedRow.visible = false;
       displacementRow.visible = false;
+      pairRow.visible = false;
+      setSelectedPreset(SuperpositionType.CUSTOM);
       updatePreview();
     };
 
@@ -250,14 +283,11 @@ export class SuperpositionDialog {
       }
       syncingCoefficients = false;
       updateConfig();
+      setSelectedPreset("all");
     };
     const normalizationRow = new HBox({
       spacing: 10,
-      children: [
-        normalizationText,
-        this.createButton(stringManager.normalizeButtonStringProperty, normalize),
-        this.createButton(stringManager.allStatesStringProperty, allStates),
-      ],
+      children: [normalizationText, this.createButton(stringManager.normalizeButtonStringProperty, normalize)],
     });
 
     if (numStates > 0) {
@@ -405,10 +435,16 @@ export class SuperpositionDialog {
       ];
     }
 
+    const pairControls = this.createPairControls(config, numStates, syncSliders, updatePreview);
+    const pairRow = pairControls.node;
+
     const selectPreset = (type: SuperpositionType) => {
       if (isSpatialPresetType(type)) {
         model.superpositionTypeProperty.value = type;
         applySpatial();
+      } else if (type === SuperpositionType.PSI_I_PSI_J && numStates >= 2) {
+        model.superpositionTypeProperty.value = type;
+        pairControls.apply();
       } else if (type === SuperpositionType.COHERENT && isOneWellModel(model)) {
         model.superpositionTypeProperty.value = type;
         syncSliders(model.superpositionConfigProperty.value);
@@ -420,26 +456,54 @@ export class SuperpositionDialog {
       movingRow.visible = type === SuperpositionType.MOVING_LOCALIZED;
       twoLobedRow.visible = type === SuperpositionType.TWO_LOBED;
       displacementRow.visible = type === SuperpositionType.COHERENT && isOneWellModel(model);
+      pairRow.visible = numStates >= 2 && type === SuperpositionType.PSI_I_PSI_J;
+      setSelectedPreset(type);
       okButton.enabled = numStates > 0 && this.amplitudeProperties.some((property) => property.value > 0);
       updatePreview();
     };
 
-    const presets = new HBox({
+    const twoLowestStatesButton = presetButton(
+      stringManager.psiIPsiJStringProperty,
+      SuperpositionType.PSI_I_PSI_J,
+      () => selectPreset(SuperpositionType.PSI_I_PSI_J),
+    );
+    twoLowestStatesButton.enabled = numStates >= 2;
+
+    const presets = new VBox({
       spacing: 8,
+      align: "left",
       children: [
-        this.createButton(stringManager.localizedStateStringProperty, () => selectPreset(SuperpositionType.LOCALIZED)),
-        this.createButton(stringManager.movingPacketStringProperty, () =>
-          selectPreset(SuperpositionType.MOVING_LOCALIZED),
-        ),
-        this.createButton(stringManager.twoLobedPacketStringProperty, () => selectPreset(SuperpositionType.TWO_LOBED)),
-        ...(isOneWellModel(model)
-          ? [
-              this.createButton(stringManager.coherentStateStringProperty, () =>
-                selectPreset(SuperpositionType.COHERENT),
-              ),
-            ]
-          : []),
-        this.createButton(stringManager.customStringProperty, () => selectPreset(SuperpositionType.CUSTOM)),
+        new HBox({
+          spacing: 8,
+          children: [
+            twoLowestStatesButton,
+            presetButton(stringManager.allStatesStringProperty, "all", allStates),
+            presetButton(stringManager.localizedStateStringProperty, SuperpositionType.LOCALIZED, () =>
+              selectPreset(SuperpositionType.LOCALIZED),
+            ),
+          ],
+        }),
+        new HBox({
+          spacing: 8,
+          children: [
+            presetButton(stringManager.movingPacketStringProperty, SuperpositionType.MOVING_LOCALIZED, () =>
+              selectPreset(SuperpositionType.MOVING_LOCALIZED),
+            ),
+            presetButton(stringManager.twoLobedPacketStringProperty, SuperpositionType.TWO_LOBED, () =>
+              selectPreset(SuperpositionType.TWO_LOBED),
+            ),
+            ...(isOneWellModel(model)
+              ? [
+                  presetButton(stringManager.coherentStateStringProperty, SuperpositionType.COHERENT, () =>
+                    selectPreset(SuperpositionType.COHERENT),
+                  ),
+                ]
+              : []),
+            presetButton(stringManager.customStringProperty, SuperpositionType.CUSTOM, () =>
+              selectPreset(SuperpositionType.CUSTOM),
+            ),
+          ],
+        }),
       ],
     });
 
@@ -448,6 +512,8 @@ export class SuperpositionDialog {
         normalize();
         updateConfig();
       }
+      model.isPlayingProperty.value = false;
+      model.timeProperty.value = 0;
       this.dialog.hide();
     });
     const updateOK = () => {
@@ -464,10 +530,26 @@ export class SuperpositionDialog {
       align: "left",
       children: [
         presets,
+        pairRow,
         spatialRow,
         movingRow,
         twoLobedRow,
         displacementRow,
+        new VBox({
+          spacing: 3,
+          align: "left",
+          children: [
+            new RichText(stringManager.superpositionEquationStringProperty, {
+              font: new PhetFont(14),
+              fill: QPPWColors.textFillProperty,
+            }),
+            new RichText(stringManager.superpositionEquationHelpStringProperty, {
+              font: new PhetFont(11),
+              fill: QPPWColors.labelFillProperty,
+              maxWidth: SuperpositionDialog.PREVIEW_WIDTH,
+            }),
+          ],
+        }),
         ...(numStates > 0
           ? [customControls]
           : [
@@ -493,6 +575,108 @@ export class SuperpositionDialog {
         new HBox({ spacing: 12, align: "center", children: [cancelButton, okButton] }),
       ],
     });
+  }
+
+  private createPairControls(
+    config: SuperpositionConfig,
+    numStates: number,
+    syncSliders: (preset: SuperpositionConfig) => void,
+    updatePreview: () => void,
+  ): { node: HBox; apply: () => void } {
+    if (numStates < 2) {
+      return { node: new HBox({ visible: false }), apply: () => undefined };
+    }
+    const model = this.model;
+    const initialPair = config.stateIndices ?? [0, 1];
+    const maxIndex = numStates - 1;
+    const firstIndex = Math.max(0, Math.min(initialPair[0], maxIndex));
+    const secondIndex = Math.max(0, Math.min(initialPair[1], maxIndex));
+    const firstStateProperty = new NumberProperty(firstIndex, {
+      range: new Range(0, maxIndex),
+    });
+    const secondStateProperty = new NumberProperty(
+      secondIndex === firstIndex ? (firstIndex + 1) % numStates : secondIndex,
+      {
+        range: new Range(0, maxIndex),
+      },
+    );
+    const pairSlider = (label: TReadOnlyProperty<string>, property: NumberProperty) => {
+      const value = new RichText("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+      property.link((index) => {
+        value.string = `${stringManager.stateStringProperty.value} ${index + 1} (ψ<sub>${index}</sub>)`;
+      });
+      return new VBox({
+        spacing: 3,
+        align: "left",
+        children: [
+          new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+          new HBox({
+            spacing: 6,
+            children: [
+              new HSlider(property, property.range!, {
+                trackSize: new Dimension2(180, 4),
+                constrainValue: Math.round,
+                keyboardStep: 1,
+                thumbSize: new Dimension2(13, 24),
+                accessibleName: label,
+              }),
+              value,
+            ],
+          }),
+        ],
+      });
+    };
+    const node = new HBox({
+      spacing: 16,
+      visible: numStates >= 2 && model.superpositionTypeProperty.value === SuperpositionType.PSI_I_PSI_J,
+      children: [
+        pairSlider(stringManager.firstStateStringProperty, firstStateProperty),
+        pairSlider(stringManager.secondStateStringProperty, secondStateProperty),
+      ],
+    });
+    const apply = () => {
+      if (numStates < 2 || model.superpositionTypeProperty.value !== SuperpositionType.PSI_I_PSI_J) {
+        return;
+      }
+      const first = firstStateProperty.value;
+      const second = secondStateProperty.value;
+      const amplitudes = new Array(numStates).fill(0);
+      amplitudes[first] = 1 / Math.sqrt(2);
+      amplitudes[second] = 1 / Math.sqrt(2);
+      const preset: SuperpositionConfig = {
+        type: SuperpositionType.PSI_I_PSI_J,
+        amplitudes,
+        phases: new Array(numStates).fill(0),
+        stateIndices: [first, second],
+      };
+      model.superpositionConfigProperty.value = preset;
+      syncSliders(preset);
+      updatePreview();
+    };
+    let syncingPair = false;
+    firstStateProperty.lazyLink((first) => {
+      if (syncingPair) {
+        return;
+      }
+      if (first === secondStateProperty.value) {
+        syncingPair = true;
+        secondStateProperty.value = (first + 1) % numStates;
+        syncingPair = false;
+      }
+      apply();
+    });
+    secondStateProperty.lazyLink((second) => {
+      if (syncingPair) {
+        return;
+      }
+      if (second === firstStateProperty.value) {
+        syncingPair = true;
+        firstStateProperty.value = (second + 1) % numStates;
+        syncingPair = false;
+      }
+      apply();
+    });
+    return { node, apply };
   }
 
   private createLegend(label: TReadOnlyProperty<string>, color: TReadOnlyProperty<Color>): Node {

@@ -60,7 +60,12 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
   private readonly arrowNode: ArrowNode;
   private readonly valueText: Text;
 
-  public constructor(spec: HandleSpec, coordinates: ChartCoordinates, isPlayingProperty: Property<boolean>) {
+  public constructor(
+    spec: HandleSpec,
+    coordinates: ChartCoordinates,
+    isPlayingProperty: Property<boolean>,
+    showValuesProperty: TReadOnlyProperty<boolean>,
+  ) {
     const range = spec.property.range;
 
     // Time pauses while a handle is dragged, then resumes (as in Quantum Bound States)
@@ -134,10 +139,17 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
       }),
     );
 
-    spec.property.link((value) => {
-      this.valueText.string = StringUtils.fillIn(spec.valuePattern, { value: value.toFixed(spec.decimalPlaces) });
+    const parameterNameProperty = QPPWDescriber.getParameterNameProperty(spec.parameter);
+    const updateValueText = () => {
+      this.valueText.string = showValuesProperty.value
+        ? `${parameterNameProperty.value} = ${StringUtils.fillIn(spec.valuePattern, { value: spec.property.value.toFixed(spec.decimalPlaces) })}`
+        : "";
       this.updateLabelPosition();
-    });
+    };
+    spec.property.link(updateValueText);
+    showValuesProperty.lazyLink(updateValueText);
+    parameterNameProperty.lazyLink(updateValueText);
+    spec.valuePattern.lazyLink(updateValueText);
   }
 
   /**

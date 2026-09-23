@@ -27,8 +27,10 @@ import { type BoundStateResult, PotentialType } from "../model/PotentialFunction
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
+import isDevMode from "../utils/isDevMode.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
+import { createConfigurePotentialButton } from "./ConfigurePotentialDialog.js";
 import { getEnergyLevelDecimalPlaces } from "./EnergyLevelPrecision.js";
 import { PotentialHandlesLayer } from "./handles/PotentialHandlesLayer.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
@@ -75,12 +77,13 @@ function getEnergyAxisRange(potentialType: PotentialType): {
     case PotentialType.MORSE:
       // Morse potential: V=0 at dissociation limit (infinity), V=-De at bottom
       return { min: -15, max: 5 };
+    case PotentialType.ECKART:
+      // The shallow Eckart dip and its higher left plateau fit this smaller window.
+      return { min: -5, max: 5 };
     case PotentialType.FINITE_WELL:
     case PotentialType.POSCHL_TELLER:
     case PotentialType.ROSEN_MORSE:
-    case PotentialType.ECKART:
     case PotentialType.COULOMB_1D:
-    case PotentialType.COULOMB_3D:
     case PotentialType.CUSTOM:
     default:
       // V=0 at infinity (wells with negative energy states)
@@ -262,8 +265,16 @@ export class EnergyChartNode extends BaseChartNode {
         x <= this.xMaxProperty.value &&
         y >= this.yMinProperty.value &&
         y <= this.yMaxProperty.value,
+      viewState.showEnergyValuesProperty,
     );
     this.addChild(this.potentialHandlesLayer);
+
+    if (isDevMode()) {
+      const configureButton = createConfigurePotentialButton(model);
+      configureButton.right = this.chartWidth - 5;
+      configureButton.top = 2;
+      this.addChild(configureButton);
+    }
 
     // Keyboard order: the handles that reshape the potential come before the (many) energy-level buttons
     this.pdomOrder = [this.potentialHandlesLayer, null];
@@ -1018,7 +1029,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Hide zero line for Coulomb potentials to reduce clutter
     const potentialType = this.model.potentialTypeProperty.value;
-    this.zeroLine.visible = potentialType !== PotentialType.COULOMB_1D && potentialType !== PotentialType.COULOMB_3D;
+    this.zeroLine.visible = potentialType !== PotentialType.COULOMB_1D;
   }
 
   /**

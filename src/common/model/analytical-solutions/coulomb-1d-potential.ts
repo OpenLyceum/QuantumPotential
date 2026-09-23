@@ -4,40 +4,16 @@
  *
  * This potential has a singularity at x=0 and describes a 1D hydrogen-like atom.
  *
- * IMPORTANT: For the pure 1D Coulomb potential, only odd-parity eigenstates exist
- * as normalizable solutions. Even-parity eigenstates are absent because they would
- * diverge at the origin. This implementation correctly produces ALL odd-parity
- * wavefunctions with ψ(0) = 0.
+ * We use the regular Dirichlet extension ψ(0) = 0, extended with odd parity to the full line.
+ * Its bound-state spectrum is the Rydberg spectrum, with principal number N = 1, 2, ...:
+ *   E_N = -mα²/(2ℏ²N²)
+ *   ψ_N(x) = C_N sign(x) ρ exp(-ρ/2) L_(N-1)^1(ρ),
+ *   ρ = 2|x|/(N a₀), a₀ = ℏ²/(mα), C_N = 1/sqrt(2 N³ a₀).
  *
- * WARNING: Standard numerical solvers (DVR, FGH, etc.) will incorrectly find a mix
- * of even and odd parity states if applied to this potential. Only the analytical
- * solution or the solveCoulomb1DNumerical wrapper (which filters for odd parity)
- * should be used. The analytical solution is STRONGLY PREFERRED as it's exact and
- * much more efficient.
- *
- * The 1D Coulomb problem has been studied in the physics literature, with particular
- * attention to the requirement that only odd-parity states are normalizable due to the
- * boundary conditions at the singular point x=0. The energy eigenvalues and wavefunctions
- * are derived from the Schrödinger equation with appropriate boundary conditions.
- *
- * FREELY AVAILABLE REFERENCES:
- * - Cheng, K.-M., & Lam, C. S. (2009). "The one-dimensional Coulomb Problem."
- *   arXiv:0905.3978. https://arxiv.org/abs/0905.3978
- *   Studies scattering and bound states for the 1D Coulomb potential V(x) = λ/|x|.
- *
- * - Campiglia, M., et al. (2019). "A Distributional Approach for the One-Dimensional Hydrogen Atom."
- *   Frontiers in Physics, 7, 101. https://www.frontiersin.org/articles/10.3389/fphy.2019.00101/full
- *   Addresses the non-integrable singularity at the origin using distribution theory.
- *
- * ENERGY EIGENVALUES:
- *   E_n = -mα²/(2ℏ²(n+1/2)²),  n = 0, 1, 2, ...
- *   (Note the half-integer quantum numbers, different from 3D Hydrogen)
- *
- * WAVEFUNCTIONS (odd parity only):
- *   ψ_n(x) = N_n · sign(x) · ρ · exp(-ρ/2) · L_n^1(ρ)
- *   where ρ = 2|x|/(n+1/2)a₀, a₀ = ℏ²/(mα), and L_n^1 are associated Laguerre polynomials.
- *   The sign(x) factor ensures odd parity: ψ(-x) = -ψ(x)
- *   The ρ factor ensures linear behavior near origin: ψ(x) ≈ Cx as x → 0
+ * The half-integer spectrum belongs to a different, singular boundary condition; it must
+ * not be combined with these regular Laguerre wavefunctions. See Abramovici and Avishai,
+ * "The one-dimensional Coulomb Problem" (2009), arXiv:0905.3978, section 4; and
+ * Totality Quantum Bound States, CoulombSolution.ts / Sam McKagan's Coulomb potential.pdf.
  */
 
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
@@ -138,7 +114,7 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
  * V(x) = -α/|x|
  *
  * This potential has a singularity at x=0 and describes a 1D hydrogen-like atom.
- * The energy eigenvalues are given by E_n = -mα²/(2ℏ²(n+1/2)²)
+ * The energy eigenvalues are E_N = -mα²/(2ℏ²N²), N = 1, 2, ...
  *
  * @param coulombStrength - Coulomb strength parameter α in J·m
  * @param mass - Particle mass in kg
@@ -155,10 +131,10 @@ export function solveCoulomb1DPotential(
   const { HBAR } = QuantumConstants;
   const alpha = coulombStrength;
 
-  // Calculate energies: E_n = -mα²/(2ℏ²(n+1/2)²) for n = 0, 1, 2, ...
+  // State index n corresponds to principal quantum number N = n + 1.
   const energies: number[] = [];
   for (let n = 0; n < numStates; n++) {
-    const energy = -(mass * alpha * alpha) / (2 * HBAR * HBAR * (n + 0.5) * (n + 0.5));
+    const energy = -(mass * alpha * alpha) / (2 * HBAR * HBAR * (n + 1) * (n + 1));
     energies.push(energy);
   }
 
@@ -170,21 +146,19 @@ export function solveCoulomb1DPotential(
     xGrid.push(gridConfig.xMin + i * dx);
   }
 
-  // Calculate effective Bohr radius for 1D: a_0 = ℏ²/(mα)
+  // Bohr radius a₀ = ℏ²/(mα)
   const a0 = (HBAR * HBAR) / (mass * alpha);
 
   // Calculate wavefunctions
-  // For 1D Coulomb, we use a hydrogen-like form with modified quantum numbers
-  // ψ_n(x) ∝ exp(-|x|/n*a_0) * L_n(2|x|/(n*a_0))
-  // where the effective n is (n + 1/2) for the 1D case
+  // Evaluate the regular odd-parity Laguerre eigenfunctions.
   const wavefunctions: number[][] = [];
 
   for (let n = 0; n < numStates; n++) {
     const wavefunction: number[] = [];
 
-    // Effective principal quantum number for 1D
-    const nEff = n + 0.5;
-    const aN = nEff * a0;
+    // Principal quantum number of the regular Coulomb state
+    const principal = n + 1;
+    const aN = principal * a0;
 
     // Normalization constant for 1D Coulomb
     // For ψ_n(x) = N * ρ * exp(-ρ/2) * L_n^1(ρ) where ρ = 2|x|/a_n
@@ -202,7 +176,7 @@ export function solveCoulomb1DPotential(
 
       // Wavefunction: ψ(x) = sign(x) * ρ * N * exp(-ρ/2) * L_n^1(ρ)
       // The factor of ρ ensures linear behavior near x=0: ψ(x) ≈ C*x
-      // ODD parity: ψ(-x) = -ψ(x), which matches the energy formula E_n = -E_R/(n+1/2)²
+      // ODD parity: ψ(-x) = -ψ(x), which matches the energy formula E_N = -E_R/N²
       const laguerre = associatedLaguerre(n, 1, rho);
       const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
 
@@ -364,12 +338,11 @@ export function calculateCoulomb1DWavefunctionZeros(
   const { HBAR } = QuantumConstants;
   const alpha = coulombStrength;
   const n = stateIndex;
-  const nEff = n + 0.5;
+  const principal = n + 1;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const aN = nEff * a0;
+  const aN = principal * a0;
 
-  // Ground state (n=0) has no interior zeros (L_0^1(ρ) = 1 - ρ has one zero at ρ=1)
-  // but the ρ factor gives a zero at x=0, which we don't count as an interior zero
+  // The ground state has no interior zeros; its only zero is at the origin.
 
   const zeros: number[] = [];
   const numSamples = 1000;
@@ -446,9 +419,9 @@ export function calculateCoulomb1DWavefunctionFirstDerivative(
   const { HBAR } = QuantumConstants;
   const alpha = coulombStrength;
   const n = stateIndex;
-  const nEff = n + 0.5;
+  const principal = n + 1;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const aN = nEff * a0;
+  const aN = principal * a0;
   const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   const firstDerivative: number[] = [];
@@ -467,8 +440,8 @@ export function calculateCoulomb1DWavefunctionFirstDerivative(
     // Handle near-singularity carefully
     if (Math.abs(x) < 2 * h) {
       // Very close to singularity - use the fact that ψ(x) ~ x near origin
-      // So ψ'(0) should be approximately constant (normalization factor)
-      firstDerivative.push(normalization);
+      // Since L_n^1(0) = n + 1, ψ'(0) = 2 N C_N / (N a₀).
+      firstDerivative.push((2 * (n + 1) * normalization) / aN);
       continue;
     }
 
@@ -506,9 +479,9 @@ export function calculateCoulomb1DWavefunctionSecondDerivative(
   const { HBAR } = QuantumConstants;
   const alpha = coulombStrength;
   const n = stateIndex;
-  const nEff = n + 0.5;
+  const principal = n + 1;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const aN = nEff * a0;
+  const aN = principal * a0;
   const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   const secondDerivative: number[] = [];
@@ -571,9 +544,9 @@ export function calculateCoulomb1DWavefunctionMinMax(
   const { HBAR } = QuantumConstants;
   const alpha = coulombStrength;
   const n = stateIndex;
-  const nEff = n + 0.5;
+  const principal = n + 1;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const aN = nEff * a0;
+  const aN = principal * a0;
   const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   let min = Infinity;
@@ -672,8 +645,8 @@ export function calculateCoulomb1DSuperpositionMinMax(
       const [cReal, cImag] = coefficients[n]!;
       const energy = energies[n]!;
 
-      const nEff = n + 0.5;
-      const aN = nEff * a0;
+      const principal = n + 1;
+      const aN = principal * a0;
       const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
       // Calculate wavefunction value

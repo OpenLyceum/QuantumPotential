@@ -9,7 +9,6 @@ export { AnalyticalPotential } from "./AnalyticalPotential.js";
 export { AsymmetricTrianglePotential } from "./AsymmetricTrianglePotential.js";
 export { BasePotential } from "./BasePotential.js";
 export { Coulomb1DPotential } from "./Coulomb1DPotential.js";
-export { Coulomb3DPotential } from "./Coulomb3DPotential.js";
 export { EckartPotential } from "./EckartPotential.js";
 export { FiniteSquareWellPotential } from "./FiniteSquareWellPotential.js";
 export { HarmonicOscillatorPotential } from "./HarmonicOscillatorPotential.js";

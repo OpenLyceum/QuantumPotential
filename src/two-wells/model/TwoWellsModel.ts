@@ -21,7 +21,7 @@ export class TwoWellsModel extends BaseModel {
   /**
    * Default well width in nanometers for double square well.
    */
-  private static readonly DEFAULT_WELL_WIDTH = 1.0;
+  private static readonly DEFAULT_WELL_WIDTH = 2.4;
 
   /**
    * Minimum well width in nanometers for double square well.
@@ -47,7 +47,7 @@ export class TwoWellsModel extends BaseModel {
   /**
    * Maximum well separation in nanometers.
    */
-  private static readonly WELL_SEPARATION_MAX = 0.7;
+  private static readonly WELL_SEPARATION_MAX = 4.0;
 
   /**
    * Default barrier height in electron volts.
@@ -139,6 +139,7 @@ export class TwoWellsModel extends BaseModel {
     super({
       potentialType: PotentialType.DOUBLE_SQUARE_WELL,
       wellWidth: TwoWellsModel.DEFAULT_WELL_WIDTH,
+      wellDepth: 13,
       wellWidthRange: new Range(TwoWellsModel.TWO_WELL_WIDTH_MIN, TwoWellsModel.TWO_WELL_WIDTH_MAX),
       // Default to an equal superposition of the first two states
       superpositionConfig: {
@@ -272,12 +273,18 @@ export class TwoWellsModel extends BaseModel {
     let gridConfig: GridConfig;
 
     if (this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL) {
-      // For double square well, use analytical solution with fixed high-resolution grid
-      // spanning the full chart range
+      // Keep both wells inside the solution grid even when their separation exceeds the chart.
+      const halfSpanNm = Math.max(
+        TwoWellsModel.CHART_DISPLAY_RANGE_NM,
+        this.wellSeparationProperty.value / 2 + this.wellWidthProperty.value + 1.5,
+      );
+      const scaledPoints = Math.round(
+        (TwoWellsModel.DOUBLE_WELL_GRID_POINTS * halfSpanNm) / TwoWellsModel.CHART_DISPLAY_RANGE_NM,
+      );
       gridConfig = {
-        xMin: -TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
-        xMax: TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
-        numPoints: TwoWellsModel.DOUBLE_WELL_GRID_POINTS,
+        xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
+        xMax: halfSpanNm * QuantumConstants.NM_TO_M,
+        numPoints: scaledPoints % 2 === 1 ? scaledPoints : scaledPoints + 1,
       };
     } else if (this.potentialTypeProperty.value === PotentialType.DOUBLE_POSCHL_TELLER) {
       // Smooth wells need room for their exponential tails beyond the visible chart.

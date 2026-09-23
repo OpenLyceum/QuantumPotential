@@ -5,6 +5,7 @@
  *  - dragging to the anchor of a value recovers that value, i.e. the drag mapping inverts the anchor.
  */
 
+import { Property } from "scenerystack/axon";
 import { Vector2 } from "scenerystack/dot";
 import { describe, expect, it } from "vitest";
 import { PotentialType } from "../src/common/model/PotentialFunction.js";
@@ -49,6 +50,7 @@ function createHandles(model: ScreenModel): PotentialHandleNode[] {
     model,
     { toView: ({ x, y }) => new Vector2(x, y), toModel: ({ x, y }) => ({ x, y }) },
     () => true,
+    new Property(false),
   );
   return layer.children as PotentialHandleNode[];
 }

@@ -8,7 +8,7 @@ This document describes the implementation of the 1D time-independent Schröding
 
 ### Analytical Solutions
 
-For well-known potentials, the solver provides exact analytical solutions for **12 potentials**:
+For well-known potentials, the solver provides exact analytical solutions for **11 potentials**:
 
 - **Infinite Square Well**: $E_n = \frac{n^2 \pi^2 \hbar^2}{2mL^2}$
 - **Finite Square Well**: Transcendental equation solutions
@@ -19,8 +19,7 @@ For well-known potentials, the solver provides exact analytical solutions for **
 - **Eckart Potential**: Analytical solutions for barrier potentials
 - **Asymmetric Triangle**: Airy function solutions
 - **Triangular Potential**: Finite triangular well with Airy functions
-- **1D Coulomb**: $E_n = -\frac{m\alpha^2}{2\hbar^2 (n + \frac{1}{2})^2}$ (odd-parity states only)
-- **3D Coulomb (Radial)**: Hydrogen-like energy levels
+- **1D Coulomb**: $E_N = -\frac{m\alpha^2}{2\hbar^2 N^2}$, $N=1,2,\ldots$ (regular odd-parity states)
 - **Double Square Well**: Symmetric double well with parity-separated states
 
 ### Multi-Well Potentials (Numerical Solutions)

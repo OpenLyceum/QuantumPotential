@@ -22,7 +22,7 @@ export class ManyWellsModel extends BaseModel {
   /**
    * Default well width in nanometers for multi-square well.
    */
-  private static readonly DEFAULT_WELL_WIDTH = 1.0;
+  private static readonly DEFAULT_WELL_WIDTH = 1.8;
 
   /**
    * Minimum well width in nanometers for multi-square well.
@@ -126,6 +126,7 @@ export class ManyWellsModel extends BaseModel {
     super({
       potentialType: PotentialType.MULTI_SQUARE_WELL,
       wellWidth: ManyWellsModel.DEFAULT_WELL_WIDTH,
+      wellDepth: 12,
       wellWidthRange: new Range(ManyWellsModel.MANY_WELL_WIDTH_MIN, ManyWellsModel.MANY_WELL_WIDTH_MAX),
       // Default to an equal superposition of the first two states
       superpositionConfig: {

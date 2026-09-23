@@ -10,7 +10,7 @@ import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Line, Node, Path, Text, VBox } from "scenerystack/scenery";
+import { Line, Node, Path, RichText, Text, VBox } from "scenerystack/scenery";
 import { EyeToggleButton, PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
@@ -89,7 +89,7 @@ export class WaveFunctionChartNode extends Node {
   private readonly stateLabelNode: Text; // Label showing which wavefunction is displayed
   private readonly stateLabelPanel: Panel;
   private readonly avgPositionLabel: Text;
-  private readonly rmsPositionLabel: Text;
+  private readonly rmsPositionLabel: RichText;
 
   // Tool components
   private readonly areaMeasurementTool: AreaMeasurementTool;
@@ -337,7 +337,7 @@ export class WaveFunctionChartNode extends Node {
     });
     this.addChild(this.avgPositionLabel);
 
-    this.rmsPositionLabel = new Text("", {
+    this.rmsPositionLabel = new RichText("", {
       font: new PhetFont(12),
       fill: QPPWColors.labelFillProperty,
       left: this.chartMargins.left + 10,

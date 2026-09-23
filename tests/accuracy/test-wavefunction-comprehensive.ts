@@ -14,7 +14,6 @@
  * 1. Harmonic Oscillator (exact analytical solution)
  * 2. Infinite Square Well (exact analytical solution)
  * 3. Finite Square Well (high-accuracy numerical solution)
- * 4. Hydrogen Atom / 3D Coulomb (exact analytical solution)
  * 5. Morse Potential (exact analytical solution)
  * 6. Pöschl-Teller Potential (exact analytical solution)
  *
@@ -43,7 +42,6 @@
  *   or: npm run test:wavefunction
  */
 
-import { solveCoulomb3DPotential } from "../../src/common/model/analytical-solutions/coulomb-3d-potential.js";
 import { solveFiniteSquareWell } from "../../src/common/model/analytical-solutions/finite-square-well.js";
 import { solveHarmonicOscillator } from "../../src/common/model/analytical-solutions/harmonic-oscillator.js";
 import { solveMorsePotential } from "../../src/common/model/analytical-solutions/morse-potential.js";
@@ -81,9 +79,7 @@ const ENERGY_TOLERANCE_HARMONIC = 0.001; // 0.1% for harmonic oscillator (exact)
 // 1 % for the finite well: a step potential is only sampled at grid points, and the error grows with
 // k·dx for the upper levels (≈ 0.7 % for the top level at 511 points)
 const ENERGY_TOLERANCE_FINITE_WELL = 0.01;
-// 5 % for Coulomb: the r → 0 cusp makes uniform-grid solvers converge only linearly in h
 // (a matrix method at h ≈ 0.1 a₀ gives −13.01 eV for the −13.61 eV ground state)
-const ENERGY_TOLERANCE_COULOMB = 0.05;
 const ENERGY_TOLERANCE_MORSE = 0.01; // 1% for Morse
 const ENERGY_TOLERANCE_POSCHL = 0.01; // 1% for Pöschl-Teller
 
@@ -627,60 +623,6 @@ function testFiniteSquareWell(): void {
 }
 
 /**
- * Test all methods against 3D Coulomb potential (Hydrogen atom)
- */
-function testCoulomb3D(): void {
-  console.log("\n" + "=".repeat(80));
-  console.log("3D COULOMB POTENTIAL (HYDROGEN ATOM) TESTS");
-  console.log("=".repeat(80));
-
-  const Z = 1; // Hydrogen
-  const mass = ELECTRON_MASS;
-  const numStates = 4;
-
-  // Radial grid r = h, 2h, …, 40a₀ (u(0) = 0 is imposed just outside the grid). Starting at r ≈ 0
-  // (the old xMin = 1e-12 m) put a sample at V ≈ −1400 eV and produced a spurious deep state.
-  const a0 = 0.529e-10; // Bohr radius
-  const numPoints = 500;
-  const h = (50 * a0) / numPoints;
-  const gridConfig: GridConfig = {
-    xMin: h,
-    xMax: 50 * a0, // the n = 4 state (⟨r⟩ = 24 a₀) must have decayed at the far edge
-    numPoints,
-  };
-
-  // Potential function: V(r) = -Ze²/(4πε₀r) for 3D
-  const e = 1.602176634e-19; // Elementary charge (C)
-  const epsilon0 = 8.8541878128e-12; // Vacuum permittivity (F/m)
-  const ke = 1 / (4 * Math.PI * epsilon0);
-  const coulombStrength = Z * e * e * ke; // α in J·m
-  const V = (r: number) => -coulombStrength / Math.max(r, 1e-15);
-
-  // Analytical solution (s-waves, L = 0)
-  const analytical = solveCoulomb3DPotential(coulombStrength, mass, numStates, gridConfig);
-
-  // Numerov only: FGH assumes a periodic domain, which a radial grid starting at r = h is not
-  const methods = [{ name: "Numerov", solver: NUMEROV }];
-
-  for (const method of methods) {
-    const result = testMethodComprehensive(
-      method.name,
-      method.solver,
-      V,
-      analytical,
-      mass,
-      numStates,
-      gridConfig,
-      "3D Coulomb / Hydrogen",
-      ENERGY_TOLERANCE_COULOMB,
-      false, // Not symmetric
-      true, // Radial: u(r) ∝ r at the origin, so only the r → ∞ edge must decay
-    );
-    printTestResult(result);
-  }
-}
-
-/**
  * Test all methods against Morse potential
  */
 function testMorsePotential(): void {
@@ -802,7 +744,6 @@ function runAllTests(): void {
   testHarmonicOscillator();
   // testInfiniteSquareWell(); // Skip - hard walls cause issues with numerical solvers
   testFiniteSquareWell();
-  testCoulomb3D();
   testMorsePotential();
   testPoschlTellerPotential();
 

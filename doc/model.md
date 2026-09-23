@@ -130,19 +130,19 @@ Stationary states don't change shape (only phase), while superposition states ev
 - What physical systems are approximated by harmonic oscillators?
 - How does tunneling affect energy levels in finite wells?
 
-### Activity 3: The Hydrogen Atom (45-60 minutes)
+### Activity 3: The 1D Coulomb Model (45-60 minutes)
 
 **Objective**: Connect 1D quantum mechanics to real atomic systems.
 
 **Instructions**:
 
-1. Select the Coulomb 3D potential (hydrogen atom)
+1. Select the 1D Coulomb potential
 2. Observe the energy levels:
    - Note they get closer together at higher n
    - Compare to the Bohr model formula: E_n = -13.6 eV / n²
 3. Examine wave functions:
-   - Ground state (n=0): no nodes, maximum at origin
-   - Excited states: increasing nodes
+   - Ground state (N=1): a node at the singular origin, with a peak on either side
+   - Excited states: increasing nodes on each side
 
 **Discussion Questions**:
 
@@ -279,7 +279,7 @@ Superposition is conceptually challenging. Master eigenstates first, then introd
 
 ### Tip 8: Discuss Limitations
 
-Be transparent about the 1D approximation. Discuss when 1D models are good approximations (e.g., quantum wells in semiconductors) and when 3D is essential (though 3D Coulomb is included).
+Be transparent about the 1D approximation. Discuss when 1D models are good approximations (e.g., quantum wells in semiconductors) and when 3D is essential.
 
 ## Assessment Ideas
 

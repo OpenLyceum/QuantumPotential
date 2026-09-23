@@ -90,6 +90,10 @@ export class StringManager {
     return this.stringProperties.titleStringProperty;
   }
 
+  get configurePotentialStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.configurePotentialStringProperty;
+  }
+
   get oneWellStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.oneWellScreenStringProperty;
   }
@@ -302,10 +306,6 @@ export class StringManager {
     return this.stringProperties.coulomb1DStringProperty;
   }
 
-  get coulomb3DStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.coulomb3DStringProperty;
-  }
-
   get doubleSquareWellStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.doubleSquareWellStringProperty;
   }
@@ -436,6 +436,22 @@ export class StringManager {
 
   get psiIPsiJStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.psiIPsiJStringProperty;
+  }
+
+  get firstStateStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.firstStateStringProperty;
+  }
+
+  get secondStateStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.secondStateStringProperty;
+  }
+
+  get superpositionEquationStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.superpositionEquationStringProperty;
+  }
+
+  get superpositionEquationHelpStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.superpositionEquationHelpStringProperty;
   }
 
   get psiKStringProperty(): ReadOnlyProperty<string> {

@@ -22,6 +22,10 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "../../common/model/LocalizedWavePacket.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
+import {
+  PotentialParameterPresets,
+  SINGLE_WELL_PARAMETER_PRESETS,
+} from "../../common/model/PotentialParameterPresets.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
@@ -34,7 +38,7 @@ export class OneWellModel extends BaseModel {
    * Default barrier height in electron volts.
    * Used for Rosen-Morse and Eckart potentials.
    */
-  private static readonly DEFAULT_BARRIER_HEIGHT = 0.5;
+  private static readonly DEFAULT_BARRIER_HEIGHT = 4;
 
   /**
    * Minimum barrier height in electron volts.
@@ -70,12 +74,12 @@ export class OneWellModel extends BaseModel {
   /**
    * Minimum coherent state displacement in nanometers.
    */
-  private static readonly COHERENT_DISPLACEMENT_MIN = -2.0;
+  private static readonly COHERENT_DISPLACEMENT_MIN = -4.0;
 
   /**
    * Maximum coherent state displacement in nanometers.
    */
-  private static readonly COHERENT_DISPLACEMENT_MAX = 2.0;
+  private static readonly COHERENT_DISPLACEMENT_MAX = 4.0;
 
   /**
    * Default number of bound states to calculate.
@@ -200,9 +204,10 @@ export class OneWellModel extends BaseModel {
 
   // Coherent state parameter
   public readonly coherentDisplacementProperty: NumberProperty; // Displacement in nm
+  private readonly parameterPresets: PotentialParameterPresets<"wellWidth" | "wellDepth" | "barrierHeight">;
 
   public constructor() {
-    super();
+    super({ wellWidth: 5.5, wellDepth: 12 });
 
     // Initialize model-specific well parameters
     this.barrierHeightProperty = new NumberProperty(OneWellModel.DEFAULT_BARRIER_HEIGHT, {
@@ -211,6 +216,16 @@ export class OneWellModel extends BaseModel {
     this.potentialOffsetProperty = new NumberProperty(OneWellModel.DEFAULT_POTENTIAL_OFFSET, {
       range: new Range(OneWellModel.POTENTIAL_OFFSET_MIN, OneWellModel.POTENTIAL_OFFSET_MAX),
     }); // in eV (for triangular potential)
+
+    this.parameterPresets = new PotentialParameterPresets(
+      this.potentialTypeProperty,
+      {
+        wellWidth: this.wellWidthProperty,
+        wellDepth: this.wellDepthProperty,
+        barrierHeight: this.barrierHeightProperty,
+      },
+      SINGLE_WELL_PARAMETER_PRESETS,
+    );
 
     // Initialize coherent state displacement
     this.coherentDisplacementProperty = new NumberProperty(OneWellModel.DEFAULT_COHERENT_DISPLACEMENT, {
@@ -251,10 +266,12 @@ export class OneWellModel extends BaseModel {
    * Override from BaseModel to reset model-specific properties.
    */
   public override reset(): void {
-    super.reset();
-    this.barrierHeightProperty.reset();
-    this.potentialOffsetProperty.reset();
-    this.coherentDisplacementProperty.reset();
+    this.parameterPresets.reset(() => {
+      super.reset();
+      this.barrierHeightProperty.reset();
+      this.potentialOffsetProperty.reset();
+      this.coherentDisplacementProperty.reset();
+    });
 
     // The superposition config is derived from the superposition type; rebuild it for the reset state
     this.updateSuperpositionCoefficients();
@@ -373,7 +390,7 @@ export class OneWellModel extends BaseModel {
       } else {
         return height + offset;
       }
-    } else if (potentialType === PotentialType.COULOMB_1D || potentialType === PotentialType.COULOMB_3D) {
+    } else if (potentialType === PotentialType.COULOMB_1D) {
       const widthNm = wellWidth * QuantumConstants.M_TO_NM;
       const k = wellDepth * (widthNm / OneWellModel.HALF_DIVISOR);
       const distance = Math.max(Math.abs(xNm), OneWellModel.COULOMB_MIN_DISTANCE_NM);
@@ -582,8 +599,7 @@ export class OneWellModel extends BaseModel {
           potentialParams.wellWidth = wellWidth; // width in meters
           potentialParams.energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES; // offset in Joules
           break;
-        case PotentialType.COULOMB_1D:
-        case PotentialType.COULOMB_3D: {
+        case PotentialType.COULOMB_1D: {
           // For Coulomb potentials, use coulombStrength parameter α = k*e²
           // where k = 1/(4πε₀) ≈ 8.9875517923e9 N·m²/C²
           // α ≈ 2.307e-28 J·m for electron charge
@@ -787,8 +803,7 @@ export class OneWellModel extends BaseModel {
           break;
         }
 
-        case PotentialType.COULOMB_1D:
-        case PotentialType.COULOMB_3D: {
+        case PotentialType.COULOMB_1D: {
           // V(x) = -α/|x| where α = ke²
           const coulombStrength =
             OneWellModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
@@ -898,15 +913,20 @@ export class OneWellModel extends BaseModel {
     }
     let amplitudes: number[];
     let phases: number[];
+    let selectedPair: [number, number] | undefined;
 
     switch (type) {
       case SuperpositionType.PSI_I_PSI_J:
-        // Equal superposition of first two states: (|0⟩ + |1⟩)/√2
+        // Equal superposition of the chosen pair, defaulting to the first two states.
         amplitudes = new Array(numStates).fill(0);
         phases = new Array(numStates).fill(0);
         if (numStates >= 2) {
-          amplitudes[0] = 1 / Math.sqrt(2);
-          amplitudes[1] = 1 / Math.sqrt(2);
+          const [first, second] = this.superpositionConfigProperty.value.stateIndices ?? [0, 1];
+          const firstIndex = clamp(first, 0, numStates - 1);
+          const secondIndex = clamp(second, 0, numStates - 1);
+          selectedPair = [firstIndex, secondIndex === firstIndex ? (firstIndex + 1) % numStates : secondIndex];
+          amplitudes[firstIndex] = 1 / Math.sqrt(2);
+          amplitudes[selectedPair[1]] = 1 / Math.sqrt(2);
         }
         break;
 
@@ -1026,6 +1046,7 @@ export class OneWellModel extends BaseModel {
       amplitudes,
       phases,
       ...(type === SuperpositionType.COHERENT && { displacement: this.coherentDisplacementProperty.value }),
+      ...(selectedPair && { stateIndices: selectedPair }),
     };
   }
 }

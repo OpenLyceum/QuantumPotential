@@ -3,20 +3,18 @@
  * PhET's Quantum Bound States:
  *  - energyPanel, beside the energy chart: potential, superposition, and the parameters that are not
  *    geometric features of the potential (particle mass, number of wells, electric field). The geometric
- *    parameters are dragged with handles on the potential itself; their sliders appear only with ?dev.
+ *    parameters are dragged with handles on the potential itself; ?dev adds a gear dialog.
  *  - graphPanel, beside the wave-function chart: what the chart shows.
  */
 
-import { DerivedProperty, type NumberProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { DerivedProperty, type TReadOnlyProperty } from "scenerystack/axon";
 import { Dimension2 } from "scenerystack/dot";
-import { StringUtils } from "scenerystack/phetcommon";
 import { Color, HBox, Line, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, SpectrumNode } from "scenerystack/scenery-phet";
 import {
   Checkbox,
   ComboBox,
   type ComboBoxItem,
-  HSlider,
   RectangularPushButton,
   VerticalAquaRadioButtonGroup,
 } from "scenerystack/sun";
@@ -28,21 +26,11 @@ import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
 import QPPWColors from "../../QPPWColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
-import {
-  hasBarrierHeight,
-  hasElectricField,
-  hasPotentialOffset,
-  hasWellSeparation,
-  isManyWellsModel,
-  isOneWellModel,
-} from "../model/ModelTypeGuards.js";
+import { hasElectricField, isManyWellsModel } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
-import { SuperpositionType } from "../model/SuperpositionType.js";
 import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
-import { COMPACT_PANEL_SLIDER_OPTIONS, PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import { QPPWPanel } from "../QPPWPanel.js";
-import isDevMode from "../utils/isDevMode.js";
-import type { QPPWParameter } from "./accessibility/QPPWDescriber.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { EnergyLevelControl } from "./EnergyLevelControl.js";
@@ -116,9 +104,6 @@ export class ControlPanelNode {
       ),
     ];
     energyChildren.push(...this.createParameterControls());
-    if (isDevMode()) {
-      energyChildren.push(this.createDevSliders());
-    }
 
     this.energyPanel = new QPPWPanel(new VBox({ spacing: 10, align: "left", children: energyChildren }), {
       minWidth: CONTROL_PANEL_WIDTH,
@@ -263,18 +248,6 @@ export class ControlPanelNode {
         },
       },
       {
-        value: PotentialType.COULOMB_3D,
-        createNode: () =>
-          new Text(stringManager.coulomb3DStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.COULOMB_3D),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.COULOMB_3D),
-        },
-      },
-      {
         value: PotentialType.DOUBLE_SQUARE_WELL,
         createNode: () =>
           new Text(stringManager.doubleSquareWellStringProperty, {
@@ -350,7 +323,7 @@ export class ControlPanelNode {
     });
   }
 
-  /** Simple states are direct choices; wavepackets are configured in the dialog. */
+  /** Superposition presets and coefficients are configured in the dialog. */
   private createSuperpositionGroup(): Node {
     const choice = (label: TReadOnlyProperty<string>, listener: () => void): Node =>
       new RectangularPushButton({
@@ -359,25 +332,6 @@ export class ControlPanelNode {
         accessibleName: label,
         listener,
       });
-    const selectSimple = (type: SuperpositionType) => {
-      this.model.superpositionTypeProperty.value = type;
-      if (!isOneWellModel(this.model)) {
-        const count = this.model.getBoundStates()?.energies.length ?? 0;
-        const amplitudes = new Array(count).fill(0);
-        if (count > 0) {
-          amplitudes[0] = type === SuperpositionType.SINGLE || count === 1 ? 1 : 1 / Math.sqrt(2);
-        }
-        if (type === SuperpositionType.PSI_I_PSI_J && count > 1) {
-          amplitudes[1] = 1 / Math.sqrt(2);
-        }
-        this.model.superpositionConfigProperty.value = {
-          type,
-          amplitudes,
-          phases: new Array(count).fill(0),
-        };
-      }
-    };
-
     return new VBox({
       spacing: 4,
       align: "left",
@@ -387,8 +341,6 @@ export class ControlPanelNode {
           fill: QPPWColors.textFillProperty,
           maxWidth: CONTENT_WIDTH,
         }),
-        choice(stringManager.psiKStringProperty, () => selectSimple(SuperpositionType.SINGLE)),
-        choice(stringManager.psiIPsiJStringProperty, () => selectSimple(SuperpositionType.PSI_I_PSI_J)),
         choice(stringManager.configureSuperpositionStringProperty, () => {
           const previousType = this.model.superpositionTypeProperty.value;
           new SuperpositionDialog(this.model, previousType).show();
@@ -448,102 +400,6 @@ export class ControlPanelNode {
     }
 
     return controls;
-  }
-
-  /**
-   * Sliders for the geometric parameters, shown only with ?dev. In normal use these parameters are changed
-   * with the handles on the potential in the energy chart.
-   */
-  private createDevSliders(): Node {
-    const rows: Node[] = [];
-    const addRow = (
-      parameter: QPPWParameter,
-      titleStringProperty: TReadOnlyProperty<string>,
-      property: NumberProperty,
-      pattern: TReadOnlyProperty<string>,
-      decimalPlaces: number,
-      isNeeded: (type: PotentialType) => boolean,
-    ): void => {
-      const valueText = new Text("", { font: new PhetFont(11), fill: QPPWColors.textFillProperty });
-      property.link((value: number) => {
-        valueText.string = StringUtils.fillIn(pattern, { value: value.toFixed(decimalPlaces) });
-      });
-      const row = new VBox({
-        spacing: 2,
-        align: "left",
-        children: [
-          new Text(titleStringProperty, { font: new PhetFont(11), fill: QPPWColors.textFillProperty }),
-          new HBox({
-            spacing: 6,
-            children: [
-              new HSlider(property, property.range, {
-                ...COMPACT_PANEL_SLIDER_OPTIONS,
-                accessibleName: QPPWDescriber.getParameterNameProperty(parameter),
-                descriptionContent: QPPWDescriber.getSliderHelpText(parameter),
-              }),
-              valueText,
-            ],
-          }),
-        ],
-      });
-      this.model.potentialTypeProperty.link((type) => {
-        row.visible = isNeeded(type);
-      });
-      rows.push(row);
-    };
-
-    addRow(
-      "wellWidth",
-      stringManager.wellWidthStringProperty,
-      this.model.wellWidthProperty,
-      stringManager.valueWithNanometersStringProperty,
-      2,
-      (type) => type !== PotentialType.COULOMB_1D && type !== PotentialType.COULOMB_3D,
-    );
-    addRow(
-      "wellDepth",
-      stringManager.wellDepthStringProperty,
-      this.model.wellDepthProperty,
-      stringManager.valueWithElectronVoltsStringProperty,
-      2,
-      (type) =>
-        type !== PotentialType.INFINITE_WELL && type !== PotentialType.COULOMB_1D && type !== PotentialType.COULOMB_3D,
-    );
-    if (hasBarrierHeight(this.model)) {
-      addRow(
-        "barrierHeight",
-        stringManager.barrierHeightStringProperty,
-        this.model.barrierHeightProperty,
-        stringManager.valueWithElectronVoltsStringProperty,
-        2,
-        (type) => type === PotentialType.ROSEN_MORSE || type === PotentialType.ECKART,
-      );
-    }
-    if (hasPotentialOffset(this.model)) {
-      addRow(
-        "potentialOffset",
-        stringManager.potentialOffsetStringProperty,
-        this.model.potentialOffsetProperty,
-        stringManager.valueWithElectronVoltsStringProperty,
-        2,
-        (type) => type === PotentialType.TRIANGULAR,
-      );
-    }
-    if (hasWellSeparation(this.model)) {
-      addRow(
-        "wellSeparation",
-        stringManager.wellSeparationStringProperty,
-        this.model.wellSeparationProperty,
-        stringManager.valueWithNanometersStringProperty,
-        2,
-        (type) =>
-          type === PotentialType.DOUBLE_SQUARE_WELL ||
-          type === PotentialType.DOUBLE_POSCHL_TELLER ||
-          MULTI_WELL_TYPES.includes(type),
-      );
-    }
-
-    return new VBox({ spacing: 6, align: "left", children: rows });
   }
 
   /**

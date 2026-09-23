@@ -20,6 +20,7 @@ import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType
 export type BaseModelOptions = {
   potentialType?: PotentialType;
   wellWidth?: number; // nm
+  wellDepth?: number; // eV
   wellWidthRange?: Range; // nm
   superpositionConfig?: SuperpositionConfig;
 };
@@ -161,7 +162,7 @@ export abstract class BaseModel {
     this.wellWidthProperty = new NumberProperty(options?.wellWidth ?? 4.0, {
       range: options?.wellWidthRange ?? new Range(BaseModel.WELL_WIDTH_MIN, BaseModel.WELL_WIDTH_MAX),
     }); // in nanometers
-    this.wellDepthProperty = new NumberProperty(5.0, {
+    this.wellDepthProperty = new NumberProperty(options?.wellDepth ?? 5.0, {
       range: new Range(BaseModel.WELL_DEPTH_MIN, BaseModel.WELL_DEPTH_MAX),
     }); // in eV
     this.wellOffsetProperty = new NumberProperty(0.5, {

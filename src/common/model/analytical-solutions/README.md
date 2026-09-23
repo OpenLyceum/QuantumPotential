@@ -13,7 +13,7 @@ Analytical solutions provide exact mathematical expressions for energy eigenvalu
 
 ### Available Potentials
 
-This module provides **12 analytical solutions** plus 2 numerical multi-well potentials:
+This module provides **11 analytical solutions** plus 2 numerical multi-well potentials:
 
 **Analytical Solutions:**
 
@@ -27,8 +27,7 @@ This module provides **12 analytical solutions** plus 2 numerical multi-well pot
 8. Asymmetric Triangle Potential
 9. Triangular Potential (Finite)
 10. Coulomb 1D Potential
-11. Coulomb 3D Potential (Hydrogen Atom)
-12. Double Square Well
+11. Double Square Well
 
 **Multi-Well Potentials (Numerical):**
 
@@ -608,136 +607,19 @@ In the barrier regions (x < 0 or x > width), the wavefunction decays exponential
 
 **File**: `coulomb-1d-potential.ts`
 
-### Description
-
-The 1D Coulomb potential describes a one-dimensional hydrogen-like atom, with a singularity at x = 0. This is a pathological potential with unique properties that differ significantly from the 3D case.
-
-### Potential
+The regular Dirichlet solution of `V(x) = -α/|x|` has `ψ(0) = 0` and is extended with odd parity on the full line. Let `a₀ = ℏ²/(mα)` and `N = 1, 2, ...`. Its exact energies and wavefunctions are:
 
 ```
-V(x) = -α/|x|
+E_N = -mα²/(2ℏ²N²)
+ρ = 2|x|/(N a₀)
+ψ_N(x) = sign(x) ρ e^(-ρ/2) L_(N-1)^1(ρ) / √(2N³a₀)
 ```
 
-### Parameters
-
-- `coulombStrength` (α): Coulomb strength parameter in J·m
-  - For hydrogen-like atoms: α = e²/(4πε₀) where e is elementary charge
-- `mass` (m): Particle mass in kg
-- `numStates`: Number of energy levels to calculate
-- `gridConfig`: Grid configuration for wavefunction evaluation
-
-### Energy Eigenvalues
-
-```
-E_n = -mα²/(2ℏ²(n + 1/2)²)    for n = 0, 1, 2, ...
-```
-
-Note: The effective quantum number is (n + 1/2) in 1D, different from 3D.
-
-### Wavefunctions
-
-```
-ψ_n(x) = sign(x) × N_n exp(-|x|/a_n) L_n^1(2|x|/a_n)
-```
-
-where:
-
-- Effective Bohr radius: `a_0 = ℏ²/(mα)`
-- Characteristic length: `a_n = (n + 1/2)a_0`
-- `L_n^1(x)` are associated Laguerre polynomials with α = 1
-- **ALL wavefunctions have ODD PARITY**: ψ(-x) = -ψ(x) and ψ(0) = 0
-
-### ⚠️ Important: Odd-Parity Requirement
-
-**The 1D Coulomb potential only supports odd-parity eigenstates!**
-
-For this potential, only odd-parity eigenstates ψ_n(x) = -ψ_n(-x) exist as normalizable solutions. Even-parity eigenstates diverge at x = 0 and are unphysical. This is fundamentally different from the 3D Coulomb potential where both parities exist.
-
-**WARNING**: Standard numerical solvers (DVR, FGH, Matrix Numerov, etc.) will incorrectly find a mix of even and odd parity states when applied to this potential. This is because they don't "know" about the odd-parity constraint.
-
-**Recommended approach**:
-
-- Always use `solveCoulomb1DPotential()` (analytical solution) - it's exact and fast
-- If numerical methods are required, use `solveCoulomb1DNumerical()` which filters for odd parity
-- Do NOT apply standard numerical solvers directly to this potential
-
-### Physical Significance
-
-- Theoretical model for 1D confinement of Coulomb systems
-- Demonstrates the bizarre effects of dimensionality on quantum mechanics
-- Useful for understanding dimensional effects in quantum systems
-- Related to carbon nanotubes and quantum wires with Coulomb interactions
-
-### References
-
-- Loudon, R. (2016). "The one-dimensional Coulomb problem", Proc. R. Soc. A 472: 20150534
+`L_(N-1)^1` is an associated Laguerre polynomial. The half-integer spectrum corresponds to a different singular boundary condition and is not used by this simulation. See Abramovici and Avishai, [The one-dimensional Coulomb Problem](https://arxiv.org/abs/0905.3978), section 4, and Totality's `CoulombSolution.ts`.
 
 ---
 
-## 12. Coulomb 3D Potential (Hydrogen Atom)
-
-**File**: `coulomb-3d-potential.ts`
-
-### Description
-
-The 3D Coulomb potential solves the radial Schrödinger equation for the hydrogen atom with angular momentum L = 0 (s-waves). This is one of the most important exactly solvable problems in quantum mechanics.
-
-### Potential
-
-```
-V(r) = -α/r
-```
-
-### Parameters
-
-- `coulombStrength` (α): Coulomb strength parameter in J·m
-  - For hydrogen: α = e²/(4πε₀) ≈ 2.307 × 10⁻²⁸ J·m
-- `mass` (m): Reduced mass in kg
-  - For hydrogen: m = m_e m_p/(m_e + m_p) ≈ m_e
-- `numStates`: Number of energy levels to calculate
-- `gridConfig`: Grid configuration for radial coordinate r > 0
-
-### Energy Eigenvalues
-
-```
-E_n = -mα²/(2ℏ²n²) = -13.6 eV / n²    for n = 1, 2, 3, ...
-```
-
-This is the famous Rydberg formula for hydrogen energy levels.
-
-### Radial Wavefunctions (L = 0)
-
-```
-R_n0(r) = N_n0 exp(-r/na_0) L_(n-1)^1(2r/na_0)
-```
-
-where:
-
-- Bohr radius: `a_0 = ℏ²/(mα) ≈ 0.529 Å` for hydrogen
-- Characteristic length: `a_n = na_0`
-- `L_(n-1)^1(x)` are associated Laguerre polynomials
-
-### Numerical Methods
-
-Associated Laguerre polynomials `L_n^α(x)` are calculated using recurrence:
-
-- `L_0^α(x) = 1`
-- `L_1^α(x) = 1 + α - x`
-- `L_(n+1)^α(x) = [(2n + 1 + α - x)L_n^α(x) - (n + α)L_(n-1)^α(x)] / (n + 1)`
-
-### Physical Significance
-
-- Foundation of atomic physics and chemistry
-- Explains hydrogen spectrum and atomic orbitals
-- Basis for understanding:
-  - Periodic table of elements
-  - Chemical bonding
-  - Atomic spectroscopy
-  - Quantum chemistry calculations
-
----
-
-## 13. Double Square Well
+## 12. Double Square Well
 
 **File**: `double-square-well.ts`
 
@@ -1015,7 +897,7 @@ All polynomials are computed using stable recurrence relations to avoid numerica
 import {
   solveInfiniteWell,
   solveHarmonicOscillator,
-  solveCoulomb3DPotential,
+  solveCoulomb1DPotential,
   solveMultiSquareWell,
   solveMultiCoulomb1D,
 } from "./analytical-solutions";
@@ -1036,12 +918,12 @@ const harmonicResult = solveHarmonicOscillator(
   { xMin: -1e-9, xMax: 1e-9, numPoints: 1000 },
 );
 
-// Hydrogen atom (3D Coulomb)
-const hydrogenResult = solveCoulomb3DPotential(
+// Regular 1D Coulomb states
+const coulombResult = solveCoulomb1DPotential(
   2.307e-28, // Coulomb strength for hydrogen
   9.109e-31, // electron mass
-  3, // n = 1, 2, 3 states
-  { xMin: 0, xMax: 1e-8, numPoints: 1000 },
+  3, // principal quantum numbers 1, 2, 3
+  { xMin: -8e-9, xMax: 8e-9, numPoints: 1001 },
 );
 
 // Multi-square well (NEW)

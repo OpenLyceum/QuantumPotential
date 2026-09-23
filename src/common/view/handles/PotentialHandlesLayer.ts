@@ -80,13 +80,14 @@ export class PotentialHandlesLayer extends Node {
     model: ScreenModel,
     coordinates: ChartCoordinates,
     isInsideChart: (x: number, y: number) => boolean,
+    showValuesProperty: TReadOnlyProperty<boolean>,
   ) {
     super();
     this.model = model;
     this.isInsideChart = isInsideChart;
 
     this.handles = PotentialHandlesLayer.createSpecs(model).map(
-      (spec) => new PotentialHandleNode(spec, coordinates, model.isPlayingProperty),
+      (spec) => new PotentialHandleNode(spec, coordinates, model.isPlayingProperty, showValuesProperty),
     );
     this.children = this.handles;
 
@@ -133,7 +134,7 @@ export class PotentialHandlesLayer extends Node {
    * The handles of every potential this model offers. Positions are in nm and energies in eV, the units of the
    * model's Properties.
    */
-  private static createSpecs(model: ScreenModel): HandleSpec[] {
+  public static createSpecs(model: ScreenModel): HandleSpec[] {
     const width = model.wellWidthProperty;
     const depth = model.wellDepthProperty;
     const nm = stringManager.valueWithNanometersStringProperty;

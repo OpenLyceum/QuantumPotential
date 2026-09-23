@@ -6,7 +6,7 @@
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Shape } from "scenerystack/kite";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } from "scenerystack/scenery";
+import { Circle, DragListener, HBox, KeyboardDragListener, Line, Node, Path, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
@@ -41,7 +41,8 @@ export class CurvatureTool extends Node {
   private readonly marker: Line;
   private readonly positionCircle: Circle; // Circle tracking wavefunction position
   private readonly parabola: Path;
-  private readonly label: Text;
+  private readonly label: HBox;
+  private readonly labelValue: Text;
 
   // Cache for extrema positions to avoid recalculating on every drag event
   private extremaPositionsCache: number[] | null = null;
@@ -135,10 +136,29 @@ export class CurvatureTool extends Node {
     });
     this.container.addChild(this.parabola);
 
-    // Create curvature label
-    this.label = new Text("", {
-      font: new PhetFont({ size: 14, weight: "bold" }),
-      fill: QPPWColors.curvatureToolFillDarkProperty,
+    // A stacked fraction keeps the second-derivative equation compact on the chart.
+    const labelFont = new PhetFont({ size: 14, weight: "bold" });
+    const labelFill = QPPWColors.curvatureToolFillDarkProperty;
+    this.labelValue = new Text("", {
+      font: labelFont,
+      fill: labelFill,
+    });
+    this.label = new HBox({
+      spacing: 3,
+      align: "center",
+      children: [
+        new VBox({
+          spacing: 1,
+          align: "center",
+          children: [
+            new Text("d²ψ", { font: labelFont, fill: labelFill }),
+            new Line(0, 0, 27, 0, { stroke: labelFill, lineWidth: 1 }),
+            new Text("dx²", { font: labelFont, fill: labelFill }),
+          ],
+        }),
+        new Text("=", { font: labelFont, fill: labelFill }),
+        this.labelValue,
+      ],
     });
     this.container.addChild(this.label);
 
@@ -278,7 +298,7 @@ export class CurvatureTool extends Node {
       this.positionCircle.centerY = dataToViewY(derivatives.wavefunctionValue);
 
       // Update label with proper units (nm^-5/2)
-      this.label.string = stringManager.secondDerivativeLabelStringProperty.value.replace(
+      this.labelValue.string = stringManager.secondDerivativeLabelStringProperty.value.replace(
         "{{value}}",
         derivatives.secondDerivative.toFixed(3),
       );
@@ -286,7 +306,7 @@ export class CurvatureTool extends Node {
       this.label.top = yTop + 5; // Position just inside the chart area
     } else {
       this.parabola.shape = null;
-      this.label.string = stringManager.notAvailableStringProperty.value;
+      this.labelValue.string = stringManager.notAvailableStringProperty.value;
     }
   }
 

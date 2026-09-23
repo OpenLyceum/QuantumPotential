@@ -76,8 +76,8 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 - **Classical probability 1/√(E − V) is singular at turning points** — regularize with a *relative*
   epsilon (1% of max kinetic energy), never an absolute one. The closed-form harmonic-oscillator
   classical density is unusable for the same reason.
-- **Normalize numerically.** For Pöschl–Teller and 3D Coulomb the analytic Gamma-function
-  normalizations were off by 2–5× / 10²⁰; trapezoidal ∫|ψ|² dx is the reliable path.
+- **Normalize numerically.** For Pöschl–Teller the analytic Gamma-function
+  normalization was off by 2–5×; trapezoidal ∫|ψ|² dx is the reliable path.
 
 ## Parameter controls
 
@@ -90,7 +90,7 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
   and handles come first in the chart's focus order.
 - **Non-geometric parameters use ◀ ▶ spinners** (`QPPWNumberControl`, a sun `NumberSpinner`): particle
   mass, number of wells, electric field.
-- **Sliders are `?dev` only** (`src/common/utils/isDevMode.ts`), for checking the handles.
+- **The parameter gear is `?dev` only** (`src/common/utils/isDevMode.ts`); it opens controls for the current potential's handles.
 - **Energy levels**: a transparent picker over the plot hovers and selects the level nearest the
   pointer. In-plot readouts show "Eₙ = … eV" for the selected and hovered levels.
 

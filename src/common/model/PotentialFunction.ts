@@ -17,7 +17,6 @@ export const PotentialType = {
   ECKART: "eckart",
   ASYMMETRIC_TRIANGLE: "asymmetricTriangle",
   COULOMB_1D: "coulomb1D",
-  COULOMB_3D: "coulomb3D",
   DOUBLE_SQUARE_WELL: "doubleSquareWell",
   DOUBLE_POSCHL_TELLER: "doublePoschlTeller",
   MULTI_SQUARE_WELL: "multiSquareWell",

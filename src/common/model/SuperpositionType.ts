@@ -31,6 +31,8 @@ export type SuperpositionConfig = {
   amplitudes: number[];
   /** Phases for each eigenstate (in radians) */
   phases: number[];
+  /** Zero-based indices of the selected pair for the two-state preset */
+  stateIndices?: [number, number];
   /** Displacement from equilibrium in nm (for coherent states) */
   displacement?: number;
   /** Center of a localized wave packet in nm */

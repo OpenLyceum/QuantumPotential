@@ -11,6 +11,7 @@ export const FLAT_BUTTON_APPEARANCE_OPTIONS = {
 export const FLAT_PANEL_PUSH_BUTTON_OPTIONS = {
   ...FLAT_BUTTON_APPEARANCE_OPTIONS,
   baseColor: QPPWColors.controlPanelBackgroundColorProperty,
+  disabledColor: QPPWColors.disabledButtonColorProperty,
 } as const;
 
 export const FLAT_RESET_ALL_BUTTON_OPTIONS = FLAT_BUTTON_APPEARANCE_OPTIONS;

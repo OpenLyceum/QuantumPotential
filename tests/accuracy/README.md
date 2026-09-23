@@ -7,9 +7,9 @@ non-zero on failure.
 
 | Command | Script | What it checks |
 |---|---|---|
-| `npm run test:accuracy` | `test-wavefunction-comprehensive.ts` | Numerov and FGH against the harmonic oscillator, finite well, 3D Coulomb (radial, Numerov only), Morse (H₂) and Pöschl–Teller: energies, normalization, orthogonality, nodes, parity and edge decay |
+| `npm run test:accuracy` | `test-wavefunction-comprehensive.ts` | Numerov and FGH against the harmonic oscillator, finite well, Morse (H₂) and Pöschl–Teller: energies, normalization, orthogonality, nodes, parity and edge decay |
 | `npm run test:double-well` | `test-double-well.ts` | The analytical double square well: parity, nodes, edge decay, normalization, derivative continuity, parameter sweeps, grid convergence |
-| `npm run test:coulomb` | `verify-coulomb.ts` | 1D and 3D Coulomb analytical solutions |
+| `npm run test:coulomb` | `verify-coulomb.ts` | regular 1D Coulomb analytical energies, parity and normalization |
 | `npm run test:multi-square-well` | `test-multi-square-well.ts` | The numerically solved multi-square well (Many Wells screen) |
 | `npm run test:multi-coulomb-1d` | `test-multi-coulomb-1d.ts` | The numerically solved multi-Coulomb chain (Many Wells screen) — see the known issue below |
 
@@ -25,8 +25,6 @@ errors. Keep these in mind when adding cases:
   effective width depends on where the edges fall. `Schrodinger1DSolver` evaluates cell-averaged
   potentials, but scripts that call a solver directly should put edges midway between samples
   (Numerov: `dx = range/(N − 1)` with N odd; FGH is periodic: `dx = range/N`).
-- **Singular potentials.** For the radial Coulomb problem start the grid at `r = h`, not near 0; the
-  cusp limits uniform grids to ~linear convergence.
 - **Compare bound states only.** A finite box turns the continuum into discrete states above the
   barrier; compare only as many states as the exact solution has.
 - **Relative metrics.** Measure edge decay and node thresholds relative to the peak of |ψ|, count nodes

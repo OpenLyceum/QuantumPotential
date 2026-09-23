@@ -8,6 +8,10 @@ import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
+import {
+  PotentialParameterPresets,
+  SINGLE_WELL_PARAMETER_PRESETS,
+} from "../../common/model/PotentialParameterPresets.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import Logger from "../../common/utils/Logger.js";
@@ -19,7 +23,7 @@ export class IntroModel extends BaseModel {
    * Default barrier height in electron volts.
    * Used for Rosen-Morse and Eckart potentials.
    */
-  private static readonly DEFAULT_BARRIER_HEIGHT = 0.5;
+  private static readonly DEFAULT_BARRIER_HEIGHT = 4;
 
   /**
    * Minimum barrier height in electron volts.
@@ -121,9 +125,10 @@ export class IntroModel extends BaseModel {
   // Model-specific well parameters
   public readonly barrierHeightProperty: NumberProperty;
   public readonly potentialOffsetProperty: NumberProperty;
+  private readonly parameterPresets: PotentialParameterPresets<"wellWidth" | "wellDepth" | "barrierHeight">;
 
   public constructor() {
-    super();
+    super({ wellWidth: 5.5, wellDepth: 12 });
 
     // Initialize model-specific well parameters
     this.barrierHeightProperty = new NumberProperty(IntroModel.DEFAULT_BARRIER_HEIGHT, {
@@ -132,6 +137,16 @@ export class IntroModel extends BaseModel {
     this.potentialOffsetProperty = new NumberProperty(IntroModel.DEFAULT_POTENTIAL_OFFSET, {
       range: new Range(IntroModel.POTENTIAL_OFFSET_MIN, IntroModel.POTENTIAL_OFFSET_MAX),
     });
+
+    this.parameterPresets = new PotentialParameterPresets(
+      this.potentialTypeProperty,
+      {
+        wellWidth: this.wellWidthProperty,
+        wellDepth: this.wellDepthProperty,
+        barrierHeight: this.barrierHeightProperty,
+      },
+      SINGLE_WELL_PARAMETER_PRESETS,
+    );
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -157,9 +172,11 @@ export class IntroModel extends BaseModel {
    * Override from BaseModel to reset model-specific properties.
    */
   public override reset(): void {
-    super.reset();
-    this.barrierHeightProperty.reset();
-    this.potentialOffsetProperty.reset();
+    this.parameterPresets.reset(() => {
+      super.reset();
+      this.barrierHeightProperty.reset();
+      this.potentialOffsetProperty.reset();
+    });
   }
 
   /**
@@ -266,8 +283,7 @@ export class IntroModel extends BaseModel {
           potentialParams.wellWidth = wellWidth;
           potentialParams.energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
           break;
-        case PotentialType.COULOMB_1D:
-        case PotentialType.COULOMB_3D: {
+        case PotentialType.COULOMB_1D: {
           potentialParams.coulombStrength =
             IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           break;
@@ -531,8 +547,7 @@ export class IntroModel extends BaseModel {
           break;
         }
 
-        case PotentialType.COULOMB_1D:
-        case PotentialType.COULOMB_3D: {
+        case PotentialType.COULOMB_1D: {
           const coulombStrength =
             IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           const r = Math.abs(x);

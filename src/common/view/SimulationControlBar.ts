@@ -5,12 +5,12 @@
 
 import { DerivedProperty } from "scenerystack/axon";
 import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
-import { PhetFont, TimeControlNode } from "scenerystack/scenery-phet";
+import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
 import { HorizontalAquaRadioButtonGroup } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { BaseModel } from "../model/BaseModel.js";
-import { FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
+import { FLAT_BUTTON_APPEARANCE_OPTIONS, FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -98,6 +98,17 @@ export class SimulationControlBar extends Node {
       },
     });
 
+    const restartButton = new RestartButton({
+      ...FLAT_BUTTON_APPEARANCE_OPTIONS,
+      radius: 15,
+      listener: () => {
+        this.model.isPlayingProperty.value = false;
+        this.model.timeProperty.value = 0;
+      },
+      accessibleName: a11y.controls.restartTimeStringProperty,
+    });
+    const playbackControls = new HBox({ spacing: 6, align: "center", children: [restartButton, timeControlNode] });
+
     const speedButtons = new HorizontalAquaRadioButtonGroup(
       this.model.timeSpeedProperty,
       BaseModel.TIME_SPEED_MULTIPLIERS.map((speed) => ({
@@ -131,7 +142,7 @@ export class SimulationControlBar extends Node {
     const contentHBox = new HBox({
       spacing: 24,
       align: "center",
-      children: [timeDisplayVBox, timeControlNode, speedSection],
+      children: [timeDisplayVBox, playbackControls, speedSection],
     });
 
     this.addChild(contentHBox);

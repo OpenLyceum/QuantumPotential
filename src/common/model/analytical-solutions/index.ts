@@ -27,15 +27,6 @@ export {
   createCoulomb1DPotential,
   solveCoulomb1DPotential,
 } from "./coulomb-1d-potential.js";
-export {
-  Coulomb3DPotentialSolution,
-  calculateCoulomb3DClassicalProbability,
-  calculateCoulomb3DTurningPoints,
-  calculateCoulomb3DWavefunctionSecondDerivative,
-  calculateCoulomb3DWavefunctionZeros,
-  createCoulomb3DPotential,
-  solveCoulomb3DPotential,
-} from "./coulomb-3d-potential.js";
 export { solveDoubleSquareWellAnalytical } from "./double-square-well.js";
 export {
   calculateEckartPotentialClassicalProbability,
@@ -123,7 +114,6 @@ export {
 
 import { solveAsymmetricTrianglePotential } from "./asymmetric-triangle-potential.js";
 import { solveCoulomb1DPotential } from "./coulomb-1d-potential.js";
-import { solveCoulomb3DPotential } from "./coulomb-3d-potential.js";
 import { solveDoubleSquareWellAnalytical } from "./double-square-well.js";
 import { solveEckartPotential } from "./eckart-potential.js";
 import { solveFiniteSquareWell } from "./finite-square-well.js";
@@ -148,7 +138,6 @@ qppw.register("AnalyticalSolutions", {
   solveEckartPotential,
   solveAsymmetricTrianglePotential,
   solveCoulomb1DPotential,
-  solveCoulomb3DPotential,
   solveTriangularPotential,
   solveDoubleSquareWellAnalytical,
   solveMultiSquareWell,

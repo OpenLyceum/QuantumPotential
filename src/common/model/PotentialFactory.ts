@@ -2,7 +2,6 @@ import {
   type AnalyticalSolution,
   AsymmetricTrianglePotentialSolution,
   Coulomb1DPotentialSolution,
-  Coulomb3DPotentialSolution,
   EckartPotentialSolution,
   FiniteSquareWellSolution,
   HarmonicOscillatorSolution,
@@ -17,7 +16,6 @@ import {
   AsymmetricTrianglePotential,
   type BasePotential,
   Coulomb1DPotential,
-  Coulomb3DPotential,
   EckartPotential,
   FiniteSquareWellPotential,
   HarmonicOscillatorPotential,
@@ -110,13 +108,6 @@ const POTENTIAL_CONFIGS: Partial<Record<PotentialType, PotentialConfig>> = {
   [PotentialType.COULOMB_1D]: {
     solutionClass: Coulomb1DPotentialSolution,
     potentialClass: Coulomb1DPotential,
-    extractArgs: (p, m) => [p.coulombStrength!, m],
-    requiredParams: ["coulombStrength"],
-  },
-
-  [PotentialType.COULOMB_3D]: {
-    solutionClass: Coulomb3DPotentialSolution,
-    potentialClass: Coulomb3DPotential,
     extractArgs: (p, m) => [p.coulombStrength!, m],
     requiredParams: ["coulombStrength"],
   },

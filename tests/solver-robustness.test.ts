@@ -50,7 +50,6 @@ const SINGLE_WELL_POTENTIALS = [
   PotentialType.ASYMMETRIC_TRIANGLE,
   PotentialType.TRIANGULAR,
   PotentialType.COULOMB_1D,
-  PotentialType.COULOMB_3D,
 ];
 
 const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType[]]> = [
