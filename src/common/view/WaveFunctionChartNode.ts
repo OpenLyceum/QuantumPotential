@@ -452,14 +452,14 @@ export class WaveFunctionChartNode extends Node {
       Orientation.HORIZONTAL,
       2, // spacing
       {
-        edge: "max",
+        value: 0,
         extent: 8,
         stroke: QPPWColors.labelFillProperty,
         lineWidth: 1,
       },
     );
     xTickMarkSet.x = this.chartMargins.left;
-    xTickMarkSet.y = this.chartMargins.top + this.plotHeight;
+    xTickMarkSet.y = this.chartMargins.top;
     axesNode.addChild(xTickMarkSet);
 
     // X-axis tick labels
@@ -468,7 +468,7 @@ export class WaveFunctionChartNode extends Node {
       Orientation.HORIZONTAL,
       2, // spacing
       {
-        edge: "max",
+        value: 0,
         createLabel: (value: number) =>
           new Text(value.toString(), {
             font: new PhetFont(14),
@@ -477,8 +477,17 @@ export class WaveFunctionChartNode extends Node {
       },
     );
     xTickLabelSet.x = this.chartMargins.left;
-    xTickLabelSet.y = this.chartMargins.top + this.plotHeight;
+    xTickLabelSet.y = this.chartMargins.top;
     axesNode.addChild(xTickLabelSet);
+
+    // The y-axis sits at the left edge of the plot, beside its tick marks and labels.
+    const yAxisLeft = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
+      stroke: QPPWColors.axisProperty,
+      value: this.xMinProperty.value,
+    });
+    yAxisLeft.x = this.chartMargins.left;
+    yAxisLeft.y = this.chartMargins.top;
+    axesNode.addChild(yAxisLeft);
 
     // Vertical axis follows x=0, centered in the shared position range.
     const yAxis = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
