@@ -4,12 +4,13 @@
  */
 
 import { DerivedProperty } from "scenerystack/axon";
-import { HBox, Node, Text, VBox } from "scenerystack/scenery";
+import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, TimeControlNode } from "scenerystack/scenery-phet";
+import { HorizontalAquaRadioButtonGroup } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { BaseModel } from "../model/BaseModel.js";
-import { FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS, TIME_CONTROL_SPEED_RADIO_OPTIONS } from "../QPPWButtonOptions.js";
+import { FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -28,24 +29,27 @@ export class SimulationControlBar extends Node {
       fill: QPPWColors.textFillProperty,
     });
 
-    this.timeText = new Text(stringManager.timeFormatStringProperty.value.replace("{{time}}", "0.00"), {
+    const formattedTimeProperty = new DerivedProperty(
+      [this.model.timeProperty, stringManager.timeFormatStringProperty],
+      (time, format) => format.replace("{{time}}", time.toFixed(2)),
+    );
+    this.timeText = new Text(formattedTimeProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
       fill: QPPWColors.textFillProperty,
+      maxWidth: 130,
     });
 
-    this.model.timeProperty.link((time: number) => {
-      this.timeText.string = stringManager.timeFormatStringProperty.value.replace("{{time}}", time.toFixed(2));
-    });
+    // Reserve room for the changing digits so the adjacent buttons stay put while time advances.
+    const timeReadout = new AlignBox(this.timeText, { preferredWidth: 140 });
 
     const timeDisplayVBox = new VBox({
       spacing: 5,
       align: "center",
-      children: [timeLabel, this.timeText],
+      children: [timeLabel, timeReadout],
     });
 
     // Time controls (play/pause and step buttons)
     const timeControlNode = new TimeControlNode(this.model.isPlayingProperty, {
-      timeSpeedProperty: this.model.timeSpeedProperty,
       playPauseStepButtonOptions: {
         ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS,
         includeStepForwardButton: true,
@@ -92,36 +96,45 @@ export class SimulationControlBar extends Node {
           //   "Start or stop time evolution of the wavefunction. Keyboard shortcut: Space bar.",
         },
       },
-      speedRadioButtonGroupPlacement: "left",
-      speedRadioButtonGroupOptions: {
-        ...TIME_CONTROL_SPEED_RADIO_OPTIONS.speedRadioButtonGroupOptions,
+    });
 
-        // PDOM
+    const speedButtons = new HorizontalAquaRadioButtonGroup(
+      this.model.timeSpeedProperty,
+      BaseModel.TIME_SPEED_MULTIPLIERS.map((speed) => ({
+        value: speed,
+        createNode: () =>
+          new Text(`${speed}×`, {
+            font: new PhetFont(14),
+            fill: QPPWColors.textFillProperty,
+          }),
+        options: { accessibleName: `${speed}×` },
+      })),
+      {
+        spacing: 10,
+        radioButtonOptions: { radius: 7 },
         accessibleName: a11y.controls.animationSpeedStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Control time evolution speed. Use arrow keys to navigate options, Space or Enter to select.",
       },
-    });
-
-    const playbackButtonsHBox = new HBox({
-      spacing: 10,
-      children: [timeControlNode],
-    });
-
-    const playbackSectionVBox = new VBox({
-      spacing: 8,
+    );
+    const speedSection = new VBox({
+      spacing: 5,
       align: "center",
-      children: [playbackButtonsHBox],
+      children: [
+        new Text(a11y.controls.animationSpeedStringProperty, {
+          font: new PhetFont(14),
+          fill: QPPWColors.textFillProperty,
+        }),
+        speedButtons,
+      ],
     });
 
-    // Arrange all sections horizontally
+    // Keep the readout, playback buttons, and speed choices in one stable row.
     const contentHBox = new HBox({
-      spacing: 40,
+      spacing: 24,
       align: "center",
-      children: [timeDisplayVBox, playbackSectionVBox],
+      children: [timeDisplayVBox, timeControlNode, speedSection],
     });
 
     this.addChild(contentHBox);
+    this.addDisposable(formattedTimeProperty);
   }
 }

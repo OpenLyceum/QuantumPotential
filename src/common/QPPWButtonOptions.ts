@@ -1,6 +1,6 @@
 /** Shared, fleet-standard flat appearance options for simulation buttons. */
 
-import type { PlayPauseStepButtonGroupOptions, TimeControlNodeOptions } from "scenerystack/scenery-phet";
+import type { PlayPauseStepButtonGroupOptions } from "scenerystack/scenery-phet";
 import { ButtonNode } from "scenerystack/sun";
 import QPPWColors from "../QPPWColors.js";
 
@@ -20,9 +20,3 @@ export const FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS = {
   stepForwardButtonOptions: FLAT_BUTTON_APPEARANCE_OPTIONS,
   stepBackwardButtonOptions: FLAT_BUTTON_APPEARANCE_OPTIONS,
 } satisfies PlayPauseStepButtonGroupOptions;
-
-export const TIME_CONTROL_SPEED_RADIO_OPTIONS = {
-  speedRadioButtonGroupOptions: {
-    labelOptions: { fill: QPPWColors.textFillProperty },
-  },
-} satisfies Pick<TimeControlNodeOptions, "speedRadioButtonGroupOptions">;

@@ -3,8 +3,7 @@
  * It provides common functionality for time evolution, simulation control, and solver configuration.
  */
 
-import { TimeSpeed } from "scenerystack";
-import { EnumerationProperty, NumberProperty, Property } from "scenerystack/axon";
+import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
@@ -100,11 +99,8 @@ export abstract class BaseModel {
    */
   private static readonly MIN_KINETIC_ENERGY_FRACTION = 0.01;
 
-  /**
-   * Speed multiplier for slow time evolution.
-   * Slows down the simulation by a factor of 10 for better observation.
-   */
-  private static readonly SLOW_SPEED_MULTIPLIER = 0.1;
+  /** Available animation rates, relative to the original normal speed. */
+  public static readonly TIME_SPEED_MULTIPLIERS = [0.1, 0.25, 0.5, 1, 2, 4] as const;
 
   /**
    * Divisor for trapezoidal integration (averaging adjacent values).
@@ -117,7 +113,7 @@ export abstract class BaseModel {
   // Simulation state properties
   public readonly isPlayingProperty: Property<boolean>;
   public readonly timeProperty: NumberProperty; // In femtoseconds
-  public readonly timeSpeedProperty: EnumerationProperty<TimeSpeed>;
+  public readonly timeSpeedProperty: NumberProperty;
 
   // Potential type selection
   public readonly potentialTypeProperty: Property<PotentialType>;
@@ -150,7 +146,7 @@ export abstract class BaseModel {
     // Initialize simulation state
     this.isPlayingProperty = new Property<boolean>(false);
     this.timeProperty = new NumberProperty(0); // in femtoseconds
-    this.timeSpeedProperty = new EnumerationProperty(TimeSpeed.NORMAL);
+    this.timeSpeedProperty = new NumberProperty(1, { range: new Range(0.1, 4) });
 
     // Initialize potential type
     this.potentialTypeProperty = new Property<PotentialType>(options?.potentialType ?? PotentialType.INFINITE_WELL);
@@ -252,11 +248,7 @@ export abstract class BaseModel {
 
       if (this.isPlayingProperty.value || forced) {
         // Convert dt to femtoseconds and apply speed multiplier (only when playing normally)
-        const speedMultiplier = forced
-          ? 1
-          : this.timeSpeedProperty.value === TimeSpeed.SLOW
-            ? BaseModel.SLOW_SPEED_MULTIPLIER
-            : 1;
+        const speedMultiplier = forced ? 1 : this.timeSpeedProperty.value;
         const dtFemtoseconds = dt * speedMultiplier; // seconds to femtoseconds
         this.timeProperty.value += dtFemtoseconds;
         // Quantum mechanical time evolution is handled in the view layer

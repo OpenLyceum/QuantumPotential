@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { BaseModel } from "../src/common/model/BaseModel.js";
+import { BaseModel } from "../src/common/model/BaseModel.js";
 import { PotentialType } from "../src/common/model/PotentialFunction.js";
 import { IntroModel } from "../src/intro/model/IntroModel.js";
 import { ManyWellsModel } from "../src/many-wells/model/ManyWellsModel.js";
@@ -65,6 +65,27 @@ describe.each(MODELS)("%s", (_name, create, defaultPotential) => {
     expect(model.selectedEnergyLevelIndexProperty.value).toBe(levels.length - 1);
     model.dispose();
   });
+});
+
+it("applies every selected playback rate and keeps manual steps independent of speed", () => {
+  const model = new OneWellModel();
+  model.isPlayingProperty.value = true;
+
+  for (const speed of BaseModel.TIME_SPEED_MULTIPLIERS) {
+    model.timeProperty.value = 0;
+    model.timeSpeedProperty.value = speed;
+    model.step(0.5);
+    expect(model.timeProperty.value).toBeCloseTo(0.5 * speed);
+  }
+
+  model.isPlayingProperty.value = false;
+  model.timeProperty.value = 0;
+  model.step(BaseModel.MANUAL_STEP_SIZE, true);
+  expect(model.timeProperty.value).toBeCloseTo(BaseModel.MANUAL_STEP_SIZE);
+
+  model.reset();
+  expect(model.timeSpeedProperty.value).toBe(1);
+  model.dispose();
 });
 
 describe("multiple Pöschl–Teller wells", () => {
