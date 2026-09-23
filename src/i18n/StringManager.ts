@@ -450,6 +450,34 @@ export class StringManager {
     return this.stringProperties.localizedWideStringProperty;
   }
 
+  get localizedStateStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.localizedStateStringProperty;
+  }
+
+  get movingPacketStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.movingPacketStringProperty;
+  }
+
+  get twoLobedPacketStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.twoLobedPacketStringProperty;
+  }
+
+  get packetWidthStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.packetWidthStringProperty;
+  }
+
+  get momentumStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.momentumStringProperty;
+  }
+
+  get secondPositionStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.secondPositionStringProperty;
+  }
+
+  get relativePhaseStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.relativePhaseStringProperty;
+  }
+
   get coherentStateStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.coherentStateStringProperty;
   }
@@ -500,6 +528,22 @@ export class StringManager {
 
   get normalizeButtonStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.normalizeButtonStringProperty;
+  }
+
+  get allStatesStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.allStatesStringProperty;
+  }
+
+  get previousStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.previousStringProperty;
+  }
+
+  get nextStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.nextStringProperty;
+  }
+
+  get waveFunctionPreviewStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.waveFunctionPreviewStringProperty;
   }
 
   get okButtonStringProperty(): ReadOnlyProperty<string> {

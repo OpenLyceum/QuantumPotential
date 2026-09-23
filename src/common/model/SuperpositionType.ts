@@ -12,6 +12,9 @@ export const SuperpositionType = {
   SINGLE: "eigenfunction",
   LOCALIZED_NARROW: "localizedNarrow",
   LOCALIZED_WIDE: "localizedWide",
+  LOCALIZED: "localized",
+  MOVING_LOCALIZED: "movingLocalized",
+  TWO_LOBED: "twoLobed",
   COHERENT: "coherent",
   CUSTOM: "custom",
 } as const;
@@ -30,6 +33,16 @@ export type SuperpositionConfig = {
   phases: number[];
   /** Displacement from equilibrium in nm (for coherent states) */
   displacement?: number;
+  /** Center of a localized wave packet in nm */
+  position?: number;
+  /** Standard deviation of its probability density in nm */
+  width?: number;
+  /** Mean momentum in units of ℏ/nm for a moving packet */
+  momentum?: number;
+  /** Center of the second lobe in nm */
+  secondPosition?: number;
+  /** Relative phase of the second lobe in radians */
+  relativePhase?: number;
 };
 
 qppw.register("SuperpositionType", { SuperpositionType });

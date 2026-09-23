@@ -40,7 +40,9 @@ We have completed the following:
 - ✅ **Well Separation Slider** - Accessible for multi-well potentials
 - ✅ **Number of Wells Slider** - Integer-step keyboard navigation
 - ✅ **Electric Field Slider** - Full accessibility support
-- ✅ **Coherent Displacement Slider** - Keyboard accessible for coherent states
+- ✅ **Coherent Position Slider** - Keyboard accessible in the superposition dialog
+- ✅ **Localized Packet Sliders** - Keyboard accessible position and width controls in the superposition dialog
+- ✅ **Moving and Two-Lobed Sliders** - Keyboard accessible momentum, second position and relative phase controls
 - ✅ **Standard Keyboard Navigation** - Left/Right arrows, Page Up/Down, Home/End keys supported
 - ✅ **Descriptive Help Text** - Physics-focused descriptions for each slider parameter
 
@@ -51,7 +53,7 @@ We have completed the following:
 - ✅ **Energy Level Announcements** - Screen reader feedback with energy values and node counts
 - ✅ **Potential Type ComboBox** - Fully accessible with keyboard navigation
 - ✅ **Potential Type Descriptions** - Each potential has physics-focused accessible description
-- ✅ **Superposition Type ComboBox** - Keyboard accessible with descriptive help text
+- ✅ **Superposition Buttons** - Keyboard accessible simple-state and wavepacket choices
 - ✅ **Superposition State Descriptions** - Clear explanations for each quantum state option
 - ✅ **Keyboard Help Text** - Instructions for navigating dropdown menus
 - ✅ **ARIA Attributes** - Proper semantic roles and labels for all complex widgets
@@ -127,7 +129,7 @@ Our accessibility implementation follows a phased approach:
 5. **Phase 4: Complex Components** (✅ Complete)
    - Energy level selection via keyboard
    - Accessible potential type dropdown
-   - Accessible superposition type dropdown
+   - Accessible superposition choices and dialog controls
    - ARIA attributes for complex widgets
 
 6. **Phase 5: Visualizations** (✅ Complete)

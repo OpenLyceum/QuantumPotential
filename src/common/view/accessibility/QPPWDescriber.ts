@@ -34,6 +34,9 @@ const SUPERPOSITION_KEYS: Record<
   [SuperpositionType.PSI_I_PSI_J]: "psiIPsiJ",
   [SuperpositionType.LOCALIZED_NARROW]: "localizedNarrow",
   [SuperpositionType.LOCALIZED_WIDE]: "localizedWide",
+  [SuperpositionType.LOCALIZED]: "localized",
+  [SuperpositionType.MOVING_LOCALIZED]: "movingLocalized",
+  [SuperpositionType.TWO_LOBED]: "twoLobed",
   [SuperpositionType.COHERENT]: "coherent",
   [SuperpositionType.CUSTOM]: "custom",
 };

@@ -1,6 +1,6 @@
 /**
  * IntroControlPanelNode is a simplified control panel for the intro screen.
- * It excludes the superposition combo box and phase color display mode.
+ * It excludes the superposition controls and phase color display mode.
  */
 
 import { StringUtils } from "scenerystack/phetcommon";
@@ -186,7 +186,7 @@ export class IntroControlPanelNode extends Node {
       children: [potentialLabelText, potentialComboBox],
     });
 
-    // No superposition dropdown in intro screen
+    // No superposition controls in intro screen
 
     const children: Node[] = [
       titleText,

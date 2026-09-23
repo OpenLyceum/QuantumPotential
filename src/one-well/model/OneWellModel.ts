@@ -19,6 +19,7 @@ import {
   createInfiniteWellPotential,
 } from "../../common/model/analytical-solutions/infinite-square-well.js";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { createProjectedWavePacket, isSpatialPresetType } from "../../common/model/LocalizedWavePacket.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
@@ -69,7 +70,7 @@ export class OneWellModel extends BaseModel {
   /**
    * Minimum coherent state displacement in nanometers.
    */
-  private static readonly COHERENT_DISPLACEMENT_MIN = 0.0;
+  private static readonly COHERENT_DISPLACEMENT_MIN = -2.0;
 
   /**
    * Maximum coherent state displacement in nanometers.
@@ -890,6 +891,11 @@ export class OneWellModel extends BaseModel {
     // Extract to local constant for type narrowing
     const boundStates = this.boundStateResult;
     const numStates = boundStates.energies.length;
+    if (isSpatialPresetType(type)) {
+      const config = this.superpositionConfigProperty.value;
+      this.superpositionConfigProperty.value = createProjectedWavePacket(boundStates, { ...config, type });
+      return;
+    }
     let amplitudes: number[];
     let phases: number[];
 

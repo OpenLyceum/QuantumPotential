@@ -10,9 +10,16 @@
 import { DerivedProperty, type NumberProperty, type TReadOnlyProperty } from "scenerystack/axon";
 import { Dimension2 } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Color, HBox, Line, Node, RichText, Text, VBox } from "scenerystack/scenery";
+import { Color, HBox, Line, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, SpectrumNode } from "scenerystack/scenery-phet";
-import { Checkbox, ComboBox, type ComboBoxItem, HSlider, VerticalAquaRadioButtonGroup } from "scenerystack/sun";
+import {
+  Checkbox,
+  ComboBox,
+  type ComboBoxItem,
+  HSlider,
+  RectangularPushButton,
+  VerticalAquaRadioButtonGroup,
+} from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
@@ -31,6 +38,7 @@ import {
 } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
+import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 import { COMPACT_PANEL_SLIDER_OPTIONS, PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import { QPPWPanel } from "../QPPWPanel.js";
 import isDevMode from "../utils/isDevMode.js";
@@ -99,7 +107,7 @@ export class ControlPanelNode {
 
     const energyChildren: Node[] = [
       this.createPotentialGroup(listBoxParent),
-      this.createSuperpositionGroup(listBoxParent),
+      this.createSuperpositionGroup(),
       new EnergyLevelControl(model),
       new Checkbox(
         this.viewState.showEnergyValuesProperty,
@@ -342,199 +350,51 @@ export class ControlPanelNode {
     });
   }
 
-  /**
-   * Superposition combo box (opening the custom-superposition dialog), plus the coherent-state displacement on One Well.
-   */
-  private createSuperpositionGroup(listBoxParent: Node): Node {
-    // Superposition State dropdown
-    const superpositionItems: Array<ComboBoxItem<SuperpositionType>> = [
-      {
-        value: SuperpositionType.PSI_I_PSI_J,
-        createNode: () =>
-          new RichText(stringManager.psiIPsiJStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.PSI_I_PSI_J),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.PSI_I_PSI_J),
-        },
-      },
-      {
-        value: SuperpositionType.SINGLE,
-        createNode: () =>
-          new RichText(stringManager.psiKStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.SINGLE),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.SINGLE),
-        },
-      },
-      {
-        value: SuperpositionType.LOCALIZED_NARROW,
-        createNode: () =>
-          new Text(stringManager.localizedNarrowStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.LOCALIZED_NARROW),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.LOCALIZED_NARROW),
-        },
-      },
-      {
-        value: SuperpositionType.LOCALIZED_WIDE,
-        createNode: () =>
-          new Text(stringManager.localizedWideStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.LOCALIZED_WIDE),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.LOCALIZED_WIDE),
-        },
-      },
-      {
-        value: SuperpositionType.COHERENT,
-        createNode: () =>
-          new Text(stringManager.coherentStateStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.COHERENT),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.COHERENT),
-        },
-      },
-      {
-        value: SuperpositionType.CUSTOM,
-        createNode: () =>
-          new Text(stringManager.customStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        accessibleName: QPPWDescriber.getSuperpositionTypeNameProperty(SuperpositionType.CUSTOM),
-        comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getSuperpositionTypeDescriptionProperty(SuperpositionType.CUSTOM),
-        },
-      },
-    ];
-
-    const superpositionComboBox = new ComboBox(
-      this.model.superpositionTypeProperty,
-      superpositionItems,
-      listBoxParent,
-      {
-        ...COMBO_BOX_OPTIONS,
-
-        // PDOM - make superposition type selector keyboard accessible
-        accessibleName: a11y.controls.superpositionTypeStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Select wavefunction superposition state. " +
-        //   "Press Enter to open menu, use arrow keys to navigate options, " +
-        //   "Enter to select, Escape to close.",
-      },
-    );
-
-    // Coherent state displacement slider (OneWellModel only)
-    let displacementRowVBox: Node | null = null;
-    if (isOneWellModel(this.model)) {
-      const displacementValueText = new Text("", {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
+  /** Simple states are direct choices; wavepackets are configured in the dialog. */
+  private createSuperpositionGroup(): Node {
+    const choice = (label: TReadOnlyProperty<string>, listener: () => void): Node =>
+      new RectangularPushButton({
+        ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
+        content: new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        accessibleName: label,
+        listener,
       });
-
-      this.model.coherentDisplacementProperty.link((displacement: number) => {
-        displacementValueText.string = StringUtils.fillIn(stringManager.valueWithNanometersStringProperty, {
-          value: displacement.toFixed(2),
-        });
-      });
-
-      const displacementSlider = new HSlider(
-        this.model.coherentDisplacementProperty,
-        this.model.coherentDisplacementProperty.range!,
-        {
-          ...COMPACT_PANEL_SLIDER_OPTIONS,
-
-          // PDOM
-          accessibleName: QPPWDescriber.getParameterNameProperty("coherentDisplacement"),
-          descriptionContent: QPPWDescriber.getSliderHelpText("coherentDisplacement"),
-        },
-      );
-
-      displacementRowVBox = new VBox({
-        spacing: 4,
-        align: "left",
-        children: [
-          new Text(stringManager.displacementStringProperty, {
-            font: new PhetFont(12),
-            fill: QPPWColors.textFillProperty,
-          }),
-          new HBox({
-            spacing: 10,
-            children: [displacementSlider, displacementValueText],
-          }),
-        ],
-        visible: false, // Initially hidden
-      });
-
-      // Show/hide displacement slider based on superposition type
-      this.model.superpositionTypeProperty.link((type: SuperpositionType) => {
-        displacementRowVBox!.visible = type === SuperpositionType.COHERENT;
-      });
-    }
-
-    // Track the previous superposition type to revert if dialog is cancelled
-    let previousSuperpositionType: SuperpositionType = this.model.superpositionTypeProperty.value;
-    let isHandlingDialogResult = false;
-
-    // Open dialog when "Custom..." is selected
-    this.model.superpositionTypeProperty.link((type: SuperpositionType) => {
-      // Skip if we're handling dialog result to avoid recursion
-      if (isHandlingDialogResult) {
-        return;
+    const selectSimple = (type: SuperpositionType) => {
+      this.model.superpositionTypeProperty.value = type;
+      if (!isOneWellModel(this.model)) {
+        const count = this.model.getBoundStates()?.energies.length ?? 0;
+        const amplitudes = new Array(count).fill(0);
+        if (count > 0) {
+          amplitudes[0] = type === SuperpositionType.SINGLE || count === 1 ? 1 : 1 / Math.sqrt(2);
+        }
+        if (type === SuperpositionType.PSI_I_PSI_J && count > 1) {
+          amplitudes[1] = 1 / Math.sqrt(2);
+        }
+        this.model.superpositionConfigProperty.value = {
+          type,
+          amplitudes,
+          phases: new Array(count).fill(0),
+        };
       }
+    };
 
-      if (type === SuperpositionType.CUSTOM) {
-        const dialog = new SuperpositionDialog(
-          this.model.superpositionConfigProperty,
-          this.model.getBoundStates(),
-          () => {
-            // OK button pressed - keep CUSTOM selection
-            isHandlingDialogResult = true;
-            previousSuperpositionType = SuperpositionType.CUSTOM;
-            isHandlingDialogResult = false;
-          },
-          () => {
-            // Cancel button pressed - revert to previous selection
-            isHandlingDialogResult = true;
-            this.model.superpositionTypeProperty.value = previousSuperpositionType;
-            isHandlingDialogResult = false;
-          },
-        );
-        dialog.show();
-      } else {
-        // Update previous type when user selects a non-CUSTOM option
-        previousSuperpositionType = type;
-      }
+    return new VBox({
+      spacing: 4,
+      align: "left",
+      children: [
+        new Text(stringManager.superpositionStringProperty, {
+          font: TITLE_FONT,
+          fill: QPPWColors.textFillProperty,
+          maxWidth: CONTENT_WIDTH,
+        }),
+        choice(stringManager.psiKStringProperty, () => selectSimple(SuperpositionType.SINGLE)),
+        choice(stringManager.psiIPsiJStringProperty, () => selectSimple(SuperpositionType.PSI_I_PSI_J)),
+        choice(stringManager.configureSuperpositionStringProperty, () => {
+          const previousType = this.model.superpositionTypeProperty.value;
+          new SuperpositionDialog(this.model, previousType).show();
+        }),
+      ],
     });
-
-    const children: Node[] = [
-      new Text(stringManager.superpositionStringProperty, {
-        font: TITLE_FONT,
-        fill: QPPWColors.textFillProperty,
-        maxWidth: CONTENT_WIDTH,
-      }),
-      superpositionComboBox,
-    ];
-    if (displacementRowVBox) {
-      children.push(displacementRowVBox);
-    }
-
-    return new VBox({ spacing: 4, align: "left", children: children });
   }
 
   /**

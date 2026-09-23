@@ -7,6 +7,7 @@ import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
+import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
 import { type BoundStateResult, PotentialType, type WavenumberTransformResult } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
 import Schrodinger1DSolver, { type NumericalMethod } from "./Schrodinger1DSolver.js";
@@ -135,6 +136,11 @@ export abstract class BaseModel {
 
   // Cached bound state results
   protected boundStateResult: BoundStateResult | null = null;
+  private wavePacketProjection: {
+    states: BoundStateResult;
+    key: string;
+    config: SuperpositionConfig;
+  } | null = null;
 
   // Solver for quantum calculations
   protected readonly solver: Schrodinger1DSolver;
@@ -384,6 +390,28 @@ export abstract class BaseModel {
       this.calculateBoundStates();
     }
     return this.boundStateResult;
+  }
+
+  /** Reproject a spatial preset when the bound states or its parameters change. */
+  public getSuperpositionConfigForBoundStates(states: BoundStateResult): SuperpositionConfig {
+    const config = this.superpositionConfigProperty.value;
+    const type = this.superpositionTypeProperty.value;
+    if (config.type !== type || !isSpatialPresetType(type)) {
+      return config;
+    }
+    const position = config.position ?? 0;
+    const width = config.width ?? 0.5;
+    const momentum = config.momentum ?? 2;
+    const secondPosition = config.secondPosition ?? 1.5;
+    const relativePhase = config.relativePhase ?? 0;
+    const key = `${type}:${position}:${width}:${momentum}:${secondPosition}:${relativePhase}`;
+    const cached = this.wavePacketProjection;
+    if (cached && cached.states === states && cached.key === key) {
+      return cached.config;
+    }
+    const projected = createProjectedWavePacket(states, config);
+    this.wavePacketProjection = { states, key, config: projected };
+    return projected;
   }
 
   /**
@@ -740,7 +768,7 @@ export abstract class BaseModel {
       return null;
     }
 
-    const config = this.superpositionConfigProperty.value;
+    const config = this.getSuperpositionConfigForBoundStates(boundStates);
     const numPoints = boundStates.xGrid.length;
 
     // Initialize arrays
