@@ -56,8 +56,8 @@ const SINGLE_WELL_POTENTIALS = [
 const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType[]]> = [
   ["IntroModel", () => new IntroModel(), SINGLE_WELL_POTENTIALS],
   ["OneWellModel", () => new OneWellModel(), SINGLE_WELL_POTENTIALS],
-  ["TwoWellsModel", () => new TwoWellsModel(), [PotentialType.COULOMB_1D, PotentialType.DOUBLE_SQUARE_WELL]],
-  ["ManyWellsModel", () => new ManyWellsModel(), [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_COULOMB_1D]],
+  ["TwoWellsModel", () => new TwoWellsModel(), [PotentialType.DOUBLE_SQUARE_WELL, PotentialType.DOUBLE_POSCHL_TELLER]],
+  ["ManyWellsModel", () => new ManyWellsModel(), [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_POSCHL_TELLER]],
 ];
 
 describe("solver robustness", () => {

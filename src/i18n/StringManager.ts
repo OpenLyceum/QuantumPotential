@@ -306,8 +306,16 @@ export class StringManager {
     return this.stringProperties.doubleSquareWellStringProperty;
   }
 
+  get doublePoschlTellerStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.doublePoschlTellerStringProperty;
+  }
+
   get multiSquareWellStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.multiSquareWellStringProperty;
+  }
+
+  get multiPoschlTellerStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.multiPoschlTellerStringProperty;
   }
 
   get multiCoulomb1DStringProperty(): ReadOnlyProperty<string> {

@@ -1,12 +1,13 @@
 /**
  * ManyWellsModel represents the physics model for multiple quantum potential wells.
  * Similar to TwoWellsModel but generalized to N wells (1-10).
- * Supports multi-square wells and multi-Coulomb 1D potentials.
+ * Supports multi-square and multi-Pöschl–Teller wells.
  */
 
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { createMultiPoschlTellerPotential } from "../../common/model/multiPoschlTellerPotential.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
@@ -50,7 +51,7 @@ export class ManyWellsModel extends BaseModel {
 
   /**
    * Default well separation in nanometers.
-   * Distance between the centers of adjacent wells.
+   * Edge-to-edge gap between adjacent wells.
    */
   private static readonly DEFAULT_WELL_SEPARATION = 0.2;
 
@@ -105,18 +106,6 @@ export class ManyWellsModel extends BaseModel {
   private static readonly DOMAIN_MARGIN_NM = 1.5;
 
   /**
-   * Coulomb's constant in N·m²/C².
-   * Used for multi-Coulomb potential calculations: k = 1/(4πε₀).
-   */
-  private static readonly COULOMB_CONSTANT = 8.9875517923e9;
-
-  /**
-   * Minimum distance for Coulomb potential calculations in meters.
-   * Prevents singularity at centers (r = 0).
-   */
-  private static readonly COULOMB_MIN_DISTANCE = 1e-12;
-
-  /**
    * Half divisor for position calculations.
    * Used to calculate midpoints and half-widths.
    */
@@ -154,7 +143,7 @@ export class ManyWellsModel extends BaseModel {
     // Initialize model-specific well parameters
     this.wellSeparationProperty = new NumberProperty(ManyWellsModel.DEFAULT_WELL_SEPARATION, {
       range: new Range(ManyWellsModel.WELL_SEPARATION_MIN, ManyWellsModel.WELL_SEPARATION_MAX),
-    }); // in nanometers (spacing between wells)
+    }); // in nanometers (gap between wells)
 
     // Initialize electric field
     this.electricFieldProperty = new NumberProperty(ManyWellsModel.DEFAULT_ELECTRIC_FIELD, {
@@ -219,7 +208,10 @@ export class ManyWellsModel extends BaseModel {
     // truncated by the box walls. The point count scales with the domain to keep the spacing fixed.
     const halfSpanNm = Math.max(
       ManyWellsModel.CHART_DISPLAY_RANGE_NM,
-      this.getStructureWidthNm() / ManyWellsModel.HALF_DIVISOR + ManyWellsModel.DOMAIN_MARGIN_NM,
+      this.getStructureWidthNm() / ManyWellsModel.HALF_DIVISOR +
+        (this.potentialTypeProperty.value === PotentialType.MULTI_POSCHL_TELLER
+          ? Math.max(ManyWellsModel.DOMAIN_MARGIN_NM, (5 * this.wellWidthProperty.value) / 2)
+          : ManyWellsModel.DOMAIN_MARGIN_NM),
     );
     const scaledPoints = Math.round(
       (qppwQueryParameters.numberOfPoints * halfSpanNm) / ManyWellsModel.CHART_DISPLAY_RANGE_NM,
@@ -246,10 +238,8 @@ export class ManyWellsModel extends BaseModel {
           potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
-        case PotentialType.MULTI_COULOMB_1D: {
-          // For Coulomb potentials, use coulombStrength parameter α = k*e²
-          potentialParams.coulombStrength =
-            ManyWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
+        case PotentialType.MULTI_POSCHL_TELLER: {
+          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
           potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
@@ -270,15 +260,12 @@ export class ManyWellsModel extends BaseModel {
   }
 
   /**
-   * Total width (nm) of the well array: N wells and N − 1 barriers for square wells, or the span between the
-   * outermost centers for Coulomb wells.
+   * Total width (nm) of the well array: N well widths and N − 1 gaps.
    */
   private getStructureWidthNm(): number {
     const numberOfWells = this.numberOfWellsProperty.value;
     const separation = this.wellSeparationProperty.value;
-    return this.potentialTypeProperty.value === PotentialType.MULTI_COULOMB_1D
-      ? (numberOfWells - 1) * separation
-      : numberOfWells * this.wellWidthProperty.value + (numberOfWells - 1) * separation;
+    return numberOfWells * this.wellWidthProperty.value + (numberOfWells - 1) * separation;
   }
 
   /**
@@ -325,6 +312,7 @@ export class ManyWellsModel extends BaseModel {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
     const wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+    const smoothPotential = createMultiPoschlTellerPotential(numberOfWells, wellWidth, wellDepth, wellSeparation);
 
     const potential: number[] = [];
 
@@ -360,28 +348,8 @@ export class ManyWellsModel extends BaseModel {
           break;
         }
 
-        case PotentialType.MULTI_COULOMB_1D: {
-          // Multiple Coulomb centers arranged periodically
-          const coulombStrength =
-            ManyWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
-
-          // Calculate total extent of the Coulomb centers
-          const totalExtent = (numberOfWells - 1) * wellSeparation;
-          const arrayStart = -totalExtent / ManyWellsModel.HALF_DIVISOR;
-
-          // Sum contributions from all Coulomb centers
-          V = 0;
-          for (let wellIndex = 0; wellIndex < numberOfWells; wellIndex++) {
-            const centerPosition = arrayStart + wellIndex * wellSeparation;
-            const r = Math.abs(x - centerPosition);
-
-            if (r > ManyWellsModel.COULOMB_MIN_DISTANCE) {
-              // Avoid singularity at center
-              V += -coulombStrength / r;
-            } else {
-              V += -coulombStrength / ManyWellsModel.COULOMB_MIN_DISTANCE;
-            }
-          }
+        case PotentialType.MULTI_POSCHL_TELLER: {
+          V = smoothPotential(x);
           break;
         }
 

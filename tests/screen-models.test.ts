@@ -66,3 +66,36 @@ describe.each(MODELS)("%s", (_name, create, defaultPotential) => {
     model.dispose();
   });
 });
+
+describe("multiple Pöschl–Teller wells", () => {
+  it("solves two smooth wells and keeps their potential symmetric", () => {
+    const model = new TwoWellsModel();
+    model.potentialTypeProperty.value = PotentialType.DOUBLE_POSCHL_TELLER;
+
+    const levels = model.getEnergyLevels();
+    const [left, center, right] = model.getPotentialEnergy([-1e-9, 0, 1e-9]);
+    expect(levels.length).toBeGreaterThan(1);
+    expect(levels.every((energy) => Number.isFinite(energy) && energy < 0)).toBe(true);
+    expect(left).toBeCloseTo(right!, 25);
+    expect(left!).toBeLessThan(0);
+    expect(center!).toBeLessThan(0);
+    model.dispose();
+  });
+
+  it("solves a tilted smooth well array and updates when its spacing changes", () => {
+    const model = new ManyWellsModel();
+    model.potentialTypeProperty.value = PotentialType.MULTI_POSCHL_TELLER;
+    model.electricFieldProperty.value = 0.2;
+
+    const levels = model.getEnergyLevels();
+    const [left, right] = model.getPotentialEnergy([-1e-9, 1e-9]);
+    expect(levels.length).toBeGreaterThan(1);
+    expect(levels.every(Number.isFinite)).toBe(true);
+    expect(right!).toBeGreaterThan(left!);
+
+    const oldCenterPotential = model.getPotentialEnergy([0])[0]!;
+    model.wellSeparationProperty.value = 0.6;
+    expect(model.getPotentialEnergy([0])[0]).not.toBeCloseTo(oldCenterPotential, 25);
+    model.dispose();
+  });
+});

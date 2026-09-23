@@ -6,6 +6,7 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
+import { createMultiPoschlTellerPotential } from "../../common/model/multiPoschlTellerPotential.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { type GridConfig, PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
@@ -34,7 +35,7 @@ export class TwoWellsModel extends BaseModel {
 
   /**
    * Default well separation in nanometers.
-   * Distance between the centers of the two wells.
+   * Edge-to-edge gap between the two wells.
    */
   private static readonly DEFAULT_WELL_SEPARATION = 0.2;
 
@@ -90,11 +91,6 @@ export class TwoWellsModel extends BaseModel {
   private static readonly DEFAULT_NUM_STATES = 10;
 
   /**
-   * Number of states for Coulomb 1D potential.
-   */
-  private static readonly NUM_STATES_COULOMB = 80;
-
-  /**
    * Number of states for double square well.
    * Higher value needed to capture energy level splitting.
    */
@@ -120,18 +116,6 @@ export class TwoWellsModel extends BaseModel {
    * High resolution needed for accurate wavefunction representation.
    */
   private static readonly DOUBLE_WELL_GRID_POINTS = 2000;
-
-  /**
-   * Coulomb's constant in N·m²/C².
-   * Used for Coulomb potential calculations: k = 1/(4πε₀).
-   */
-  private static readonly COULOMB_CONSTANT = 8.9875517923e9;
-
-  /**
-   * Minimum distance for Coulomb potential calculations in meters.
-   * Prevents singularity at the origin (r = 0).
-   */
-  private static readonly COULOMB_MIN_DISTANCE = 1e-12;
 
   /**
    * Half divisor for position calculations.
@@ -277,9 +261,10 @@ export class TwoWellsModel extends BaseModel {
         ),
       );
       numStates = Math.max(1, Math.min(maxN, TwoWellsModel.MAX_NUM_STATES)); // Cap at MAX_NUM_STATES for safety
-    } else if (this.potentialTypeProperty.value === PotentialType.COULOMB_1D) {
-      numStates = TwoWellsModel.NUM_STATES_COULOMB; // Use more states for Coulomb potential
-    } else if (this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL) {
+    } else if (
+      this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL ||
+      this.potentialTypeProperty.value === PotentialType.DOUBLE_POSCHL_TELLER
+    ) {
       numStates = TwoWellsModel.NUM_STATES_DOUBLE_WELL; // Use more states for double well to capture splitting
     }
 
@@ -293,6 +278,20 @@ export class TwoWellsModel extends BaseModel {
         xMin: -TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
         xMax: TwoWellsModel.CHART_DISPLAY_RANGE_NM * QuantumConstants.NM_TO_M,
         numPoints: TwoWellsModel.DOUBLE_WELL_GRID_POINTS,
+      };
+    } else if (this.potentialTypeProperty.value === PotentialType.DOUBLE_POSCHL_TELLER) {
+      // Smooth wells need room for their exponential tails beyond the visible chart.
+      const halfSpanNm = Math.max(
+        TwoWellsModel.CHART_DISPLAY_RANGE_NM,
+        (this.wellWidthProperty.value + this.wellSeparationProperty.value) / 2 + (5 * this.wellWidthProperty.value) / 2,
+      );
+      const scaledPoints = Math.round(
+        (qppwQueryParameters.numberOfPoints * halfSpanNm) / TwoWellsModel.CHART_DISPLAY_RANGE_NM,
+      );
+      gridConfig = {
+        xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
+        xMax: halfSpanNm * QuantumConstants.NM_TO_M,
+        numPoints: scaledPoints % 2 === 1 ? scaledPoints : scaledPoints + 1,
       };
     } else {
       gridConfig = {
@@ -314,20 +313,16 @@ export class TwoWellsModel extends BaseModel {
         case PotentialType.INFINITE_WELL:
           // No additional parameters needed
           break;
-        case PotentialType.COULOMB_1D: {
-          // For Coulomb potentials, use coulombStrength parameter α = k*e²
-          // where k = 1/(4πε₀) ≈ 8.9875517923e9 N·m²/C²
-          // α ≈ 2.307e-28 J·m for electron charge
-          potentialParams.coulombStrength =
-            TwoWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
-          break;
-        }
         case PotentialType.DOUBLE_SQUARE_WELL: {
           // For double square well, we need width, depth, and separation
           potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
           potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
+        case PotentialType.DOUBLE_POSCHL_TELLER:
+          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+          break;
         default:
           // For other potential types, use numerical solution
           break;
@@ -383,6 +378,7 @@ export class TwoWellsModel extends BaseModel {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
     const wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+    const smoothPotential = createMultiPoschlTellerPotential(2, wellWidth, wellDepth, wellSeparation);
 
     const potential: number[] = [];
 
@@ -410,19 +406,9 @@ export class TwoWellsModel extends BaseModel {
           break;
         }
 
-        case PotentialType.COULOMB_1D: {
-          // V(x) = -α/|x| where α = ke²
-          const coulombStrength =
-            TwoWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
-          const r = Math.abs(x);
-          if (r > TwoWellsModel.COULOMB_MIN_DISTANCE) {
-            // Avoid singularity at origin
-            V = -coulombStrength / r;
-          } else {
-            V = -coulombStrength / TwoWellsModel.COULOMB_MIN_DISTANCE;
-          }
+        case PotentialType.DOUBLE_POSCHL_TELLER:
+          V = smoothPotential(x);
           break;
-        }
 
         default:
           V = 0;

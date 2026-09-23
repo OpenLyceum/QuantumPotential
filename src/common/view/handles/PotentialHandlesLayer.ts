@@ -17,7 +17,9 @@ import {
   hasWellSeparation,
   isManyWellsModel,
 } from "../../model/ModelTypeGuards.js";
+import { createMultiPoschlTellerPotential } from "../../model/multiPoschlTellerPotential.js";
 import { PotentialType } from "../../model/PotentialFunction.js";
+import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 import { type ChartCoordinates, type HandleSpec, PotentialHandleNode } from "./PotentialHandleNode.js";
 
@@ -40,9 +42,6 @@ const MAX_HANDLE_X = 3.7;
 // Energy (eV) at which the handle on an infinite wall sits
 const INFINITE_WALL_HANDLE_Y = 7.5;
 
-// Energy (eV) of the Coulomb-chain separation handle, below the chain's shallow levels
-const COULOMB_HANDLE_Y = -3;
-
 const rosenMorse = (x: number, depth: number, barrier: number, a: number): number =>
   -depth / Math.cosh(x / a) ** 2 + barrier * Math.tanh(x / a);
 
@@ -50,6 +49,22 @@ const eckart = (x: number, depth: number, barrier: number, a: number): number =>
   const z = 1 / (1 + Math.exp(x / a));
   return depth * z * z - barrier * z;
 };
+
+const smoothWellEnergy = (
+  x: number,
+  count: number,
+  width: number,
+  depth: number,
+  separation: number,
+  field = 0,
+): number =>
+  createMultiPoschlTellerPotential(
+    count,
+    width * QuantumConstants.NM_TO_M,
+    depth * QuantumConstants.EV_TO_JOULES,
+    separation * QuantumConstants.NM_TO_M,
+    field / QuantumConstants.NM_TO_M,
+  )(x * QuantumConstants.NM_TO_M) * QuantumConstants.JOULES_TO_EV;
 
 export class PotentialHandlesLayer extends Node {
   private readonly model: ScreenModel;
@@ -240,10 +255,33 @@ export class PotentialHandlesLayer extends Node {
           y: d,
         })),
       );
+
+      const smooth = [PotentialType.DOUBLE_POSCHL_TELLER];
+      const outerCenter = (w: number, s: number): number => (w + s) / 2;
+      const smoothPoint = (x: number, w: number, d: number, s: number): { x: number; y: number } => ({
+        x: x,
+        y: smoothWellEnergy(x, 2, w, d, s),
+      });
+      specs.push(
+        spec(width, "wellWidth", "horizontal", smooth, (w) =>
+          smoothPoint(
+            outerCenter(w, separation.value) + (SECH2_THREE_QUARTER_POINT * w) / 2,
+            w,
+            depth.value,
+            separation.value,
+          ),
+        ),
+        spec(separation, "wellSeparation", "horizontal", smooth, (s) =>
+          smoothPoint(outerCenter(width.value, s), width.value, depth.value, s),
+        ),
+        spec(depth, "wellDepth", "vertical", smooth, (d) =>
+          smoothPoint(outerCenter(width.value, separation.value), width.value, d, separation.value),
+        ),
+      );
     }
 
-    // Multi-square well (N wells, barriers of width d, total T = Nw + (N − 1)d centred at 0) and the Coulomb
-    // chain (N centres d apart), both tilted by eℰx
+    // Multi-square well (N wells, barriers of width d, total T = Nw + (N − 1)d centred at 0)
+    // and a row of smooth Pöschl–Teller wells, both tilted by eℰx.
     if (isManyWellsModel(model) && hasElectricField(model)) {
       const separation = model.wellSeparationProperty;
       const count = model.numberOfWellsProperty;
@@ -262,12 +300,31 @@ export class PotentialHandlesLayer extends Node {
         spec(depth, "wellDepth", "vertical", squares, (d) =>
           tilted(Math.min(MAX_HANDLE_X, total(width.value, separation.value) / 2 + PLATEAU_MARGIN), d),
         ),
-        {
-          ...spec(separation, "wellSeparation", "horizontal", [PotentialType.MULTI_COULOMB_1D], (d) =>
-            tilted(((count.value - 1) * d) / 2, COULOMB_HANDLE_Y),
+      );
+      const smooth = [PotentialType.MULTI_POSCHL_TELLER];
+      const centralRightCenter = (w: number, s: number): number => (count.value % 2 === 0 ? 0.5 : 1) * (w + s);
+      const smoothPoint = (x: number, w: number, d: number, s: number): { x: number; y: number } => ({
+        x: x,
+        y: smoothWellEnergy(x, count.value, w, d, s, field.value),
+      });
+      specs.push(
+        spec(width, "wellWidth", "horizontal", smooth, (w) =>
+          smoothPoint(
+            centralRightCenter(w, separation.value) + (SECH2_THREE_QUARTER_POINT * w) / 2,
+            w,
+            depth.value,
+            separation.value,
           ),
-          isVisibleFor: (type) => type === PotentialType.MULTI_COULOMB_1D && count.value > 1,
+        ),
+        {
+          ...spec(separation, "wellSeparation", "horizontal", smooth, (s) =>
+            smoothPoint(centralRightCenter(width.value, s), width.value, depth.value, s),
+          ),
+          isVisibleFor: (type) => type === PotentialType.MULTI_POSCHL_TELLER && count.value > 1,
         },
+        spec(depth, "wellDepth", "vertical", smooth, (d) =>
+          smoothPoint(centralRightCenter(width.value, separation.value), width.value, d, separation.value),
+        ),
       );
     }
 

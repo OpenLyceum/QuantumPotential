@@ -19,7 +19,9 @@ export const PotentialType = {
   COULOMB_1D: "coulomb1D",
   COULOMB_3D: "coulomb3D",
   DOUBLE_SQUARE_WELL: "doubleSquareWell",
+  DOUBLE_POSCHL_TELLER: "doublePoschlTeller",
   MULTI_SQUARE_WELL: "multiSquareWell",
+  MULTI_POSCHL_TELLER: "multiPoschlTeller",
   MULTI_COULOMB_1D: "multiCoulomb1D",
   TRIANGULAR: "triangular",
   CUSTOM: "custom",
@@ -51,11 +53,11 @@ export type WellParameters = {
   slope?: number;
   /** Coulomb strength parameter α for Coulomb potentials (J·m) */
   coulombStrength?: number;
-  /** Well separation for double square well (meters) */
+  /** Edge-to-edge separation of adjacent wells (meters) */
   wellSeparation?: number;
   /** Energy offset for triangular potential (Joules) */
   energyOffset?: number;
-  /** Number of wells for multi-square well and multi-Coulomb 1D (1-10) */
+  /** Number of wells for multi-well potentials (1-10) */
   numberOfWells?: number;
   /** Uniform electric field for multi-well potentials (V/m); adds the tilt V = eℰx */
   electricField?: number;

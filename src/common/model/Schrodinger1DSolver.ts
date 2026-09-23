@@ -13,6 +13,7 @@ import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./anal
 import { solveMultiCoulomb1D } from "./analytical-solutions/multi-coulomb-1d.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
 import { solveFGH } from "./FGHSolver.js";
+import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.js";
 import { NumericalMethod } from "./NumericalMethod.js";
 import NumerovSolver from "./numerov/NumerovSolver.js";
 import XGrid from "./numerov/XGrid.js";
@@ -162,6 +163,29 @@ export class Schrodinger1DSolver {
     gridConfig: GridConfig,
   ): BoundStateResult | null {
     switch (wellParams.type) {
+      case PotentialType.DOUBLE_POSCHL_TELLER:
+      case PotentialType.MULTI_POSCHL_TELLER:
+        if (
+          wellParams.wellWidth !== undefined &&
+          wellParams.wellDepth !== undefined &&
+          wellParams.wellSeparation !== undefined &&
+          (wellParams.type === PotentialType.DOUBLE_POSCHL_TELLER || wellParams.numberOfWells !== undefined)
+        ) {
+          return this.solveNumerical(
+            createMultiPoschlTellerPotential(
+              wellParams.type === PotentialType.DOUBLE_POSCHL_TELLER ? 2 : wellParams.numberOfWells!,
+              wellParams.wellWidth,
+              wellParams.wellDepth,
+              wellParams.wellSeparation,
+              wellParams.electricField ?? 0,
+            ),
+            mass,
+            numStates,
+            gridConfig,
+          );
+        }
+        break;
+
       case PotentialType.DOUBLE_SQUARE_WELL:
         if (
           wellParams.wellWidth !== undefined &&

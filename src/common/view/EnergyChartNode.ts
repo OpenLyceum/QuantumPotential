@@ -68,6 +68,9 @@ function getEnergyAxisRange(potentialType: PotentialType): {
     case PotentialType.MULTI_COULOMB_1D:
       // Multi-Coulomb 1D potential with V=0 at infinity
       return { min: -15, max: 5 };
+    case PotentialType.DOUBLE_POSCHL_TELLER:
+    case PotentialType.MULTI_POSCHL_TELLER:
+      return { min: -20, max: 5 };
     case PotentialType.MORSE:
       // Morse potential: V=0 at dissociation limit (infinity), V=-De at bottom
       return { min: -15, max: 5 };

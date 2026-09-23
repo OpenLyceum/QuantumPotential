@@ -32,8 +32,8 @@ const SINGLE_WELLS = [
 const SCREENS: ReadonlyArray<[string, () => ScreenModel, PotentialType[]]> = [
   ["Intro", () => new IntroModel(), SINGLE_WELLS],
   ["One Well", () => new OneWellModel(), SINGLE_WELLS],
-  ["Two Wells", () => new TwoWellsModel(), [PotentialType.DOUBLE_SQUARE_WELL]],
-  ["Many Wells", () => new ManyWellsModel(), [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_COULOMB_1D]],
+  ["Two Wells", () => new TwoWellsModel(), [PotentialType.DOUBLE_SQUARE_WELL, PotentialType.DOUBLE_POSCHL_TELLER]],
+  ["Many Wells", () => new ManyWellsModel(), [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_POSCHL_TELLER]],
 ];
 
 const ENERGY_TOLERANCE_EV = 1e-3;

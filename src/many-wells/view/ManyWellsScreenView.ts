@@ -2,7 +2,7 @@
  * ManyWellsScreenView is the main view for the Many Wells screen.
  * It displays multiple quantum potential wells (1-10) with two potential types:
  * - Multi-square well (generalization of double square well)
- * - Multi-Coulomb 1D (multiple Coulomb centers)
+ * - Multi-Pöschl–Teller (multiple smooth wells)
  */
 
 import type { TReadOnlyProperty } from "scenerystack/axon";
@@ -30,11 +30,11 @@ export class ManyWellsScreenView extends BaseScreenView {
 
     // Create the standard quantum well layout with custom control panel options
     // - Hide particle mass slider (use electron mass for simplicity)
-    // - Allow Multi-Square Well and Multi-Coulomb 1D potential types
+    // - Allow Multi-Square Well and Multi-Pöschl–Teller potential types
     // - Show number of wells slider (1-10)
     this.createStandardLayout(model, this.viewState, {
       showParticleMass: false,
-      allowedPotentialTypes: [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_COULOMB_1D],
+      allowedPotentialTypes: [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_POSCHL_TELLER],
     });
   }
 

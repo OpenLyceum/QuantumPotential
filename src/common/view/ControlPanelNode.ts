@@ -58,7 +58,7 @@ const COMBO_BOX_OPTIONS = {
 };
 
 /** Potential types with more than one well (they have a separation and, in Many Wells, a count and a field). */
-const MULTI_WELL_TYPES: readonly PotentialType[] = [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_COULOMB_1D];
+const MULTI_WELL_TYPES: readonly PotentialType[] = [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_POSCHL_TELLER];
 
 export type ControlPanelNodeOptions = {
   // Whether to show the particle mass control
@@ -269,6 +269,18 @@ export class ControlPanelNode {
         },
       },
       {
+        value: PotentialType.DOUBLE_POSCHL_TELLER,
+        createNode: () =>
+          new Text(stringManager.doublePoschlTellerStringProperty, {
+            font: new PhetFont(14),
+            fill: QPPWColors.textFillProperty,
+          }),
+        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.DOUBLE_POSCHL_TELLER),
+        comboBoxListItemNodeOptions: {
+          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.DOUBLE_POSCHL_TELLER),
+        },
+      },
+      {
         value: PotentialType.MULTI_SQUARE_WELL,
         createNode: () =>
           new Text(stringManager.multiSquareWellStringProperty, {
@@ -281,15 +293,15 @@ export class ControlPanelNode {
         },
       },
       {
-        value: PotentialType.MULTI_COULOMB_1D,
+        value: PotentialType.MULTI_POSCHL_TELLER,
         createNode: () =>
-          new Text(stringManager.multiCoulomb1DStringProperty, {
+          new Text(stringManager.multiPoschlTellerStringProperty, {
             font: new PhetFont(14),
             fill: QPPWColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_COULOMB_1D),
+        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_POSCHL_TELLER),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.MULTI_COULOMB_1D),
+          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.MULTI_POSCHL_TELLER),
         },
       },
     ];
@@ -625,10 +637,7 @@ export class ControlPanelNode {
       stringManager.valueWithElectronVoltsStringProperty,
       2,
       (type) =>
-        type !== PotentialType.INFINITE_WELL &&
-        type !== PotentialType.COULOMB_1D &&
-        type !== PotentialType.COULOMB_3D &&
-        type !== PotentialType.MULTI_COULOMB_1D,
+        type !== PotentialType.INFINITE_WELL && type !== PotentialType.COULOMB_1D && type !== PotentialType.COULOMB_3D,
     );
     if (hasBarrierHeight(this.model)) {
       addRow(
@@ -657,7 +666,10 @@ export class ControlPanelNode {
         this.model.wellSeparationProperty,
         stringManager.valueWithNanometersStringProperty,
         2,
-        (type) => type === PotentialType.DOUBLE_SQUARE_WELL || MULTI_WELL_TYPES.includes(type),
+        (type) =>
+          type === PotentialType.DOUBLE_SQUARE_WELL ||
+          type === PotentialType.DOUBLE_POSCHL_TELLER ||
+          MULTI_WELL_TYPES.includes(type),
       );
     }
 
