@@ -1,6 +1,6 @@
-# CLAUDE.md — Quantum Potential (QPPW)
+# AGENTS.md — Quantum Potential (QPPW)
 
-Sim-specific context for AI assistants. General SceneryStack guidance: [OpenLyceum/.github/CLAUDE.md](https://github.com/OpenLyceum/.github/blob/main/CLAUDE.md).
+Sim-specific context for AI assistants. General SceneryStack guidance: [OpenLyceum/.github/AGENTS.md](https://github.com/OpenLyceum/.github/blob/main/AGENTS.md).
 
 ## Project
 
@@ -124,7 +124,7 @@ deferred fleet-wide). Full convention:
 ### `package.json` overrides
 
 Same fleet pins as the template (`lodash`, `three`, `brace-expansion`) — rationale in
-[SceneryStackTemplate/CLAUDE.md](https://github.com/OpenLyceum/SceneryStackTemplate/blob/main/CLAUDE.md).
+[SceneryStackTemplate/AGENTS.md](https://github.com/OpenLyceum/SceneryStackTemplate/blob/main/AGENTS.md).
 
 ## Testing
 
