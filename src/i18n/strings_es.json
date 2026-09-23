@@ -106,8 +106,8 @@
   "okButton": "Aceptar",
   "cancelButton": "Cancelar",
   "superposition": "Superposición:",
-  "psiIPsiJ": "ψₙ, ψₘ",
-  "psiK": "ψₖ",
+  "psiIPsiJ": "Dos estados (ψ₀ + ψ₁)",
+  "psiK": "Un estado (elige en la gráfica)",
   "localizedNarrow": "Localizado estrecho",
   "localizedWide": "Localizado ancho",
   "coherentState": "Estado coherente",
@@ -208,16 +208,16 @@
       "custom": "Potencial cuántico personalizado definido por los parámetros del usuario."
     },
     "superpositionNames": {
-      "single": "Estado propio único",
-      "psiIPsiJ": "Superposición de dos estados propios",
+      "single": "Estado de energía elegido",
+      "psiIPsiJ": "Dos estados de energía más bajos",
       "localizedNarrow": "Paquete de ondas gaussiano estrecho",
       "localizedWide": "Paquete de ondas gaussiano ancho",
       "coherent": "Estado coherente",
       "custom": "Superposición personalizada"
     },
     "superpositionDescriptions": {
-      "single": "Estado propio único seleccionado. Estado estacionario sin evolución temporal.",
-      "psiIPsiJ": "Superposición de dos estados propios. La función de onda oscila entre los estados.",
+      "single": "Muestra el nivel de energía elegido en la gráfica. Su densidad de probabilidad permanece constante con el tiempo.",
+      "psiIPsiJ": "Combinación a partes iguales de los dos estados de energía más bajos, ψ₀ y ψ₁. Su densidad de probabilidad cambia con el tiempo.",
       "localizedNarrow": "Paquete de ondas gaussiano estrecho. Partícula localizada con gran incertidumbre en el momento.",
       "localizedWide": "Paquete de ondas gaussiano ancho. Partícula extendida con poca incertidumbre en el momento.",
       "coherent": "Superposición en estado coherente. Paquete de ondas de incertidumbre mínima que oscila.",

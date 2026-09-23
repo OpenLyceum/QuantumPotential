@@ -106,8 +106,8 @@
   "okButton": "OK",
   "cancelButton": "Cancel",
   "superposition": "Superposition:",
-  "psiIPsiJ": "ψₙ, ψₘ",
-  "psiK": "ψₖ",
+  "psiIPsiJ": "Two lowest states (ψ₀ + ψ₁)",
+  "psiK": "One state (select on chart)",
   "localizedNarrow": "Localized narrow",
   "localizedWide": "Localized wide",
   "coherentState": "Coherent state",
@@ -208,16 +208,16 @@
       "custom": "Custom quantum potential defined by user parameters."
     },
     "superpositionNames": {
-      "single": "Single eigenstate",
-      "psiIPsiJ": "Superposition of two eigenstates",
+      "single": "Selected energy state",
+      "psiIPsiJ": "Two lowest energy states",
       "localizedNarrow": "Narrow Gaussian wavepacket",
       "localizedWide": "Wide Gaussian wavepacket",
       "coherent": "Coherent state",
       "custom": "Custom superposition"
     },
     "superpositionDescriptions": {
-      "single": "Single eigenstate selected. Stationary state with no time evolution.",
-      "psiIPsiJ": "Superposition of two eigenstates. Wavefunction oscillates between states.",
+      "single": "Shows the energy level selected on the chart. Its probability density stays the same over time.",
+      "psiIPsiJ": "Equal combination of the two lowest energy states, ψ₀ and ψ₁. Its probability density changes over time.",
       "localizedNarrow": "Narrow Gaussian wavepacket. Localized particle with large momentum uncertainty.",
       "localizedWide": "Wide Gaussian wavepacket. Spread out particle with small momentum uncertainty.",
       "coherent": "Coherent state superposition. Minimal uncertainty wavepacket that oscillates.",

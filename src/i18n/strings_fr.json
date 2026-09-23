@@ -106,8 +106,8 @@
   "okButton": "OK",
   "cancelButton": "Annuler",
   "superposition": "Superposition:",
-  "psiIPsiJ": "ψₙ, ψₘ",
-  "psiK": "ψₖ",
+  "psiIPsiJ": "Deux états (ψ₀ + ψ₁)",
+  "psiK": "Un état (choisir sur le graphe)",
   "localizedNarrow": "Localisé étroit",
   "localizedWide": "Localisé large",
   "coherentState": "État cohérent",
@@ -208,16 +208,16 @@
       "custom": "Potentiel quantique personnalisé défini par les paramètres de l'utilisateur."
     },
     "superpositionNames": {
-      "single": "État propre unique",
-      "psiIPsiJ": "Superposition de deux états propres",
+      "single": "État d'énergie choisi",
+      "psiIPsiJ": "Deux états d'énergie les plus bas",
       "localizedNarrow": "Paquet d'ondes gaussien étroit",
       "localizedWide": "Paquet d'ondes gaussien large",
       "coherent": "État cohérent",
       "custom": "Superposition personnalisée"
     },
     "superpositionDescriptions": {
-      "single": "État propre unique sélectionné. État stationnaire sans évolution temporelle.",
-      "psiIPsiJ": "Superposition de deux états propres. La fonction d'onde oscille entre les états.",
+      "single": "Affiche le niveau d'énergie choisi sur le graphique. Sa densité de probabilité reste constante au fil du temps.",
+      "psiIPsiJ": "Combinaison à parts égales des deux états d'énergie les plus bas, ψ₀ et ψ₁. Sa densité de probabilité change au fil du temps.",
       "localizedNarrow": "Paquet d'ondes gaussien étroit. Particule localisée avec une grande incertitude sur la quantité de mouvement.",
       "localizedWide": "Paquet d'ondes gaussien large. Particule étalée avec une faible incertitude sur la quantité de mouvement.",
       "coherent": "Superposition en état cohérent. Paquet d'ondes d'incertitude minimale qui oscille.",
