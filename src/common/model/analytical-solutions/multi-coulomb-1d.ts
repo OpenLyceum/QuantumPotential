@@ -18,8 +18,9 @@
  * where d is the spacing between adjacent centers.
  */
 
-import { BoundStateResult, GridConfig } from "../PotentialFunction.js";
-import Schrodinger1DSolver from "../Schrodinger1DSolver.js";
+import Logger from "../../utils/Logger.js";
+import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
+import type Schrodinger1DSolver from "../Schrodinger1DSolver.js";
 
 /**
  * Create a multi-Coulomb 1D potential function.
@@ -101,27 +102,18 @@ export function solveMultiCoulomb1D(
   solver: Schrodinger1DSolver, // Numerical solver instance
 ): BoundStateResult {
   // Create the potential function
-  const potential = createMultiCoulomb1DPotential(
-    numberOfCenters,
-    centerSpacing,
-    coulombStrength,
-  );
+  const potential = createMultiCoulomb1DPotential(numberOfCenters, centerSpacing, coulombStrength);
 
   // Use numerical solver to find bound states
   try {
-    const result = solver.solveNumerical(
-      potential,
-      mass,
-      numStates,
-      gridConfig,
-    );
+    const result = solver.solveNumerical(potential, mass, numStates, gridConfig);
 
     return {
       ...result,
       method: "analytical" as const, // Mark as analytical (exact potential definition)
     };
   } catch (error) {
-    console.error("Error solving multi-Coulomb 1D:", error);
+    Logger.error("Error solving multi-Coulomb 1D:", error);
 
     // Return empty result on error
     const xGrid: number[] = [];

@@ -3,15 +3,12 @@
  * It displays a double quantum potential well and demonstrates quantum tunneling.
  */
 
-import {
-  BaseScreenView,
-  ScreenStringProperties,
-} from "../../common/view/BaseScreenView.js";
-import { TwoWellsModel } from "../model/TwoWellsModel.js";
+import type { TReadOnlyProperty } from "scenerystack/axon";
+import type { ScreenViewOptions } from "scenerystack/sim";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
-import { ScreenViewOptions } from "scenerystack/sim";
-import { TReadOnlyProperty } from "scenerystack/axon";
+import { BaseScreenView, type ScreenStringProperties } from "../../common/view/BaseScreenView.js";
 import stringManager from "../../i18n/StringManager.js";
+import type { TwoWellsModel } from "../model/TwoWellsModel.js";
 import { TwoWellsViewState } from "./TwoWellsViewState.js";
 
 export class TwoWellsScreenView extends BaseScreenView {
@@ -21,9 +18,7 @@ export class TwoWellsScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "Two Wells",
-        screenDescription:
-          "Two Wells screen for exploring quantum tunneling and energy level splitting in double potential wells.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().twoWellsStringProperty,
       },
       options,
     );
@@ -36,10 +31,7 @@ export class TwoWellsScreenView extends BaseScreenView {
     // - Allow Coulomb 1D and Double Square Well potential types
     this.createStandardLayout(model, this.viewState, {
       showParticleMass: false,
-      allowedPotentialTypes: [
-        PotentialType.COULOMB_1D,
-        PotentialType.DOUBLE_SQUARE_WELL,
-      ],
+      allowedPotentialTypes: [PotentialType.COULOMB_1D, PotentialType.DOUBLE_SQUARE_WELL],
     });
 
     // Set up PDOM (Parallel DOM) structure for accessibility
@@ -73,14 +65,10 @@ export class TwoWellsScreenView extends BaseScreenView {
   protected getScreenStringProperties(): ScreenStringProperties {
     return {
       titleStringProperty: stringManager.twoWellsStringProperty,
-      descriptionStringProperty:
-        stringManager.twoWellsDescriptionStringProperty,
-      keyConceptsStringProperty:
-        stringManager.twoWellsKeyConceptsStringProperty,
-      interactionsStringProperty:
-        stringManager.twoWellsInteractionsStringProperty,
-      educationalContentStringProperty:
-        stringManager.twoWellsEducationalContentStringProperty,
+      descriptionStringProperty: stringManager.twoWellsDescriptionStringProperty,
+      keyConceptsStringProperty: stringManager.twoWellsKeyConceptsStringProperty,
+      interactionsStringProperty: stringManager.twoWellsInteractionsStringProperty,
+      educationalContentStringProperty: stringManager.twoWellsEducationalContentStringProperty,
     };
   }
 

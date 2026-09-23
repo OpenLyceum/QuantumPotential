@@ -20,22 +20,18 @@
  *   https://pages.physics.wisc.edu/~tgwalker/106.Numerov.pdf
  */
 
-import QuantumConstants from "./QuantumConstants.js";
+import qppw from "../../QPPWNamespace.js";
 import {
-  BoundStateResult,
-  EnergyOnlyResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
-import {
+  cubicSplineInterpolation,
   DotMatrix,
   diagonalize,
-  normalizeWavefunction,
   matrixToArray,
-  cubicSplineInterpolation,
+  normalizeOnGrid,
+  normalizeWavefunction,
 } from "./LinearAlgebraUtils.js";
+import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 import { standardizeWavefunction } from "./WavefunctionStandardization.js";
-import qppw from "../../QPPWNamespace.js";
 
 /**
  * Solve the 1D Schrödinger equation using the matrix Numerov method.
@@ -130,7 +126,7 @@ export function solveMatrixNumerov(
   // Add potential energy (diagonal)
   const H = T.copy();
   for (let i = 0; i < N; i++) {
-    H.set(i, i, H.get(i, i) + V[i]);
+    H.set(i, i, H.get(i, i) + V[i]!);
   }
 
   // Convert to array and diagonalize to get eigenvalues and eigenvectors
@@ -147,15 +143,15 @@ export function solveMatrixNumerov(
   const energies: number[] = [];
 
   // Estimate boundary potential
-  const V_boundary = Math.max(V[0], V[N - 1]);
+  const VBoundary = Math.max(V[0]!, V[N - 1]!);
 
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (E < V at boundaries)
     // Also filter out negative energies that are too large (numerical artifacts)
-    if (energy < V_boundary && isFinite(energy)) {
+    if (energy < VBoundary && isFinite(energy)) {
       energies.push(energy);
     }
   }
@@ -171,14 +167,14 @@ export function solveMatrixNumerov(
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
 
     // Only include bound states (E < V at boundaries)
     // Also filter out negative energies that are too large (numerical artifacts)
-    if (energy < V_boundary && isFinite(energy)) {
+    if (energy < VBoundary && isFinite(energy)) {
       // Extract and normalize wavefunction
-      const wavefunction = [...eigen.eigenvectors[idx]];
+      const wavefunction = [...eigen.eigenvectors[idx]!];
 
       // Apply boundary conditions (force ψ=0 at boundaries)
       wavefunction[0] = 0;
@@ -202,20 +198,13 @@ export function solveMatrixNumerov(
   }
 
   const upsampleFactor = 8;
-  const { fineXGrid } = cubicSplineInterpolation(
-    xGrid,
-    wavefunctions[0],
-    upsampleFactor,
-  );
+  const { fineXGrid } = cubicSplineInterpolation(xGrid, wavefunctions[0]!, upsampleFactor);
 
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
-    const { fineYValues } = cubicSplineInterpolation(
-      xGrid,
-      wavefunction,
-      upsampleFactor,
-    );
-    fineWavefunctions.push(fineYValues);
+    const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
+    // Re-normalize on the fine grid: spline interpolation does not preserve ∫|ψ|² dx
+    fineWavefunctions.push(normalizeOnGrid(fineYValues, fineXGrid));
   }
 
   return {

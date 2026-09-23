@@ -4,7 +4,7 @@ import { init, madeWithSceneryStackSplashDataURI } from "scenerystack/init";
 // This needs to happen first, so we have init.ts => assert.ts => splash.ts => brand.ts => everything else (in main.ts)
 init({
   // Internal name of the simulation.
-  name: "qppw",
+  name: "quantum-potential",
 
   // Version (will be shown in the About dialog)
   version: "1.0.0",
@@ -17,7 +17,7 @@ init({
   locale: "en",
 
   // List of locales that are supported (and can be switched between in the simulation while running)
-  availableLocales: ["en", "fr"],
+  availableLocales: ["en", "fr", "es"],
 
   // Image to show while loading the simulation. Can be any image URL.
   splashDataURI: madeWithSceneryStackSplashDataURI,

@@ -9,13 +9,9 @@
  * where f_j = (h²/12) k²(x_j)
  */
 
-import QuantumConstants from "./QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
 import qppw from "../../QPPWNamespace.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 
 /**
  * Solve the 1D Schrödinger equation using the Numerov method.
@@ -56,13 +52,9 @@ export function solveNumerov(
   const energyStep = (energyMax - energyMin) / 1000;
   let prevSign = 0;
 
-  for (
-    let E = energyMin;
-    E <= energyMax && energies.length < numStates;
-    E += energyStep
-  ) {
+  for (let E = energyMin; E <= energyMax && energies.length < numStates; E += energyStep) {
     const psi = integrateNumerov(E, V, xGrid, dx, mass);
-    const endValue = psi[numPoints - 1];
+    const endValue = psi[numPoints - 1]!;
 
     // Check for sign change (indicates bound state)
     const currentSign = Math.sign(endValue);
@@ -97,13 +89,7 @@ export function solveNumerov(
  * @param mass - Particle mass (kg)
  * @returns Wavefunction array
  */
-export function integrateNumerov(
-  E: number,
-  V: number[],
-  xGrid: number[],
-  dx: number,
-  mass: number,
-): number[] {
+export function integrateNumerov(E: number, V: number[], xGrid: number[], dx: number, mass: number): number[] {
   const { HBAR } = QuantumConstants;
   const N = xGrid.length;
   const psi = new Array(N).fill(0);
@@ -120,17 +106,18 @@ export function integrateNumerov(
 
   // Numerov forward integration
   for (let j = 1; j < N - 1; j++) {
-    const numerator = (2 - 10 * f[j]) * psi[j] - (1 + f[j - 1]) * psi[j - 1];
-    const denominator = 1 + f[j + 1];
+    const numerator = (2 - 10 * f[j]!) * psi[j] - (1 + f[j - 1]!) * psi[j - 1];
+    const denominator = 1 + f[j + 1]!;
     psi[j + 1] = numerator / denominator;
 
-    // Check for divergence (not a bound state)
+    // Keep the numbers finite without changing the solution's shape or sign: Numerov is linear, so
+    // rescaling everything integrated so far is exact. (Clipping at 1e10 and freezing the rest used to
+    // fire inside the left barrier for deep wells — where ψ legitimately grows by e^80 — so every
+    // energy gave the same end sign and the scan found no states below the barrier top.)
     if (Math.abs(psi[j + 1]) > 1e10) {
-      // Force large value to indicate divergence
-      for (let k = j + 1; k < N; k++) {
-        psi[k] = psi[j + 1];
+      for (let k = 0; k <= j + 1; k++) {
+        psi[k] *= 1e-10;
       }
-      break;
     }
   }
 
@@ -168,9 +155,9 @@ export function integrateNumerovFromCenter(
 
   // Find center index (closest to x=0)
   let centerIdx = 0;
-  let minDist = Math.abs(xGrid[0]);
+  let minDist = Math.abs(xGrid[0]!);
   for (let i = 1; i < N; i++) {
-    const dist = Math.abs(xGrid[i]);
+    const dist = Math.abs(xGrid[i]!);
     if (dist < minDist) {
       minDist = dist;
       centerIdx = i;
@@ -195,7 +182,7 @@ export function integrateNumerovFromCenter(
     // From Schrödinger equation: ψ'' = -k²ψ
     // So ψ(dx) = ψ(0)·(1 - k²·dx²/2) = ψ(0)·(1 - 6f) where f = k²·dx²/12
     psi[centerIdx] = 1.0;
-    psi[centerIdx + 1] = 1.0 * (1 - 6 * f[centerIdx]);
+    psi[centerIdx + 1] = 1.0 * (1 - 6 * f[centerIdx]!);
   } else {
     // Antisymmetric state: ψ(-x) = -ψ(x)
     // At x=0: ψ(0) = 0 (wavefunction must be zero for antisymmetry)
@@ -209,8 +196,8 @@ export function integrateNumerovFromCenter(
   const renormalizationInterval = 50; // Renormalize every 50 steps
 
   for (let j = centerIdx + 1; j < N - 1; j++) {
-    const numerator = (2 - 10 * f[j]) * psi[j] - (1 + f[j - 1]) * psi[j - 1];
-    const denominator = 1 + f[j + 1];
+    const numerator = (2 - 10 * f[j]!) * psi[j] - (1 + f[j - 1]!) * psi[j - 1];
+    const denominator = 1 + f[j + 1]!;
     psi[j + 1] = numerator / denominator;
 
     // Stop on catastrophic numerical failure
@@ -280,21 +267,23 @@ export function refineEnergy(
   xGrid: number[],
   dx: number,
   mass: number,
-  tolerance = 1e-10,
+  relativeTolerance = 1e-12,
 ): number {
   const N = xGrid.length;
   let Elow = E1;
   let Ehigh = E2;
+  const endValueLowSign = Math.sign(integrateNumerov(Elow, V, xGrid, dx, mass)[N - 1]!);
 
-  while (Ehigh - Elow > tolerance) {
+  // Energies are ~1e-19 J, so the stopping rule must be relative (an absolute 1e-10 J tolerance
+  // meant the loop never ran and every energy was just the midpoint of the coarse scan bracket).
+  // The iteration cap bounds the work when the bracket straddles zero energy.
+  for (let iteration = 0; iteration < 100; iteration++) {
+    if (Ehigh - Elow <= relativeTolerance * Math.max(Math.abs(Elow), Math.abs(Ehigh))) {
+      break;
+    }
     const Emid = (Elow + Ehigh) / 2;
-    const psi = integrateNumerov(Emid, V, xGrid, dx, mass);
-    const endValue = psi[N - 1];
-
-    const psiLow = integrateNumerov(Elow, V, xGrid, dx, mass);
-    const endValueLow = psiLow[N - 1];
-
-    if (Math.sign(endValue) === Math.sign(endValueLow)) {
+    const endValue = integrateNumerov(Emid, V, xGrid, dx, mass)[N - 1]!;
+    if (Math.sign(endValue) === endValueLowSign) {
       Elow = Emid;
     } else {
       Ehigh = Emid;
@@ -315,7 +304,7 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
   // Calculate ∫|ψ|² dx using trapezoidal rule
   let integral = 0;
   for (let i = 0; i < psi.length - 1; i++) {
-    integral += (psi[i] * psi[i] + psi[i + 1] * psi[i + 1]) / 2;
+    integral += (psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2;
   }
   integral *= dx;
 

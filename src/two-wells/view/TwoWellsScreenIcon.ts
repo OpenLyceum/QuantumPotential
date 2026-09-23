@@ -3,8 +3,8 @@
  * Features a colorful double potential well with tunneling visualization.
  */
 
-import { Rectangle, Node, Path, LinearGradient } from "scenerystack/scenery";
 import { Shape } from "scenerystack/kite";
+import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
 import QPPWColors from "../../QPPWColors.js";
 
@@ -19,8 +19,7 @@ const WELL_TOP = ICON_HEIGHT * 0.16;
 const WELL_BOTTOM = ICON_HEIGHT * 0.8;
 const BARRIER_TOP = ICON_HEIGHT * 0.3;
 const CENTRAL_BARRIER_WIDTH = 16;
-const WELL_SECTION_WIDTH =
-  (ICON_WIDTH - 2 * PADDING - CENTRAL_BARRIER_WIDTH) / 2;
+const WELL_SECTION_WIDTH = (ICON_WIDTH - 2 * PADDING - CENTRAL_BARRIER_WIDTH) / 2;
 const LEFT_WELL_END = PADDING + WELL_SECTION_WIDTH;
 const RIGHT_WELL_START = LEFT_WELL_END + CENTRAL_BARRIER_WIDTH;
 
@@ -76,27 +75,16 @@ export class TwoWellsScreenIcon extends ScreenIcon {
     });
 
     // Central barrier with gradient
-    const barrierGradient = new LinearGradient(
-      LEFT_WELL_END,
-      0,
-      RIGHT_WELL_START,
-      0,
-    )
+    const barrierGradient = new LinearGradient(LEFT_WELL_END, 0, RIGHT_WELL_START, 0)
       .addColorStop(0, QPPWColors.iconBarrierEdgeProperty.value)
       .addColorStop(0.5, QPPWColors.iconBarrierCenterProperty.value)
       .addColorStop(1, QPPWColors.iconBarrierEdgeProperty.value);
 
     const barrierHeight = WELL_BOTTOM - BARRIER_TOP;
-    const barrier = new Rectangle(
-      LEFT_WELL_END,
-      BARRIER_TOP,
-      CENTRAL_BARRIER_WIDTH,
-      barrierHeight,
-      {
-        fill: barrierGradient,
-        opacity: BARRIER_OPACITY,
-      },
-    );
+    const barrier = new Rectangle(LEFT_WELL_END, BARRIER_TOP, CENTRAL_BARRIER_WIDTH, barrierHeight, {
+      fill: barrierGradient,
+      opacity: BARRIER_OPACITY,
+    });
 
     // Left well wave function
     const leftWaveStart = PADDING + 2;
@@ -131,9 +119,7 @@ export class TwoWellsScreenIcon extends ScreenIcon {
     });
 
     // Tunneling effect - dashed line through barrier
-    const tunnelShape = new Shape()
-      .moveTo(LEFT_WELL_END - 2, TUNNEL_Y)
-      .lineTo(RIGHT_WELL_START + 2, TUNNEL_Y);
+    const tunnelShape = new Shape().moveTo(LEFT_WELL_END - 2, TUNNEL_Y).lineTo(RIGHT_WELL_START + 2, TUNNEL_Y);
 
     const tunnelEffect = new Path(tunnelShape, {
       stroke: QPPWColors.iconTunnelEffectProperty,
@@ -143,39 +129,18 @@ export class TwoWellsScreenIcon extends ScreenIcon {
     });
 
     // Energy levels
-    const leftEnergy = new Rectangle(
-      LEFT_ENERGY_X,
-      ENERGY_LEVEL_Y,
-      ENERGY_LEVEL_WIDTH,
-      ENERGY_LEVEL_HEIGHT,
-      {
-        fill: QPPWColors.iconEnergyLevelProperty,
-        opacity: ENERGY_LEVEL_OPACITY,
-      },
-    );
+    const leftEnergy = new Rectangle(LEFT_ENERGY_X, ENERGY_LEVEL_Y, ENERGY_LEVEL_WIDTH, ENERGY_LEVEL_HEIGHT, {
+      fill: QPPWColors.iconEnergyLevelProperty,
+      opacity: ENERGY_LEVEL_OPACITY,
+    });
 
-    const rightEnergy = new Rectangle(
-      RIGHT_ENERGY_X,
-      ENERGY_LEVEL_Y,
-      ENERGY_LEVEL_WIDTH,
-      ENERGY_LEVEL_HEIGHT,
-      {
-        fill: QPPWColors.iconEnergyLevelProperty,
-        opacity: ENERGY_LEVEL_OPACITY,
-      },
-    );
+    const rightEnergy = new Rectangle(RIGHT_ENERGY_X, ENERGY_LEVEL_Y, ENERGY_LEVEL_WIDTH, ENERGY_LEVEL_HEIGHT, {
+      fill: QPPWColors.iconEnergyLevelProperty,
+      opacity: ENERGY_LEVEL_OPACITY,
+    });
 
     const iconNode = new Node({
-      children: [
-        background,
-        barrier,
-        well,
-        leftEnergy,
-        rightEnergy,
-        leftWave,
-        rightWave,
-        tunnelEffect,
-      ],
+      children: [background, barrier, well, leftEnergy, rightEnergy, leftWave, rightWave, tunnelEffect],
     });
 
     super(iconNode, {

@@ -3,7 +3,7 @@
  */
 
 import { Property } from "scenerystack/axon";
-import { BaseViewState, DisplayMode } from "../../common/view/BaseViewState.js";
+import { BaseViewState, type DisplayMode } from "../../common/view/BaseViewState.js";
 
 // Intro screen only supports these two modes (no "phaseColor")
 export type IntroDisplayMode = "probabilityDensity" | "waveFunction";

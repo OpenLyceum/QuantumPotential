@@ -6,12 +6,11 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
-import {
-  WellParameters,
-  NumericalMethod,
-} from "../../common/model/Schrodinger1DSolver.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import Logger from "../../common/utils/Logger.js";
 
 export class IntroModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -127,24 +126,12 @@ export class IntroModel extends BaseModel {
     super();
 
     // Initialize model-specific well parameters
-    this.barrierHeightProperty = new NumberProperty(
-      IntroModel.DEFAULT_BARRIER_HEIGHT,
-      {
-        range: new Range(
-          IntroModel.BARRIER_HEIGHT_MIN,
-          IntroModel.BARRIER_HEIGHT_MAX,
-        ),
-      },
-    );
-    this.potentialOffsetProperty = new NumberProperty(
-      IntroModel.DEFAULT_POTENTIAL_OFFSET,
-      {
-        range: new Range(
-          IntroModel.POTENTIAL_OFFSET_MIN,
-          IntroModel.POTENTIAL_OFFSET_MAX,
-        ),
-      },
-    );
+    this.barrierHeightProperty = new NumberProperty(IntroModel.DEFAULT_BARRIER_HEIGHT, {
+      range: new Range(IntroModel.BARRIER_HEIGHT_MIN, IntroModel.BARRIER_HEIGHT_MAX),
+    });
+    this.potentialOffsetProperty = new NumberProperty(IntroModel.DEFAULT_POTENTIAL_OFFSET, {
+      range: new Range(IntroModel.POTENTIAL_OFFSET_MIN, IntroModel.POTENTIAL_OFFSET_MAX),
+    });
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -188,34 +175,24 @@ export class IntroModel extends BaseModel {
    */
   protected override calculateBoundStates(): void {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const wellDepth =
-      this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate number of states based on potential type and energy range
     let numStates: number;
 
     // For harmonic oscillator, calculate states up to MAX_ENERGY_EV
-    if (
-      this.potentialTypeProperty.value === PotentialType.HARMONIC_OSCILLATOR
-    ) {
-      const springConstant =
-        (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) /
-        (wellWidth * wellWidth);
+    if (this.potentialTypeProperty.value === PotentialType.HARMONIC_OSCILLATOR) {
+      const springConstant = (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) / (wellWidth * wellWidth);
       const omega = Math.sqrt(springConstant / mass);
-      const maxEnergy =
-        IntroModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
+      const maxEnergy = IntroModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
       // E_n = ℏω(n + 1/2), solve for n: n = E/(ℏω) - 1/2
-      const maxN = Math.floor(
-        maxEnergy / (QuantumConstants.HBAR * omega) - 0.5,
-      );
+      const maxN = Math.floor(maxEnergy / (QuantumConstants.HBAR * omega) - 0.5);
       numStates = Math.max(1, Math.min(maxN + 1, IntroModel.MAX_NUM_STATES)); // Cap at MAX_NUM_STATES for safety
     }
     // For infinite well, calculate states up to MAX_ENERGY_EV
     else if (this.potentialTypeProperty.value === PotentialType.INFINITE_WELL) {
-      const maxEnergy =
-        IntroModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
+      const maxEnergy = IntroModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
       // E_n = (ℏ²π²n²)/(2mL²), solve for n
       const maxN = Math.floor(
         Math.sqrt(
@@ -231,21 +208,13 @@ export class IntroModel extends BaseModel {
       // Use generous estimate to ensure we get all states
       const estimatedMax = Math.ceil(
         (1 / Math.PI) *
-          Math.sqrt(
-            (2 * mass * wellDepth * wellWidth * wellWidth) /
-              (QuantumConstants.HBAR * QuantumConstants.HBAR),
-          ),
+          Math.sqrt((2 * mass * wellDepth * wellWidth * wellWidth) / (QuantumConstants.HBAR * QuantumConstants.HBAR)),
       );
       // Request more states than estimated to ensure we capture all bound states
-      numStates = Math.max(
-        IntroModel.DEFAULT_NUM_STATES,
-        Math.min(estimatedMax * 2, IntroModel.MAX_NUM_STATES),
-      ); // At least DEFAULT_NUM_STATES, cap at MAX_NUM_STATES
+      numStates = Math.max(IntroModel.DEFAULT_NUM_STATES, Math.min(estimatedMax * 2, IntroModel.MAX_NUM_STATES)); // At least DEFAULT_NUM_STATES, cap at MAX_NUM_STATES
     }
     // For asymmetric triangle, calculate states that fit in the energy range
-    else if (
-      this.potentialTypeProperty.value === PotentialType.ASYMMETRIC_TRIANGLE
-    ) {
+    else if (this.potentialTypeProperty.value === PotentialType.ASYMMETRIC_TRIANGLE) {
       numStates = IntroModel.NUM_STATES_ASYMMETRIC_TRIANGLE; // Asymmetric triangle may have many states
     }
     // For triangular potential, calculate states based on well depth
@@ -274,8 +243,7 @@ export class IntroModel extends BaseModel {
           break;
         case PotentialType.HARMONIC_OSCILLATOR:
           potentialParams.springConstant =
-            (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) /
-            (wellWidth * wellWidth);
+            (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) / (wellWidth * wellWidth);
           break;
         case PotentialType.MORSE:
           potentialParams.dissociationEnergy = wellDepth;
@@ -288,14 +256,12 @@ export class IntroModel extends BaseModel {
           break;
         case PotentialType.ROSEN_MORSE:
           potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight =
-            this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
           potentialParams.wellWidth = wellWidth;
           break;
         case PotentialType.ECKART:
           potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight =
-            this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
           potentialParams.wellWidth = wellWidth;
           break;
         case PotentialType.ASYMMETRIC_TRIANGLE:
@@ -305,35 +271,23 @@ export class IntroModel extends BaseModel {
         case PotentialType.TRIANGULAR:
           potentialParams.wellDepth = wellDepth;
           potentialParams.wellWidth = wellWidth;
-          potentialParams.energyOffset =
-            this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
           break;
         case PotentialType.COULOMB_1D:
         case PotentialType.COULOMB_3D: {
           potentialParams.coulombStrength =
-            IntroModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
+            IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           break;
         }
       }
 
-      this.boundStateResult = this.solver.solveAnalyticalIfPossible(
-        potentialParams,
-        mass,
-        numStates,
-        gridConfig,
-      );
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
+      this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
-      console.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }
@@ -342,40 +296,26 @@ export class IntroModel extends BaseModel {
    * Calculate the classical probability density for a given energy level.
    * Override from BaseModel to provide potential-specific implementations.
    */
-  public override getClassicalProbabilityDensity(
-    energyIndex: number,
-  ): number[] | null {
+  public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
     if (!this.boundStateResult) {
       this.calculateBoundStates();
     }
 
-    if (
-      !this.boundStateResult ||
-      energyIndex < 0 ||
-      energyIndex >= this.boundStateResult.energies.length
-    ) {
+    if (!this.boundStateResult || energyIndex < 0 || energyIndex >= this.boundStateResult.energies.length) {
       return null;
     }
 
-    const energy = this.boundStateResult.energies[energyIndex];
+    const energy = this.boundStateResult.energies[energyIndex]!;
     const xGrid = this.boundStateResult.xGrid;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Use the analytical solution's method if available
     const analyticalSolution = this.solver.getAnalyticalSolution();
     if (analyticalSolution) {
       try {
-        return analyticalSolution.calculateClassicalProbability(
-          energy,
-          mass,
-          xGrid,
-        );
+        return analyticalSolution.calculateClassicalProbability(energy, mass, xGrid);
       } catch (error) {
-        console.warn(
-          "Failed to use analytical classical probability, falling back to numerical:",
-          error,
-        );
+        Logger.warn("Failed to use analytical classical probability, falling back to numerical:", error);
       }
     }
 
@@ -383,12 +323,7 @@ export class IntroModel extends BaseModel {
     const potential = this.calculatePotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
-    return this.calculateClassicalProbabilityDensity(
-      potential,
-      energy,
-      mass,
-      xGrid,
-    );
+    return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
   }
 
   /**
@@ -402,28 +337,22 @@ export class IntroModel extends BaseModel {
       this.calculateBoundStates();
     }
 
-    if (
-      !this.boundStateResult ||
-      energyLevel < 0 ||
-      energyLevel >= this.boundStateResult.energies.length
-    ) {
+    if (!this.boundStateResult || energyLevel < 0 || energyLevel >= this.boundStateResult.energies.length) {
       return null;
     }
 
-    const energy = this.boundStateResult.energies[energyLevel];
+    const energy = this.boundStateResult.energies[energyLevel]!;
 
     // Try to use analytical solution's turning point calculation
     const analyticalSolution = this.solver.getAnalyticalSolution();
     if (analyticalSolution) {
       try {
-        const turningPointsPairs =
-          analyticalSolution.calculateTurningPoints(energy);
+        const turningPointsPairs = analyticalSolution.calculateTurningPoints(energy);
         if (turningPointsPairs && turningPointsPairs.length > 0) {
           // For simple single-well potentials, use the first pair
           // Convert from meters to nanometers
-          const leftNm = turningPointsPairs[0].left * QuantumConstants.M_TO_NM;
-          const rightNm =
-            turningPointsPairs[0].right * QuantumConstants.M_TO_NM;
+          const leftNm = turningPointsPairs[0]!.left * QuantumConstants.M_TO_NM;
+          const rightNm = turningPointsPairs[0]!.right * QuantumConstants.M_TO_NM;
 
           // Clamp turning points to chart's X-axis range
           const minX = -IntroModel.CHART_DISPLAY_RANGE_NM;
@@ -434,10 +363,7 @@ export class IntroModel extends BaseModel {
           return { left, right };
         }
       } catch (error) {
-        console.warn(
-          "Failed to use analytical turning points, falling back to numerical:",
-          error,
-        );
+        Logger.warn("Failed to use analytical turning points, falling back to numerical:", error);
       }
     }
 
@@ -456,16 +382,13 @@ export class IntroModel extends BaseModel {
 
     // Loop to find turning points numerically
     for (let i = 0; i < xGrid.length - 1; i++) {
-      const x = xGrid[i] * QuantumConstants.M_TO_NM;
+      const x = xGrid[i]! * QuantumConstants.M_TO_NM;
       const V = this.getPotentialAtPosition(x);
 
-      const xNext = xGrid[i + 1] * QuantumConstants.M_TO_NM;
+      const xNext = xGrid[i + 1]! * QuantumConstants.M_TO_NM;
       const VNext = this.getPotentialAtPosition(xNext);
 
-      if (
-        (V <= energyEV && VNext >= energyEV) ||
-        (V >= energyEV && VNext <= energyEV)
-      ) {
+      if ((V <= energyEV && VNext >= energyEV) || (V >= energyEV && VNext <= energyEV)) {
         // Avoid division by zero when V and VNext are equal
         if (VNext === V) {
           continue; // skip this segment
@@ -501,11 +424,7 @@ export class IntroModel extends BaseModel {
       this.calculateBoundStates();
     }
 
-    if (
-      !this.boundStateResult ||
-      energyLevel < 0 ||
-      energyLevel >= this.boundStateResult.energies.length
-    ) {
+    if (!this.boundStateResult || energyLevel < 0 || energyLevel >= this.boundStateResult.energies.length) {
       return 0;
     }
 
@@ -514,30 +433,24 @@ export class IntroModel extends BaseModel {
       return 0;
     }
 
-    const wavefunction = this.boundStateResult.wavefunctions[energyLevel];
+    const wavefunction = this.boundStateResult.wavefunctions[energyLevel]!;
     const xGrid = this.boundStateResult.xGrid;
 
     let forbiddenProbability = 0;
     let totalProbability = 0;
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i] * QuantumConstants.M_TO_NM;
-      const psi = wavefunction[i];
+      const x = xGrid[i]! * QuantumConstants.M_TO_NM;
+      const psi = wavefunction[i]!;
       const probabilityDensity = psi * psi;
 
       let dx: number;
       if (i === 0) {
-        dx =
-          ((xGrid[1] - xGrid[0]) / IntroModel.HALF_DIVISOR) *
-          QuantumConstants.M_TO_NM;
+        dx = ((xGrid[1]! - xGrid[0]!) / IntroModel.HALF_DIVISOR) * QuantumConstants.M_TO_NM;
       } else if (i === xGrid.length - 1) {
-        dx =
-          ((xGrid[i] - xGrid[i - 1]) / IntroModel.HALF_DIVISOR) *
-          QuantumConstants.M_TO_NM;
+        dx = ((xGrid[i]! - xGrid[i - 1]!) / IntroModel.HALF_DIVISOR) * QuantumConstants.M_TO_NM;
       } else {
-        dx =
-          ((xGrid[i + 1] - xGrid[i - 1]) / IntroModel.HALF_DIVISOR) *
-          QuantumConstants.M_TO_NM;
+        dx = ((xGrid[i + 1]! - xGrid[i - 1]!) / IntroModel.HALF_DIVISOR) * QuantumConstants.M_TO_NM;
       }
 
       totalProbability += probabilityDensity * dx;
@@ -547,9 +460,7 @@ export class IntroModel extends BaseModel {
       }
     }
 
-    return totalProbability > 0
-      ? (forbiddenProbability / totalProbability) * 100
-      : 0;
+    return totalProbability > 0 ? (forbiddenProbability / totalProbability) * 100 : 0;
   }
 
   /**
@@ -557,13 +468,12 @@ export class IntroModel extends BaseModel {
    */
   private calculatePotentialEnergy(xGrid: number[]): number[] {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const wellDepth =
-      this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+    const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
 
     const potential: number[] = [];
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i];
+      const x = xGrid[i]!;
       let V: number;
 
       switch (this.potentialTypeProperty.value) {
@@ -576,9 +486,7 @@ export class IntroModel extends BaseModel {
           break;
 
         case PotentialType.HARMONIC_OSCILLATOR: {
-          const springConstant =
-            (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) /
-            (wellWidth * wellWidth);
+          const springConstant = (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) / (wellWidth * wellWidth);
           V = 0.5 * springConstant * x * x;
           break;
         }
@@ -586,7 +494,7 @@ export class IntroModel extends BaseModel {
         case PotentialType.MORSE: {
           const a = 1 / wellWidth;
           const exponential = Math.exp(-a * x);
-          V = wellDepth * Math.pow(1 - exponential, 2);
+          V = wellDepth * (1 - exponential) ** 2;
           break;
         }
 
@@ -597,8 +505,7 @@ export class IntroModel extends BaseModel {
         }
 
         case PotentialType.ROSEN_MORSE: {
-          const barrierHeight =
-            this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+          const barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
           const coshRM = Math.cosh(x / wellWidth);
           const tanhRM = Math.tanh(x / wellWidth);
           V = -wellDepth / (coshRM * coshRM) + barrierHeight * tanhRM;
@@ -606,8 +513,7 @@ export class IntroModel extends BaseModel {
         }
 
         case PotentialType.ECKART: {
-          const barrierHeightE =
-            this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+          const barrierHeightE = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
           const expE = Math.exp(x / wellWidth);
           const denomE = 1 + expE;
           V = wellDepth / (denomE * denomE) - barrierHeightE / denomE;
@@ -621,8 +527,7 @@ export class IntroModel extends BaseModel {
         }
 
         case PotentialType.TRIANGULAR: {
-          const energyOffset =
-            this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
+          const energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
           if (x < 0) {
             V = wellDepth + energyOffset;
           } else if (x < wellWidth) {
@@ -636,9 +541,7 @@ export class IntroModel extends BaseModel {
         case PotentialType.COULOMB_1D:
         case PotentialType.COULOMB_3D: {
           const coulombStrength =
-            IntroModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
+            IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           const r = Math.abs(x);
           if (r > IntroModel.COULOMB_MIN_DISTANCE) {
             V = -coulombStrength / r;
@@ -665,6 +568,6 @@ export class IntroModel extends BaseModel {
   private getPotentialAtPosition(xNm: number): number {
     const x = xNm * QuantumConstants.NM_TO_M;
     const potential = this.calculatePotentialEnergy([x]);
-    return potential[0] * QuantumConstants.JOULES_TO_EV;
+    return potential[0]! * QuantumConstants.JOULES_TO_EV;
   }
 }

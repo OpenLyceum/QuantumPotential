@@ -7,45 +7,57 @@
  *   const result = solver.solve(potential, mass, numStates, gridConfig);
  */
 
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  PotentialType,
-  WellParameters,
-} from "./PotentialFunction.js";
-import {
-  AnalyticalSolution,
-  solveDoubleSquareWellAnalytical,
-} from "./analytical-solutions";
-import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
+import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
+import qppw from "../../QPPWNamespace.js";
+import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
 import { solveMultiCoulomb1D } from "./analytical-solutions/multi-coulomb-1d.js";
-import { PotentialFactory } from "./PotentialFactory.js";
-import { solveNumerov } from "./NumerovSolver.js";
-import { solveMatrixNumerov } from "./MatrixNumerovSolver.js";
+import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
 import { solveDVR } from "./DVRSolver.js";
 import { solveFGH } from "./FGHSolver.js";
-import { solveSpectral } from "./SpectralSolver.js";
-import { solveQuantumBound } from "./QuantumBoundStateSolver.js";
-import { computeWavefunctionsNumerov } from "./WavefunctionNumerovSolver.js";
-import QuantumConstants from "./QuantumConstants.js";
-import QPPWPreferences from "../../QPPWPreferences.js";
-import qppw from "../../QPPWNamespace.js";
+import { solveMatrixNumerov } from "./MatrixNumerovSolver.js";
 import { NumericalMethod } from "./NumericalMethod.js";
-import { BasePotential, AnalyticalPotential } from "./potentials/index.js";
+import { solveNumerov } from "./NumerovSolver.js";
+import { PotentialFactory } from "./PotentialFactory.js";
+import {
+  type BoundStateResult,
+  type GridConfig,
+  type PotentialFunction,
+  PotentialType,
+  type WellParameters,
+} from "./PotentialFunction.js";
+import type { AnalyticalPotential, BasePotential } from "./potentials/index.js";
+import { solveQuantumBound } from "./QuantumBoundStateSolver.js";
+import QuantumConstants from "./QuantumConstants.js";
+import { solveSpectral } from "./SpectralSolver.js";
+import { computeWavefunctionsNumerov } from "./WavefunctionNumerovSolver.js";
 
 // Re-export potential classes for external use
 export {
-  BasePotential,
   AnalyticalPotential,
+  BasePotential,
   NumericalPotential,
 } from "./potentials/index.js";
-
+// Re-export WellParameters for backward compatibility
+export type { WellParameters };
 // Re-export NumericalMethod for backward compatibility
 export { NumericalMethod };
 
-// Re-export WellParameters for backward compatibility
-export type { WellParameters };
+/** Samples per cell for cellAveragedPotential (midpoint rule). */
+const CELL_AVERAGE_SAMPLES = 16;
+
+/**
+ * The potential averaged over a cell of the given width centred on x (midpoint rule). Used for the
+ * numerical solvers so a discontinuous potential is represented by its correct weight in every cell.
+ */
+function cellAveragedPotential(potential: PotentialFunction, cellWidth: number): PotentialFunction {
+  return (x: number) => {
+    let sum = 0;
+    for (let k = 0; k < CELL_AVERAGE_SAMPLES; k++) {
+      sum += potential(x + ((k + 0.5) / CELL_AVERAGE_SAMPLES - 0.5) * cellWidth);
+    }
+    return sum / CELL_AVERAGE_SAMPLES;
+  };
+}
 
 /**
  * Main class for solving the 1D time-independent Schrödinger equation.
@@ -110,12 +122,7 @@ export class Schrodinger1DSolver {
     }
 
     // Handle special cases that don't have classes yet (multi-well potentials)
-    const specialCaseResult = this.handleSpecialCases(
-      wellParams,
-      mass,
-      numStates,
-      gridConfig,
-    );
+    const specialCaseResult = this.handleSpecialCases(wellParams, mass, numStates, gridConfig);
     if (specialCaseResult) {
       return specialCaseResult;
     }
@@ -135,10 +142,7 @@ export class Schrodinger1DSolver {
    * @param mass - Particle mass in kg
    * @returns AnalyticalSolution instance or null
    */
-  private createAnalyticalSolution(
-    wellParams: WellParameters,
-    mass: number,
-  ): AnalyticalSolution | null {
+  private createAnalyticalSolution(wellParams: WellParameters, mass: number): AnalyticalSolution | null {
     return PotentialFactory.createAnalyticalSolution(wellParams, mass);
   }
 
@@ -231,7 +235,7 @@ export class Schrodinger1DSolver {
    * @returns Bound state results with energies and wavefunctions
    */
   public solveNumerical(
-    potential: PotentialFunction,
+    pointPotential: PotentialFunction,
     mass: number,
     numStates: number,
     gridConfig: GridConfig,
@@ -245,19 +249,27 @@ export class Schrodinger1DSolver {
 
     // Step 1: Find energies (and optionally wavefunctions) using selected solver
     // Use the requested grid size from gridConfig, or fall back to preferences
-    const coarseNumPoints =
-      numPoints || QPPWPreferences.gridPointsProperty.value;
+    const coarseNumPoints = numPoints || QPPWPreferences.gridPointsProperty.value;
     const coarseGridConfig: GridConfig = {
       xMin,
       xMax,
       numPoints: coarseNumPoints,
     };
 
+    // Evaluate the potential as its average over each grid cell rather than at the grid point. For a
+    // step potential (square wells) point sampling makes the effective well and barrier widths depend on
+    // where the edges fall between samples, so levels jumped by several % as the grid size changed;
+    // the cell average weights each edge exactly. For smooth potentials it differs from point sampling
+    // only at O(dx²).
+    const cellWidth = (xMax - xMin) / Math.max(1, coarseNumPoints - 1);
+    const potential = cellAveragedPotential(pointPotential, cellWidth);
+
     let result: BoundStateResult;
 
     if (this.numericalMethod === NumericalMethod.NUMEROV) {
       // Numerov method requires energy range for shooting method
-      if (!energyRange) {
+      let range = energyRange;
+      if (!range) {
         // Estimate energy range based on potential at grid points
         const dx = (xMax - xMin) / (coarseNumPoints - 1);
         let Vmin = Infinity;
@@ -266,62 +278,35 @@ export class Schrodinger1DSolver {
         for (let i = 0; i < coarseNumPoints; i++) {
           const x = xMin + i * dx;
           const V = potential(x);
-          if (V < Vmin) Vmin = V;
-          if (V < 1e100 && V > Vmax) Vmax = V; // Ignore infinite barriers
+          if (V < Vmin) {
+            Vmin = V;
+          }
+          if (V < 1e100 && V > Vmax) {
+            Vmax = V; // Ignore infinite barriers
+          }
         }
 
         // Search for bound states between Vmin and Vmax
-        energyRange = [Vmin, Vmax];
+        range = [Vmin, Vmax];
       }
 
       // Numerov always returns full result with wavefunctions
-      result = solveNumerov(
-        potential,
-        mass,
-        numStates,
-        coarseGridConfig,
-        energyRange[0],
-        energyRange[1],
-      );
+      result = solveNumerov(potential, mass, numStates, coarseGridConfig, range[0], range[1]);
     } else if (this.numericalMethod === NumericalMethod.MATRIX_NUMEROV) {
       // Matrix Numerov method
-      result = solveMatrixNumerov(
-        potential,
-        mass,
-        numStates,
-        coarseGridConfig,
-        ENERGIES_ONLY,
-      );
+      result = solveMatrixNumerov(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
     } else if (this.numericalMethod === NumericalMethod.DVR) {
       // DVR method
-      result = solveDVR(
-        potential,
-        mass,
-        numStates,
-        coarseGridConfig,
-        ENERGIES_ONLY,
-      );
+      result = solveDVR(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
     } else if (this.numericalMethod === NumericalMethod.FGH) {
       // Fourier Grid Hamiltonian method
-      result = solveFGH(
-        potential,
-        mass,
-        numStates,
-        coarseGridConfig,
-        ENERGIES_ONLY,
-      );
+      result = solveFGH(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
     } else if (this.numericalMethod === NumericalMethod.QUANTUM_BOUND) {
       // Advanced shooting method with adaptive bracketing
       result = solveQuantumBound(potential, mass, numStates, coarseGridConfig);
     } else {
       // Spectral (Chebyshev) method
-      result = solveSpectral(
-        potential,
-        mass,
-        numStates,
-        coarseGridConfig,
-        ENERGIES_ONLY,
-      );
+      result = solveSpectral(potential, mass, numStates, coarseGridConfig, ENERGIES_ONLY);
     }
 
     // Step 2: If ENERGIES_ONLY was true, compute wavefunctions on finer grid using Numerov
@@ -333,12 +318,7 @@ export class Schrodinger1DSolver {
         numPoints: FINE_GRID_POINTS,
       };
 
-      const wavefunctionResult = computeWavefunctionsNumerov(
-        result.energies,
-        potential,
-        mass,
-        fineGridConfig,
-      );
+      const wavefunctionResult = computeWavefunctionsNumerov(result.energies, potential, mass, fineGridConfig);
 
       return {
         energies: result.energies,
@@ -360,10 +340,7 @@ export class Schrodinger1DSolver {
    * @param mass - Particle mass in kg
    * @returns BasePotential instance (AnalyticalPotential or NumericalPotential)
    */
-  public createPotential(
-    wellParams: WellParameters,
-    mass: number,
-  ): BasePotential | null {
+  public createPotential(wellParams: WellParameters, mass: number): BasePotential | null {
     return PotentialFactory.createPotential(wellParams, mass);
   }
 
@@ -377,11 +354,7 @@ export class Schrodinger1DSolver {
    * @param gridConfig - Grid configuration for spatial discretization
    * @returns Bound state results with energies and wavefunctions
    */
-  public solvePotential(
-    potential: BasePotential,
-    numStates: number,
-    gridConfig: GridConfig,
-  ): BoundStateResult {
+  public solvePotential(potential: BasePotential, numStates: number, gridConfig: GridConfig): BoundStateResult {
     if (potential.hasAnalyticalSolution()) {
       // Use analytical solution
       const analyticalPotential = potential as AnalyticalPotential;
@@ -389,12 +362,7 @@ export class Schrodinger1DSolver {
     } else {
       // Use numerical solution
       const potentialFunction = potential.createPotential();
-      return this.solveNumerical(
-        potentialFunction,
-        potential.getMass(),
-        numStates,
-        gridConfig,
-      );
+      return this.solveNumerical(potentialFunction, potential.getMass(), numStates, gridConfig);
     }
   }
 
@@ -405,10 +373,7 @@ export class Schrodinger1DSolver {
    * @param wellDepth - Depth of the well in Joules (0 inside, depth outside)
    * @returns Potential function V(x)
    */
-  public static createInfiniteWellPotential(
-    wellWidth: number,
-    wellDepth = 1e100,
-  ): PotentialFunction {
+  public static createInfiniteWellPotential(wellWidth: number, wellDepth = 1e100): PotentialFunction {
     const halfWidth = wellWidth / 2;
     return (x: number) => {
       if (x >= -halfWidth && x <= halfWidth) {
@@ -426,11 +391,7 @@ export class Schrodinger1DSolver {
    * @param center - Center position of well in meters (default 0)
    * @returns Potential function V(x)
    */
-  public static createFiniteWellPotential(
-    wellWidth: number,
-    wellDepth: number,
-    center = 0,
-  ): PotentialFunction {
+  public static createFiniteWellPotential(wellWidth: number, wellDepth: number, center = 0): PotentialFunction {
     const halfWidth = wellWidth / 2;
     return (x: number) => {
       const xShifted = x - center;

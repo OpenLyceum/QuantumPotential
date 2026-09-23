@@ -31,15 +31,10 @@
  *   where H_n are the Hermite polynomials
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { hermitePolynomial, factorial } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
+import { factorial, hermitePolynomial } from "./math-utilities.js";
 
 /**
  * Create the potential function for a harmonic oscillator.
@@ -48,9 +43,7 @@ import { AnalyticalSolution } from "./AnalyticalSolution.js";
  * @param springConstant - Spring constant k in N/m
  * @returns Potential function V(x) in Joules
  */
-export function createHarmonicOscillatorPotential(
-  springConstant: number,
-): PotentialFunction {
+export function createHarmonicOscillatorPotential(springConstant: number): PotentialFunction {
   return (x: number) => {
     return 0.5 * springConstant * x * x;
   };
@@ -85,7 +78,7 @@ export function calculateHarmonicOscillatorClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -97,7 +90,7 @@ export function calculateHarmonicOscillatorClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -108,8 +101,8 @@ export function calculateHarmonicOscillatorClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -117,7 +110,7 @@ export function calculateHarmonicOscillatorClassicalProbability(
   // Normalize so that ∫P(x)dx = 1
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -251,30 +244,24 @@ export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
   // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization =
-    (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-    Math.pow((alpha * alpha) / Math.PI, 0.25);
+  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
 
   const firstDerivative: number[] = [];
 
   for (const x of xGrid) {
     const xi = alpha * x;
     const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermite_n = hermitePolynomial(n, xi);
+    const hermiteN = hermitePolynomial(n, xi);
 
     // Calculate H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermite_derivative = 0;
+    let hermiteDerivative = 0;
     if (n > 0) {
-      const hermite_n_minus_1 = hermitePolynomial(n - 1, xi);
-      hermite_derivative = 2 * n * hermite_n_minus_1;
+      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
+      hermiteDerivative = 2 * n * hermiteNMinus1;
     }
 
     // ψ' = N * α * exp(-αx²/2) * [H'_n(ξ) - ξ * H_n(ξ)]
-    const firstDeriv =
-      normalization *
-      alpha *
-      gaussianFactor *
-      (hermite_derivative - xi * hermite_n);
+    const firstDeriv = normalization * alpha * gaussianFactor * (hermiteDerivative - xi * hermiteN);
     firstDerivative.push(firstDeriv);
   }
 
@@ -306,29 +293,27 @@ export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
   // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization =
-    (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-    Math.pow((alpha * alpha) / Math.PI, 0.25);
+  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
 
   const secondDerivative: number[] = [];
 
   for (const x of xGrid) {
     const xi = alpha * x;
     const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermite_n = hermitePolynomial(n, xi);
+    const hermiteN = hermitePolynomial(n, xi);
 
     // Calculate H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermite_derivative = 0;
+    let hermiteDerivative = 0;
     if (n > 0) {
-      const hermite_n_minus_1 = hermitePolynomial(n - 1, xi);
-      hermite_derivative = 2 * n * hermite_n_minus_1;
+      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
+      hermiteDerivative = 2 * n * hermiteNMinus1;
     }
 
     // Calculate H''_n(ξ) = 4n(n-1) H_{n-2}(ξ)
-    let hermite_second_derivative = 0;
+    let hermiteSecondDerivative = 0;
     if (n > 1) {
-      const hermite_n_minus_2 = hermitePolynomial(n - 2, xi);
-      hermite_second_derivative = 4 * n * (n - 1) * hermite_n_minus_2;
+      const hermiteNMinus2 = hermitePolynomial(n - 2, xi);
+      hermiteSecondDerivative = 4 * n * (n - 1) * hermiteNMinus2;
     }
 
     // ψ'' = N * exp(-ξ²/2) * α² * [ξ²H_n(ξ) - H_n(ξ) - 2ξH'_n(ξ) + H''_n(ξ)]
@@ -339,10 +324,7 @@ export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
       gaussianFactor *
       alpha *
       alpha *
-      (xi * xi * hermite_n -
-        hermite_n -
-        2 * xi * hermite_derivative +
-        hermite_second_derivative);
+      (xi * xi * hermiteN - hermiteN - 2 * xi * hermiteDerivative + hermiteSecondDerivative);
     secondDerivative.push(secondDeriv);
   }
 
@@ -376,9 +358,7 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
   // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization =
-    (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-    Math.pow((alpha * alpha) / Math.PI, 0.25);
+  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
 
   let min = Infinity;
   let max = -Infinity;
@@ -392,25 +372,25 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
 
     const xi = alpha * x;
     const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermite_n = hermitePolynomial(n, xi);
-    const psi = normalization * gaussianFactor * hermite_n;
+    const hermiteN = hermitePolynomial(n, xi);
+    const psi = normalization * gaussianFactor * hermiteN;
 
     // Calculate first derivative for extrema detection
     // ψ'_n(x) = N * α * exp(-αx²/2) * [H'_n(ξ) - ξ * H_n(ξ)]
     // where H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermite_derivative = 0;
+    let hermiteDerivative = 0;
     if (n > 0) {
-      const hermite_n_minus_1 = hermitePolynomial(n - 1, xi);
-      hermite_derivative = 2 * n * hermite_n_minus_1;
+      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
+      hermiteDerivative = 2 * n * hermiteNMinus1;
     }
-    const derivative =
-      normalization *
-      alpha *
-      gaussianFactor *
-      (hermite_derivative - xi * hermite_n);
+    const derivative = normalization * alpha * gaussianFactor * (hermiteDerivative - xi * hermiteN);
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -471,13 +451,11 @@ export function calculateHarmonicOscillatorSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       // Calculate wavefunction value
-      const normalization =
-        (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-        Math.pow(alpha / Math.PI, 0.25);
+      const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * (alpha / Math.PI) ** 0.25;
       const xi = alpha * x;
       const gaussianFactor = Math.exp((-xi * xi) / 2);
       const hermite = hermitePolynomial(n, xi);
@@ -490,11 +468,16 @@ export function calculateHarmonicOscillatorSuperpositionMinMax(
 
       // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
       // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };
@@ -544,19 +527,17 @@ export function calculateHarmonicOscillatorFourierTransform(
     const phiP: number[] = [];
 
     // Normalization in momentum space: (ℏ/(π mω))^(1/4) / √(2^n n!) = (1/(α²π))^(1/4) / √(2^n n!)
-    const normalization =
-      (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-      Math.pow(1 / (alpha * alpha * Math.PI), 0.25);
+    const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * (1 / (alpha * alpha * Math.PI)) ** 0.25;
 
     for (const p of pGrid) {
       // Argument for Hermite polynomial in momentum space
-      const xi_p = p / (alpha * HBAR);
+      const xiP = p / (alpha * HBAR);
 
       // Gaussian factor in momentum space
-      const gaussianFactor = Math.exp((-xi_p * xi_p) / 2);
+      const gaussianFactor = Math.exp((-xiP * xiP) / 2);
 
       // Hermite polynomial (same order as position space)
-      const hermite = hermitePolynomial(n, xi_p);
+      const hermite = hermitePolynomial(n, xiP);
 
       // The Fourier transform includes a phase factor (-i)^n, but since we're
       // taking the magnitude for real display, this becomes 1
@@ -578,79 +559,42 @@ export function calculateHarmonicOscillatorFourierTransform(
  * Extends the AnalyticalSolution abstract base class.
  */
 export class HarmonicOscillatorSolution extends AnalyticalSolution {
-  constructor(
-    private springConstant: number,
-    private mass: number,
-  ) {
+  private springConstant: number;
+  private mass: number;
+
+  constructor(springConstant: number, mass: number) {
     super();
+    this.springConstant = springConstant;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    return solveHarmonicOscillator(
-      this.springConstant,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    return solveHarmonicOscillator(this.springConstant, this.mass, numStates, gridConfig);
   }
 
   createPotential(): PotentialFunction {
     return createHarmonicOscillatorPotential(this.springConstant);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateHarmonicOscillatorClassicalProbability(
-      this.springConstant,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateHarmonicOscillatorClassicalProbability(this.springConstant, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateHarmonicOscillatorWavefunctionZeros(
-      this.springConstant,
-      this.mass,
-      stateIndex,
-    );
+    return calculateHarmonicOscillatorWavefunctionZeros(this.springConstant, this.mass, stateIndex);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
-    const points = calculateHarmonicOscillatorTurningPoints(
-      this.springConstant,
-      energy,
-    );
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
+    const points = calculateHarmonicOscillatorTurningPoints(this.springConstant, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateHarmonicOscillatorWavefunctionFirstDerivative(
-      this.springConstant,
-      this.mass,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateHarmonicOscillatorWavefunctionFirstDerivative(this.springConstant, this.mass, stateIndex, xGrid);
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateHarmonicOscillatorWavefunctionSecondDerivative(
-      this.springConstant,
-      this.mass,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateHarmonicOscillatorWavefunctionSecondDerivative(this.springConstant, this.mass, stateIndex, xGrid);
   }
 
   calculateWavefunctionMinMax(
@@ -709,14 +653,13 @@ export class HarmonicOscillatorSolution extends AnalyticalSolution {
     const actualPMax = pMax || defaultPMax;
 
     // Use analytical Fourier transform
-    const { pGrid, momentumWavefunctions } =
-      calculateHarmonicOscillatorFourierTransform(
-        this.springConstant,
-        mass,
-        numStates,
-        nMomentum,
-        actualPMax,
-      );
+    const { pGrid, momentumWavefunctions } = calculateHarmonicOscillatorFourierTransform(
+      this.springConstant,
+      mass,
+      numStates,
+      nMomentum,
+      actualPMax,
+    );
 
     return {
       pGrid,
@@ -768,9 +711,7 @@ export function solveHarmonicOscillator(
   for (let n = 0; n < numStates; n++) {
     const wavefunction: number[] = [];
     // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-    const normalization =
-      (1 / Math.sqrt(Math.pow(2, n) * factorial(n))) *
-      Math.pow((alpha * alpha) / Math.PI, 0.25);
+    const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
 
     for (const x of xGrid) {
       const xi = alpha * x;
@@ -818,19 +759,28 @@ export function calculateCoherentStateCoefficients(
   // Calculate α = √(mω/2ℏ) * x₀
   const alpha = Math.sqrt((mass * omega) / (2 * HBAR)) * displacement;
 
-  // Calculate coefficients: c_n = e^(-α²/2) * α^n / √n!
-  const prefactor = Math.exp((-alpha * alpha) / 2);
-  const amplitudes: number[] = [];
-
+  // Coefficients c_n = e^(−α²/2) α^n / √n!, computed in log space: for large α or n the direct form
+  // overflows (α^n, n!) or underflows (the prefactor) to ∞/∞ = NaN. The common prefactor cancels in
+  // the normalization, so only log|c_n| = n ln|α| − ½ ln n! is needed, shifted by its maximum.
+  const logAbsAlpha = Math.log(Math.abs(alpha));
+  const logMagnitudes: number[] = [];
+  let logFactorial = 0;
   for (let n = 0; n < numStates; n++) {
-    const coeff = (prefactor * Math.pow(alpha, n)) / Math.sqrt(factorial(n));
-    amplitudes.push(coeff);
+    if (n > 0) {
+      logFactorial += Math.log(n);
+    }
+    logMagnitudes.push(alpha === 0 ? (n === 0 ? 0 : -Infinity) : n * logAbsAlpha - logFactorial / 2);
   }
+  const maxLog = Math.max(...logMagnitudes);
+  const amplitudes = logMagnitudes.map((logMagnitude, n) => {
+    const sign = alpha < 0 && n % 2 === 1 ? -1 : 1;
+    return sign * Math.exp(logMagnitude - maxLog);
+  });
 
-  // Normalize the coefficients (should already be normalized, but ensure it)
+  // Normalize over the states kept (the truncated Poisson distribution)
   const norm = Math.sqrt(amplitudes.reduce((sum, a) => sum + a * a, 0));
   for (let i = 0; i < amplitudes.length; i++) {
-    amplitudes[i] /= norm;
+    amplitudes[i]! /= norm;
   }
 
   // All phases are zero for a real coherent state (pure displacement)

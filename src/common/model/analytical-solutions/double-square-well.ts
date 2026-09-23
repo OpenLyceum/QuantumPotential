@@ -63,8 +63,9 @@
  * These equations have no closed-form solution and must be solved numerically using root-finding.
  */
 
+import Logger from "../../utils/Logger.js";
+import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 
 /**
  * Count the number of nodes (zero crossings) in a wavefunction.
@@ -78,7 +79,7 @@ function countNodes(wavefunction: number[]): number {
 
   for (let i = 0; i < wavefunction.length - 1; i++) {
     // Check for sign change (node/zero crossing)
-    if (wavefunction[i] * wavefunction[i + 1] < 0) {
+    if (wavefunction[i]! * wavefunction[i + 1]! < 0) {
       nodeCount++;
     }
   }
@@ -130,16 +131,8 @@ function searchForMissingEigenvalues(
   }> = [];
 
   for (let n = 0; n < Math.min(currentStates.length, numStates); n++) {
-    const state = currentStates[n];
-    const wf = computeDoubleWellWavefunction(
-      state.energy,
-      state.parity,
-      Linner,
-      Louter,
-      V0,
-      mass,
-      xGrid,
-    );
+    const state = currentStates[n]!;
+    const wf = computeDoubleWellWavefunction(state.energy, state.parity, Linner, Louter, V0, mass, xGrid);
     const nodeCount = countNodes(wf);
 
     statesWithNodes.push({
@@ -160,31 +153,26 @@ function searchForMissingEigenvalues(
   }> = [];
 
   for (let i = 0; i < statesWithNodes.length; i++) {
-    const current = statesWithNodes[i];
+    const current = statesWithNodes[i]!;
 
     if (current.nodeCount > current.expectedNodes) {
       // Missing state(s) detected!
       const numMissing = current.nodeCount - current.expectedNodes;
 
-      console.log(
+      Logger.debug(
         `Detected missing state(s): Index ${i} has ${current.nodeCount} nodes but should have ${current.expectedNodes}.\n` +
           `  This means ${numMissing} state(s) are missing before this one.`,
       );
 
       // Determine where to search: between previous state and current state
-      const Emin = i > 0 ? statesWithNodes[i - 1].energy : V0 * 1e-6;
+      const Emin = i > 0 ? statesWithNodes[i - 1]!.energy : V0 * 1e-6;
       const Emax = current.energy;
 
       // Determine expected parity of missing state(s)
       // States alternate: even, odd, even, odd, ...
       // If we're looking for state at index n, parity is "even" if n is even, "odd" if n is odd
-      for (
-        let missingIndex = current.expectedNodes;
-        missingIndex < current.nodeCount;
-        missingIndex++
-      ) {
-        const expectedParity: "even" | "odd" =
-          missingIndex % 2 === 0 ? "even" : "odd";
+      for (let missingIndex = current.expectedNodes; missingIndex < current.nodeCount; missingIndex++) {
+        const expectedParity: "even" | "odd" = missingIndex % 2 === 0 ? "even" : "odd";
 
         searchRegions.push({
           Emin,
@@ -198,7 +186,7 @@ function searchForMissingEigenvalues(
 
   // Perform ultra-fine targeted search in each region
   for (const region of searchRegions) {
-    console.log(
+    Logger.debug(
       `Searching for missing ${region.missingParity} parity state with ${region.expectedNodeCount} nodes\n` +
         `  Energy range: [${region.Emin.toExponential(4)}, ${region.Emax.toExponential(4)}] J`,
     );
@@ -243,7 +231,9 @@ function targetedEigenvalueSearch(
 
   // Transcendental equation for the specified parity
   const transcendentalEquation = (E: number): number => {
-    if (E >= V0 || E <= 0) return Infinity;
+    if (E >= V0 || E <= 0) {
+      return Infinity;
+    }
 
     const k = Math.sqrt(2 * mass * E) / HBAR;
     const kappa = Math.sqrt(2 * mass * (V0 - E)) / HBAR;
@@ -252,23 +242,19 @@ function targetedEigenvalueSearch(
     if (parity === "even") {
       const coshKL = Math.cosh(kappa * Linner);
       const sinhKL = Math.sinh(kappa * Linner);
-      const numerator =
-        -k * coshKL * Math.sin(k * L) + kappa * sinhKL * Math.cos(k * L);
-      const denominator =
-        coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
+      const numerator = -k * coshKL * Math.sin(k * L) + kappa * sinhKL * Math.cos(k * L);
+      const denominator = coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
 
-      if (Math.abs(denominator) < 1e-15) return Infinity;
-      return numerator / denominator + alpha;
+      // Pole-free form of ψ'/ψ + α (see findEvenParityDoubleWell)
+      return (numerator + alpha * denominator) / k;
     } else {
       const sinhKL = Math.sinh(kappa * Linner);
       const coshKL = Math.cosh(kappa * Linner);
-      const numerator =
-        -k * sinhKL * Math.sin(k * L) + kappa * coshKL * Math.cos(k * L);
-      const denominator =
-        sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
+      const numerator = -k * sinhKL * Math.sin(k * L) + kappa * coshKL * Math.cos(k * L);
+      const denominator = sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
 
-      if (Math.abs(denominator) < 1e-15) return Infinity;
-      return numerator / denominator + alpha;
+      // Pole-free form of ψ'/ψ + α (see findEvenParityDoubleWell)
+      return (numerator + alpha * denominator) / k;
     }
   };
 
@@ -286,31 +272,16 @@ function targetedEigenvalueSearch(
     if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
 
-      if (
-        root !== null &&
-        isValidBoundState(root, Linner, L, V0, mass, parity)
-      ) {
+      if (root !== null && isValidBoundState(root, Linner, L, V0, mass, parity)) {
         // Validate with node counting
-        const wf = computeDoubleWellWavefunction(
-          root,
-          parity,
-          Linner,
-          Louter,
-          V0,
-          mass,
-          xGrid,
-        );
+        const wf = computeDoubleWellWavefunction(root, parity, Linner, Louter, V0, mass, xGrid);
         const nodeCount = countNodes(wf);
 
         if (nodeCount === expectedNodeCount) {
           // Check if this is truly a new state
-          const isNew = foundStates.every(
-            (s) => Math.abs(s.energy - root) > 1e-11,
-          );
+          const isNew = foundStates.every((s) => Math.abs(s.energy - root) > 1e-9 * Math.abs(root));
           if (isNew) {
-            console.log(
-              `  ✓ Found missing ${parity} state: E = ${root.toExponential(6)} J, ${nodeCount} nodes`,
-            );
+            Logger.debug(`  ✓ Found missing ${parity} state: E = ${root.toExponential(6)} J, ${nodeCount} nodes`);
             foundStates.push({ energy: root, parity });
           }
         }
@@ -319,7 +290,7 @@ function targetedEigenvalueSearch(
   }
 
   if (foundStates.length === 0) {
-    console.log(`  ✗ No matching state found in this region`);
+    Logger.debug(`  ✗ No matching state found in this region`);
   }
 
   return foundStates;
@@ -364,22 +335,10 @@ export function solveDoubleSquareWellAnalytical(
   const searchStates = Math.max(numStates + 4, estimatedStates);
 
   // Find even parity states
-  const evenEnergies = findEvenParityDoubleWell(
-    Linner,
-    Louter,
-    V0,
-    mass,
-    Math.ceil(searchStates / 2),
-  );
+  const evenEnergies = findEvenParityDoubleWell(Linner, Louter, V0, mass, Math.ceil(searchStates / 2));
 
   // Find odd parity states
-  const oddEnergies = findOddParityDoubleWell(
-    Linner,
-    Louter,
-    V0,
-    mass,
-    Math.ceil(searchStates / 2),
-  );
+  const oddEnergies = findOddParityDoubleWell(Linner, Louter, V0, mass, Math.ceil(searchStates / 2));
 
   // Combine and sort states by energy
   const combinedStates: Array<{ energy: number; parity: "even" | "odd" }> = [];
@@ -398,22 +357,14 @@ export function solveDoubleSquareWellAnalytical(
   // This is critical for ensuring the doublet and other low-lying states are found
   const maxRecoveryAttempts = 3;
   for (let attempt = 0; attempt < maxRecoveryAttempts; attempt++) {
-    const recoveryResult = searchForMissingEigenvalues(
-      combinedStates,
-      Linner,
-      Louter,
-      V0,
-      mass,
-      gridConfig,
-      numStates,
-    );
+    const recoveryResult = searchForMissingEigenvalues(combinedStates, Linner, Louter, V0, mass, gridConfig, numStates);
 
     if (recoveryResult.newStates.length === 0) {
       // No missing states detected, we're done
       break;
     }
 
-    console.log(
+    Logger.debug(
       `[Recovery Attempt ${attempt + 1}] Found ${recoveryResult.newStates.length} missing eigenvalue(s) via node counting`,
     );
 
@@ -447,7 +398,7 @@ export function solveDoubleSquareWellAnalytical(
     const evenCount = evenEnergies.length;
     const oddCount = oddEnergies.length;
 
-    console.warn(
+    Logger.warn(
       `Warning: Only found ${selectedStates.length} properly alternating states out of ${numStates} requested.\n` +
         `  Even parity states found: ${evenCount}\n` +
         `  Odd parity states found: ${oddCount}\n` +
@@ -461,7 +412,7 @@ export function solveDoubleSquareWellAnalytical(
 
   // Check if we're significantly below WKB estimate
   if (selectedStates.length < estimatedStates * 0.7) {
-    console.warn(
+    Logger.warn(
       `Warning: Found ${selectedStates.length} states but WKB approximation suggests ~${estimatedStates} should exist.\n` +
         `  Significant shortfall detected - some eigenvalues may be missing.`,
     );
@@ -480,15 +431,7 @@ export function solveDoubleSquareWellAnalytical(
   const energies: number[] = [];
 
   for (const state of selectedStates) {
-    const wf = computeDoubleWellWavefunction(
-      state.energy,
-      state.parity,
-      Linner,
-      Louter,
-      V0,
-      mass,
-      xGrid,
-    );
+    const wf = computeDoubleWellWavefunction(state.energy, state.parity, Linner, Louter, V0, mass, xGrid);
     wavefunctions.push(wf);
     energies.push(state.energy);
   }
@@ -500,15 +443,15 @@ export function solveDoubleSquareWellAnalytical(
 
   for (let n = 0; n < Math.min(selectedStates.length, numStates); n++) {
     const expectedNodes = n;
-    const actualNodes = countNodes(wavefunctions[n]);
+    const actualNodes = countNodes(wavefunctions[n]!);
 
     if (actualNodes !== expectedNodes) {
       missingStates.push(n);
-      console.warn(
+      Logger.warn(
         `WARNING: State ${n} has ${actualNodes} nodes but should have ${expectedNodes} nodes!\n` +
           `  This indicates a missing eigenvalue before this state.\n` +
-          `  Energy = ${energies[n].toExponential(6)} J\n` +
-          `  Parity = ${selectedStates[n].parity}\n` +
+          `  Energy = ${energies[n]!.toExponential(6)} J\n` +
+          `  Parity = ${selectedStates[n]!.parity}\n` +
           `  Expected sequence: n=0 (even, 0 nodes), n=1 (odd, 1 node), n=2 (even, 2 nodes), ...`,
       );
     }
@@ -517,38 +460,38 @@ export function solveDoubleSquareWellAnalytical(
   // Special check for doublet (first two states)
   if (selectedStates.length >= 2) {
     // Ground state MUST be even parity with 0 nodes
-    if (selectedStates[0].parity !== "even") {
-      console.warn(
-        `CRITICAL: Ground state has ${selectedStates[0].parity} parity but MUST be even!\n` +
+    if (selectedStates[0]!.parity !== "even") {
+      Logger.warn(
+        `CRITICAL: Ground state has ${selectedStates[0]!.parity} parity but MUST be even!\n` +
           `  This indicates the true ground state is missing.\n` +
-          `  Current ground state energy: ${energies[0].toExponential(6)} J`,
+          `  Current ground state energy: ${energies[0]!.toExponential(6)} J`,
       );
       missingStates.push(0);
     }
 
     // First excited state MUST be odd parity with 1 node
-    if (selectedStates[1].parity !== "odd") {
-      console.warn(
-        `CRITICAL: First excited state has ${selectedStates[1].parity} parity but MUST be odd!\n` +
+    if (selectedStates[1]!.parity !== "odd") {
+      Logger.warn(
+        `CRITICAL: First excited state has ${selectedStates[1]!.parity} parity but MUST be odd!\n` +
           `  This indicates the doublet partner is missing.\n` +
-          `  Current first excited state energy: ${energies[1].toExponential(6)} J`,
+          `  Current first excited state energy: ${energies[1]!.toExponential(6)} J`,
       );
       missingStates.push(1);
     }
 
     // Check doublet energy splitting
-    const splitting = energies[1] - energies[0];
+    const splitting = energies[1]! - energies[0]!;
     const splittingPercent = (splitting / V0) * 100;
 
     if (splitting < 0) {
-      console.error(
+      Logger.error(
         `CRITICAL ERROR: First excited state energy is LOWER than ground state!\n` +
-          `  Ground state: ${energies[0].toExponential(6)} J (${selectedStates[0].parity})\n` +
-          `  First excited: ${energies[1].toExponential(6)} J (${selectedStates[1].parity})\n` +
+          `  Ground state: ${energies[0]!.toExponential(6)} J (${selectedStates[0]!.parity})\n` +
+          `  First excited: ${energies[1]!.toExponential(6)} J (${selectedStates[1]!.parity})\n` +
           `  This violates the variational principle and indicates missing states.`,
       );
     } else if (splittingPercent > 50) {
-      console.warn(
+      Logger.warn(
         `WARNING: Doublet splitting is unusually large (${splittingPercent.toFixed(2)}% of V₀).\n` +
           `  This may indicate a missing state between the ground and first excited states.\n` +
           `  Typical doublet splittings are much smaller due to tunneling suppression.`,
@@ -557,7 +500,7 @@ export function solveDoubleSquareWellAnalytical(
   }
 
   if (missingStates.length > 0) {
-    console.warn(
+    Logger.warn(
       `\n=== SUMMARY: Missing states detected at indices: ${missingStates.join(", ")} ===\n` +
         `  Total states found: ${selectedStates.length}\n` +
         `  States requested: ${numStates}\n` +
@@ -646,17 +589,12 @@ function isValidBoundState(
  *
  * This gives a rough upper bound on the number of states we should find.
  */
-function estimateNumberOfBoundStates(
-  wellWidth: number,
-  V0: number,
-  mass: number,
-): number {
+function estimateNumberOfBoundStates(wellWidth: number, V0: number, mass: number): number {
   const { HBAR } = QuantumConstants;
 
   // WKB approximation for total well width (both wells combined)
   const totalWellWidth = 2 * wellWidth;
-  const estimate =
-    (totalWellWidth * Math.sqrt(2 * mass * V0)) / (Math.PI * HBAR);
+  const estimate = (totalWellWidth * Math.sqrt(2 * mass * V0)) / (Math.PI * HBAR);
 
   // Round up to get conservative estimate
   return Math.ceil(estimate);
@@ -667,34 +605,33 @@ function estimateNumberOfBoundStates(
  *
  * Returns intervals [E1, E2] where additional search should be performed.
  */
-function detectEnergyGaps(
-  energies: number[],
-  V0: number,
-): Array<{ start: number; end: number }> {
-  if (energies.length < 2) return [];
+function detectEnergyGaps(energies: number[], V0: number): Array<{ start: number; end: number }> {
+  if (energies.length < 2) {
+    return [];
+  }
 
   const gaps: Array<{ start: number; end: number }> = [];
 
   // Calculate typical energy spacing
   const spacings: number[] = [];
   for (let i = 1; i < energies.length; i++) {
-    spacings.push(energies[i] - energies[i - 1]);
+    spacings.push(energies[i]! - energies[i - 1]!);
   }
 
   // Use median spacing as reference (more robust than mean)
   spacings.sort((a, b) => a - b);
-  const medianSpacing = spacings[Math.floor(spacings.length / 2)];
+  const medianSpacing = spacings[Math.floor(spacings.length / 2)]!;
 
   // Flag gaps that are significantly larger than median (3x threshold)
   const gapThreshold = 3.0 * medianSpacing;
 
   for (let i = 1; i < energies.length; i++) {
-    const gap = energies[i] - energies[i - 1];
+    const gap = energies[i]! - energies[i - 1]!;
     if (gap > gapThreshold && gap > V0 * 0.01) {
       // Also must be > 1% of V0
       gaps.push({
-        start: energies[i - 1],
-        end: energies[i],
+        start: energies[i - 1]!,
+        end: energies[i]!,
       });
     }
   }
@@ -732,12 +669,12 @@ function searchInInterval(
       const root = solveBisection(transcendentalEq, E1, E2, 1e-12, 100);
       if (root !== null && validator(root)) {
         // Check if this root is new (not already found)
-        const isNew = roots.every(
-          (existingRoot) => Math.abs(root - existingRoot) > 1e-10,
-        );
+        const isNew = roots.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           roots.push(root);
-          if (roots.length >= maxRoots) break;
+          if (roots.length >= maxRoots) {
+            break;
+          }
         }
       }
     }
@@ -774,7 +711,9 @@ function findEvenParityDoubleWell(
    */
   const transcendentalEquation = (E: number): number => {
     // Must be bound state (below barrier top)
-    if (E >= V0) return Infinity;
+    if (E >= V0) {
+      return Infinity;
+    }
 
     // Must be above well bottom
     if (E <= 0) {
@@ -796,19 +735,13 @@ function findEvenParityDoubleWell(
     // ψ'_well = -Bk sin(kL) + Ck cos(kL) = -α D
     // ψ_well = B cos(kL) + C sin(kL) = D
 
-    const numerator =
-      -k * coshKL * Math.sin(k * L) +
-      k * (kappa / k) * sinhKL * Math.cos(k * L);
-    const denominator =
-      coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
+    const numerator = -k * coshKL * Math.sin(k * L) + k * (kappa / k) * sinhKL * Math.cos(k * L);
+    const denominator = coshKL * Math.cos(k * L) + (kappa / k) * sinhKL * Math.sin(k * L);
 
-    if (Math.abs(denominator) < 1e-15) return Infinity;
-
-    const lhs = numerator / denominator;
-    const rhs = alpha;
-
-    // Matching condition: ψ'_well / ψ_well = ψ'_outside / ψ_outside = -α
-    return lhs + rhs;
+    // Matching condition ψ'_well/ψ_well = −α, multiplied through by ψ_well (= denominator) so the
+    // function has no poles: the ratio form changes sign at poles too, and those spurious brackets
+    // (rejected later) could hide a neighbouring true root. Divided by k to keep it O(κ).
+    return (numerator + alpha * denominator) / k;
   };
 
   // Search for roots in energy range
@@ -821,25 +754,20 @@ function findEvenParityDoubleWell(
   // Search the lowest 5% of energy range with ultra-fine resolution to ensure we find it.
   const doubletSearchMax = Emin + (Emax - Emin) * 0.05;
   const doubletSearchPoints = 3000; // Extra-fine grid for doublet
-  const dE_doublet = (doubletSearchMax - Emin) / doubletSearchPoints;
+  const dEDoublet = (doubletSearchMax - Emin) / doubletSearchPoints;
 
   for (let i = 0; i < doubletSearchPoints - 1; i++) {
-    const E1 = Emin + i * dE_doublet;
-    const E2 = Emin + (i + 1) * dE_doublet;
+    const E1 = Emin + i * dEDoublet;
+    const E2 = Emin + (i + 1) * dEDoublet;
 
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
     if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
-      if (
-        root !== null &&
-        isValidBoundState(root, Linner, L, V0, mass, "even")
-      ) {
+      if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "even")) {
         // Check if this root is new (not already found)
-        const isNew = energies.every(
-          (existingRoot) => Math.abs(root - existingRoot) > 1e-11,
-        );
+        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           energies.push(root);
         }
@@ -876,8 +804,7 @@ function findEvenParityDoubleWell(
 
     if (gaps.length > 0) {
       // Create validator closure
-      const validator = (E: number) =>
-        isValidBoundState(E, Linner, L, V0, mass, "even");
+      const validator = (E: number) => isValidBoundState(E, Linner, L, V0, mass, "even");
 
       // Search in each gap region
       for (const gap of gaps) {
@@ -893,7 +820,9 @@ function findEvenParityDoubleWell(
         energies.push(...additionalRoots);
         energies.sort((a, b) => a - b);
 
-        if (energies.length >= maxStates) break;
+        if (energies.length >= maxStates) {
+          break;
+        }
       }
     }
   }
@@ -926,9 +855,13 @@ function findOddParityDoubleWell(
    * Returns f(E) = 0 when E is an eigenvalue.
    */
   const transcendentalEquation = (E: number): number => {
-    if (E >= V0) return Infinity;
+    if (E >= V0) {
+      return Infinity;
+    }
 
-    if (E <= 0) return Infinity;
+    if (E <= 0) {
+      return Infinity;
+    }
 
     const k = Math.sqrt(2 * mass * E) / HBAR;
     const kappa = Math.sqrt(2 * mass * (V0 - E)) / HBAR;
@@ -943,19 +876,13 @@ function findOddParityDoubleWell(
     // ψ'_well = -Bk sin(kL) + Ck cos(kL) = -α D
     // ψ_well = B cos(kL) + C sin(kL) = D
 
-    const numerator =
-      -k * sinhKL * Math.sin(k * L) +
-      k * (kappa / k) * coshKL * Math.cos(k * L);
-    const denominator =
-      sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
+    const numerator = -k * sinhKL * Math.sin(k * L) + k * (kappa / k) * coshKL * Math.cos(k * L);
+    const denominator = sinhKL * Math.cos(k * L) + (kappa / k) * coshKL * Math.sin(k * L);
 
-    if (Math.abs(denominator) < 1e-15) return Infinity;
-
-    const lhs = numerator / denominator;
-    const rhs = alpha;
-
-    // Matching condition: ψ'_well / ψ_well = ψ'_outside / ψ_outside = -α
-    return lhs + rhs;
+    // Matching condition ψ'_well/ψ_well = −α, multiplied through by ψ_well (= denominator) so the
+    // function has no poles: the ratio form changes sign at poles too, and those spurious brackets
+    // (rejected later) could hide a neighbouring true root. Divided by k to keep it O(κ).
+    return (numerator + alpha * denominator) / k;
   };
 
   // Search for roots in energy range
@@ -968,25 +895,20 @@ function findOddParityDoubleWell(
   // Search the lowest 5% of energy range with ultra-fine resolution to ensure we find it.
   const doubletSearchMax = Emin + (Emax - Emin) * 0.05;
   const doubletSearchPoints = 3000; // Extra-fine grid for doublet
-  const dE_doublet = (doubletSearchMax - Emin) / doubletSearchPoints;
+  const dEDoublet = (doubletSearchMax - Emin) / doubletSearchPoints;
 
   for (let i = 0; i < doubletSearchPoints - 1; i++) {
-    const E1 = Emin + i * dE_doublet;
-    const E2 = Emin + (i + 1) * dE_doublet;
+    const E1 = Emin + i * dEDoublet;
+    const E2 = Emin + (i + 1) * dEDoublet;
 
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
     if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
-      if (
-        root !== null &&
-        isValidBoundState(root, Linner, L, V0, mass, "odd")
-      ) {
+      if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "odd")) {
         // Check if this root is new (not already found)
-        const isNew = energies.every(
-          (existingRoot) => Math.abs(root - existingRoot) > 1e-11,
-        );
+        const isNew = energies.every((existingRoot) => Math.abs(root - existingRoot) > 1e-9 * Math.abs(existingRoot));
         if (isNew) {
           energies.push(root);
         }
@@ -1022,8 +944,7 @@ function findOddParityDoubleWell(
 
     if (gaps.length > 0) {
       // Create validator closure
-      const validator = (E: number) =>
-        isValidBoundState(E, Linner, L, V0, mass, "odd");
+      const validator = (E: number) => isValidBoundState(E, Linner, L, V0, mass, "odd");
 
       // Search in each gap region
       for (const gap of gaps) {
@@ -1039,7 +960,9 @@ function findOddParityDoubleWell(
         energies.push(...additionalRoots);
         energies.sort((a, b) => a - b);
 
-        if (energies.length >= maxStates) break;
+        if (energies.length >= maxStates) {
+          break;
+        }
       }
     }
   }
@@ -1138,8 +1061,7 @@ function computeDoubleWellWavefunction(
       } else if (absX < Louter) {
         // Inside left well
         const xShifted = absX - Linner;
-        const valueRight =
-          B * Math.cos(k * xShifted) + C * Math.sin(k * xShifted);
+        const valueRight = B * Math.cos(k * xShifted) + C * Math.sin(k * xShifted);
         value = parity === "even" ? valueRight : -valueRight;
       } else {
         // Outside left well
@@ -1152,7 +1074,7 @@ function computeDoubleWellWavefunction(
   }
 
   // Normalize using trapezoidal rule
-  const dx = xGrid[1] - xGrid[0];
+  const dx = xGrid[1]! - xGrid[0]!;
   const normSq = psi.reduce((sum, val) => sum + val * val, 0) * dx;
   const norm = Math.sqrt(normSq);
 
@@ -1174,7 +1096,7 @@ function solveBisection(
   f: (x: number) => number,
   xMin: number,
   xMax: number,
-  tolerance: number,
+  tolerance: number, // relative to |x|
   maxIterations: number,
 ): number | null {
   let a = xMin;
@@ -1193,8 +1115,9 @@ function solveBisection(
     const c = (a + b) / 2;
     const fc = f(c);
 
-    // Check convergence
-    if (Math.abs(fc) < tolerance || (b - a) / 2 < tolerance) {
+    // Converged once the bracket is small relative to the energy (~1e-19 J). The old absolute test
+    // (b − a)/2 < 1e-12 J held immediately, so "roots" were just midpoints of the scan brackets.
+    if (fc === 0 || (b - a) / 2 <= tolerance * Math.max(Math.abs(a), Math.abs(b))) {
       return c;
     }
 
@@ -1206,11 +1129,6 @@ function solveBisection(
     }
   }
 
-  // Return best approximation even if not fully converged
-  const c = (a + b) / 2;
-  if (Math.abs(f(c)) < tolerance * 10) {
-    return c;
-  }
-
-  return null;
+  // The bracket still contains the sign change; return its midpoint
+  return (a + b) / 2;
 }

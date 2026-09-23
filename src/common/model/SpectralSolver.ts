@@ -11,24 +11,20 @@
  * Reference: Boyd, "Chebyshev and Fourier Spectral Methods", 2nd ed. (2001)
  */
 
-import QuantumConstants from "./QuantumConstants.js";
+import qppw from "../../QPPWNamespace.js";
 import {
-  BoundStateResult,
-  EnergyOnlyResult,
-  GridConfig,
-  PotentialFunction,
-} from "./PotentialFunction.js";
-import {
+  cubicSplineInterpolation,
   DotMatrix,
   diagonalize,
-  normalizeWavefunctionChebyshev,
-  symmetrizeMatrix,
   extractInteriorMatrix,
   matrixToArray,
-  cubicSplineInterpolation,
+  normalizeOnGrid,
+  normalizeWavefunctionChebyshev,
+  symmetrizeMatrix,
 } from "./LinearAlgebraUtils.js";
+import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
+import QuantumConstants from "./QuantumConstants.js";
 import { standardizeWavefunction } from "./WavefunctionStandardization.js";
-import qppw from "../../QPPWNamespace.js";
 
 /**
  * Solve the 1D Schrödinger equation using Chebyshev spectral method.
@@ -73,9 +69,7 @@ export function solveSpectral(
   // Map to physical domain [xMin, xMax]
   const domainMin = xMin;
   const domainMax = xMax;
-  const xGrid = xiGrid.map(
-    (xi) => ((domainMax - domainMin) * xi + (domainMax + domainMin)) / 2,
-  );
+  const xGrid = xiGrid.map((xi) => ((domainMax - domainMin) * xi + (domainMax + domainMin)) / 2);
 
   // Chebyshev differentiation matrix in [-1, 1]
   const D = chebyshevDifferentiationMatrix(N);
@@ -105,20 +99,20 @@ export function solveSpectral(
 
   // Add potential energy (diagonal)
   for (let i = 0; i < N; i++) {
-    H.set(i, i, H.get(i, i) + potential(xGrid[i]));
+    H.set(i, i, H.get(i, i) + potential(xGrid[i]!));
   }
 
   // Apply boundary conditions: ψ(xMin) = ψ(xMax) = 0
   // Remove first and last rows/columns
-  const H_interior = extractInteriorMatrix(H);
+  const HInterior = extractInteriorMatrix(H);
 
   // Symmetrize the Hamiltonian matrix
   // The second derivative operator with Dirichlet BCs should be self-adjoint,
   // so the matrix should be symmetric. Any asymmetry is numerical error.
-  const H_symmetric = symmetrizeMatrix(H_interior);
+  const HSymmetric = symmetrizeMatrix(HInterior);
 
   // Convert to array and diagonalize interior Hamiltonian
-  const hamiltonianArray = matrixToArray(H_symmetric);
+  const hamiltonianArray = matrixToArray(HSymmetric);
   const eigen = diagonalize(hamiltonianArray);
 
   // Sort eigenvalues and eigenvectors by energy
@@ -130,14 +124,19 @@ export function solveSpectral(
   // Extract the lowest numStates bound states
   const energies: number[] = [];
 
-  // For spectral method with Dirichlet boundary conditions (ψ=0 at boundaries),
-  // all eigenvalues correspond to bound states confined by the boundary conditions.
-  // We simply take the lowest numStates eigenvalues.
-  const interiorSize = H_interior.getRowDimension();
-  for (let i = 0; i < Math.min(numStates, interiorSize); i++) {
-    const idx = sortedIndices[i];
-    const energy = eigen.eigenvalues[idx];
-    energies.push(energy);
+  // The Dirichlet box makes every eigenvalue discrete, but only those below the potential at the box
+  // edges are bound states of the physical problem; the rest are box-quantized continuum states.
+  // (Same criterion as the DVR and matrix-Numerov solvers.)
+  const interiorSize = HInterior.getRowDimension();
+  const VBoundary = Math.max(potential(xMin), potential(xMax));
+  const boundIndices: number[] = [];
+  for (let i = 0; i < interiorSize && boundIndices.length < numStates; i++) {
+    const idx = sortedIndices[i]!;
+    const energy = eigen.eigenvalues[idx]!;
+    if (energy < VBoundary && Number.isFinite(energy)) {
+      energies.push(energy);
+      boundIndices.push(idx);
+    }
   }
 
   // If only energies requested, return early without computing wavefunctions
@@ -150,15 +149,13 @@ export function solveSpectral(
 
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
-  for (let i = 0; i < Math.min(numStates, interiorSize); i++) {
-    const idx = sortedIndices[i];
-
+  for (const idx of boundIndices) {
     // Reconstruct full wavefunction with boundary conditions
-    const psi_interior = eigen.eigenvectors[idx];
-    const psi_full = [0, ...psi_interior, 0]; // Add zeros at boundaries
+    const psiInterior = eigen.eigenvectors[idx]!;
+    const psiFull = [0, ...psiInterior, 0]; // Add zeros at boundaries
 
     // Normalize
-    const normalizedPsi = normalizeWavefunctionChebyshev(psi_full, xMin, xMax);
+    const normalizedPsi = normalizeWavefunctionChebyshev(psiFull, xMin, xMax);
     // Standardize sign for consistency across solvers
     const standardizedPsi = standardizeWavefunction(normalizedPsi, xGrid);
     wavefunctions.push(standardizedPsi);
@@ -175,20 +172,13 @@ export function solveSpectral(
   }
 
   const upsampleFactor = 8;
-  const { fineXGrid } = cubicSplineInterpolation(
-    xGrid,
-    wavefunctions[0],
-    upsampleFactor,
-  );
+  const { fineXGrid } = cubicSplineInterpolation(xGrid, wavefunctions[0]!, upsampleFactor);
 
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
-    const { fineYValues } = cubicSplineInterpolation(
-      xGrid,
-      wavefunction,
-      upsampleFactor,
-    );
-    fineWavefunctions.push(fineYValues);
+    const { fineYValues } = cubicSplineInterpolation(xGrid, wavefunction, upsampleFactor);
+    // Re-normalize on the fine grid: spline interpolation does not preserve ∫|ψ|² dx
+    fineWavefunctions.push(normalizeOnGrid(fineYValues, fineXGrid));
   }
 
   return {
@@ -235,12 +225,12 @@ function chebyshevDifferentiationMatrix(N: number): DotMatrix {
         } else if (i === N - 1) {
           D.set(i, j, -(2 * (N - 1) * (N - 1) + 1) / 6);
         } else {
-          D.set(i, j, -x[j] / (2 * (1 - x[j] * x[j])));
+          D.set(i, j, -x[j]! / (2 * (1 - x[j]! * x[j]!)));
         }
       } else {
         // Off-diagonal elements
-        const sign = Math.pow(-1, i + j);
-        D.set(i, j, ((c[i] / c[j]) * sign) / (x[i] - x[j]));
+        const sign = (-1) ** (i + j);
+        D.set(i, j, ((c[i]! / c[j]!) * sign) / (x[i]! - x[j]!));
       }
     }
   }

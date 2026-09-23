@@ -34,29 +34,29 @@
  *   where z = 2λ exp(-(x-x_e)/a), λ = a√(2mD_e)/ℏ
  */
 
+import { NoBoundStatesError } from "../NoBoundStatesError.js";
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { associatedLaguerre } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { associatedLaguerre } from "./math-utilities.js";
 
 /**
  * Class-based implementation of Morse potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class MorsePotentialSolution extends AnalyticalSolution {
-  constructor(
-    private dissociationEnergy: number,
-    private wellWidth: number,
-    private equilibriumPosition: number,
-    private mass: number,
-  ) {
+  private dissociationEnergy: number;
+  private wellWidth: number;
+  private equilibriumPosition: number;
+  private mass: number;
+
+  constructor(dissociationEnergy: number, wellWidth: number, equilibriumPosition: number, mass: number) {
     super();
+    this.dissociationEnergy = dissociationEnergy;
+    this.wellWidth = wellWidth;
+    this.equilibriumPosition = equilibriumPosition;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
@@ -71,18 +71,10 @@ export class MorsePotentialSolution extends AnalyticalSolution {
   }
 
   createPotential(): PotentialFunction {
-    return createMorsePotential(
-      this.dissociationEnergy,
-      this.wellWidth,
-      this.equilibriumPosition,
-    );
+    return createMorsePotential(this.dissociationEnergy, this.wellWidth, this.equilibriumPosition);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return calculateMorsePotentialClassicalProbability(
       this.dissociationEnergy,
       this.wellWidth,
@@ -103,9 +95,7 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateMorsePotentialTurningPoints(
       this.dissociationEnergy,
       this.wellWidth,
@@ -115,10 +105,7 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateMorsePotentialWavefunctionFirstDerivative(
       this.dissociationEnergy,
       this.wellWidth,
@@ -129,10 +116,7 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     return calculateMorsePotentialWavefunctionSecondDerivative(
       this.dissociationEnergy,
       this.wellWidth,
@@ -188,13 +172,7 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     numMomentumPoints?: number,
     pMax?: number,
   ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.dissociationEnergy,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.dissociationEnergy, numMomentumPoints, pMax);
   }
 }
 
@@ -234,7 +212,7 @@ export function solveMorsePotential(
   const actualNumStates = Math.min(numStates, nMax + 1);
 
   if (actualNumStates <= 0) {
-    throw new Error("Morse potential too shallow to support bound states");
+    throw new NoBoundStatesError("Morse potential too shallow to support bound states");
   }
 
   // Calculate the characteristic frequency
@@ -246,8 +224,7 @@ export function solveMorsePotential(
   const energies: number[] = [];
   for (let n = 0; n < actualNumStates; n++) {
     const term1 = HBAR * omega * (n + 0.5);
-    const term2 =
-      (HBAR * HBAR * omega * omega * (n + 0.5) * (n + 0.5)) / (4 * De);
+    const term2 = (HBAR * HBAR * omega * omega * (n + 0.5) * (n + 0.5)) / (4 * De);
     const energy = term1 - term2 - De; // Energy relative to dissociation limit
     energies.push(energy);
   }
@@ -276,7 +253,7 @@ export function solveMorsePotential(
       // Calculate wavefunction without normalization
       const exponent = lambda - n - 0.5;
       const laguerre = associatedLaguerre(n, alpha, z);
-      const value = Math.pow(z, exponent) * Math.exp(-z / 2) * laguerre;
+      const value = z ** exponent * Math.exp(-z / 2) * laguerre;
 
       psiRaw.push(value);
     }
@@ -284,7 +261,7 @@ export function solveMorsePotential(
     // Normalize wavefunction numerically to ensure ∫|ψ|² dx = 1
     let normSq = 0;
     for (let i = 0; i < psiRaw.length; i++) {
-      normSq += psiRaw[i] * psiRaw[i] * dx;
+      normSq += psiRaw[i]! * psiRaw[i]! * dx;
     }
     const norm = 1 / Math.sqrt(normSq);
     const wavefunction = psiRaw.map((psi) => norm * psi);
@@ -320,7 +297,7 @@ export function createMorsePotential(
 
   return (x: number) => {
     const exponent = Math.exp(-(x - xe) / a);
-    return De * Math.pow(1 - exponent, 2) - De;
+    return De * (1 - exponent) ** 2 - De;
   };
 }
 
@@ -344,11 +321,7 @@ export function calculateMorsePotentialClassicalProbability(
   mass: number,
   xGrid: number[],
 ): number[] {
-  const potentialFn = createMorsePotential(
-    dissociationEnergy,
-    wellWidth,
-    equilibriumPosition,
-  );
+  const potentialFn = createMorsePotential(dissociationEnergy, wellWidth, equilibriumPosition);
 
   const classicalProbability: number[] = [];
   let integralSum = 0;
@@ -356,7 +329,7 @@ export function calculateMorsePotentialClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]);
+    const ke = energy - potentialFn(xGrid[i]!);
     if (ke > maxKE) {
       maxKE = ke;
     }
@@ -368,7 +341,7 @@ export function calculateMorsePotentialClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]);
+    const kineticEnergy = energy - potentialFn(xGrid[i]!);
 
     if (kineticEnergy <= 0) {
       classicalProbability.push(0);
@@ -378,8 +351,8 @@ export function calculateMorsePotentialClassicalProbability(
       classicalProbability.push(probability);
 
       if (i > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -387,7 +360,7 @@ export function calculateMorsePotentialClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -462,7 +435,7 @@ function computeMorseNormalization(
     const x = xMin + i * dx;
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
     const laguerre = associatedLaguerre(n, alpha, z);
-    const psi = Math.pow(z, exponent) * Math.exp(-z / 2) * laguerre;
+    const psi = z ** exponent * Math.exp(-z / 2) * laguerre;
     normSq += psi * psi * dx;
   }
 
@@ -512,18 +485,12 @@ export function calculateMorsePotentialWavefunctionZeros(
 
   let prevX = xMin;
   const prevZ = 2 * lambda * Math.exp(-(prevX - xe) / a);
-  let prevVal =
-    Math.pow(prevZ, exponent) *
-    Math.exp(-prevZ / 2) *
-    associatedLaguerre(n, alpha, prevZ);
+  let prevVal = prevZ ** exponent * Math.exp(-prevZ / 2) * associatedLaguerre(n, alpha, prevZ);
 
   for (let i = 1; i <= numSamples; i++) {
     const x = xMin + i * dx;
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
-    const val =
-      Math.pow(z, exponent) *
-      Math.exp(-z / 2) *
-      associatedLaguerre(n, alpha, z);
+    const val = z ** exponent * Math.exp(-z / 2) * associatedLaguerre(n, alpha, z);
 
     // Sign change detected
     if (prevVal * val < 0) {
@@ -533,10 +500,7 @@ export function calculateMorsePotentialWavefunctionZeros(
       for (let iter = 0; iter < 20; iter++) {
         const mid = (left + right) / 2;
         const zMid = 2 * lambda * Math.exp(-(mid - xe) / a);
-        const valMid =
-          Math.pow(zMid, exponent) *
-          Math.exp(-zMid / 2) *
-          associatedLaguerre(n, alpha, zMid);
+        const valMid = zMid ** exponent * Math.exp(-zMid / 2) * associatedLaguerre(n, alpha, zMid);
 
         if (Math.abs(valMid) < 1e-12) {
           zeros.push(mid);
@@ -608,17 +572,9 @@ export function calculateMorsePotentialWavefunctionFirstDerivative(
     const zMinus = 2 * lambda * Math.exp(-(xMinus - xe) / a);
     const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
-    const psiMinus =
-      normalization *
-      Math.pow(zMinus, exponent) *
-      Math.exp(-zMinus / 2) *
-      associatedLaguerre(n, alpha, zMinus);
+    const psiMinus = normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
 
-    const psiPlus =
-      normalization *
-      Math.pow(zPlus, exponent) *
-      Math.exp(-zPlus / 2) *
-      associatedLaguerre(n, alpha, zPlus);
+    const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
 
     // First derivative using central difference
     const firstDeriv = (psiPlus - psiMinus) / (2 * h);
@@ -675,23 +631,11 @@ export function calculateMorsePotentialWavefunctionSecondDerivative(
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
     const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
-    const psiMinus =
-      normalization *
-      Math.pow(zMinus, exponent) *
-      Math.exp(-zMinus / 2) *
-      associatedLaguerre(n, alpha, zMinus);
+    const psiMinus = normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
 
-    const psi =
-      normalization *
-      Math.pow(z, exponent) *
-      Math.exp(-z / 2) *
-      associatedLaguerre(n, alpha, z);
+    const psi = normalization * z ** exponent * Math.exp(-z / 2) * associatedLaguerre(n, alpha, z);
 
-    const psiPlus =
-      normalization *
-      Math.pow(zPlus, exponent) *
-      Math.exp(-zPlus / 2) *
-      associatedLaguerre(n, alpha, zPlus);
+    const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
 
     // Second derivative using central difference
     const secondDeriv = (psiPlus - 2 * psi + psiMinus) / (h * h);
@@ -738,15 +682,7 @@ export function calculateMorsePotentialWavefunctionMinMax(
   const exponent = lambda - n - 0.5;
 
   // Get numerical normalization constant
-  const normalization = computeMorseNormalization(
-    a,
-    lambda,
-    n,
-    xe,
-    xMin,
-    xMax,
-    numPoints,
-  );
+  const normalization = computeMorseNormalization(a, lambda, n, xe, xMin, xMax, numPoints);
 
   let min = Infinity;
   let max = -Infinity;
@@ -761,8 +697,7 @@ export function calculateMorsePotentialWavefunctionMinMax(
 
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
     const laguerre = associatedLaguerre(n, alpha, z);
-    const psi =
-      normalization * Math.pow(z, exponent) * Math.exp(-z / 2) * laguerre;
+    const psi = normalization * z ** exponent * Math.exp(-z / 2) * laguerre;
 
     // Calculate derivative using central difference for extrema detection
     let derivative = 0;
@@ -774,22 +709,19 @@ export function calculateMorsePotentialWavefunctionMinMax(
       const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
       const psiMinus =
-        normalization *
-        Math.pow(zMinus, exponent) *
-        Math.exp(-zMinus / 2) *
-        associatedLaguerre(n, alpha, zMinus);
+        normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
 
-      const psiPlus =
-        normalization *
-        Math.pow(zPlus, exponent) *
-        Math.exp(-zPlus / 2) *
-        associatedLaguerre(n, alpha, zPlus);
+      const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
 
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -857,28 +789,19 @@ export function calculateMorsePotentialSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       // Calculate wavefunction value
       const alpha = 2 * lambda - 2 * n - 1;
       const exponent = lambda - n - 0.5;
 
       // Get numerical normalization constant
-      const normalization = computeMorseNormalization(
-        a,
-        lambda,
-        n,
-        xe,
-        xMin,
-        xMax,
-        numPoints,
-      );
+      const normalization = computeMorseNormalization(a, lambda, n, xe, xMin, xMax, numPoints);
 
       const z = 2 * lambda * Math.exp(-(x - xe) / a);
       const laguerre = associatedLaguerre(n, alpha, z);
-      const psi =
-        normalization * Math.pow(z, exponent) * Math.exp(-z / 2) * laguerre;
+      const psi = normalization * z ** exponent * Math.exp(-z / 2) * laguerre;
 
       // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
       const phase = (-energy * time) / HBAR;
@@ -887,11 +810,16 @@ export function calculateMorsePotentialSuperpositionMinMax(
 
       // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
       // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

@@ -17,8 +17,9 @@
  * Center well (if N odd) or center barrier (if N even) at x = 0
  */
 
-import { BoundStateResult, GridConfig } from "../PotentialFunction.js";
-import Schrodinger1DSolver from "../Schrodinger1DSolver.js";
+import Logger from "../../utils/Logger.js";
+import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
+import type Schrodinger1DSolver from "../Schrodinger1DSolver.js";
 
 /**
  * Create a multi-square well potential function.
@@ -36,8 +37,7 @@ export function createMultiSquareWellPotential(
   wellSeparation: number,
 ): (x: number) => number {
   // Calculate total structure width
-  const totalWidth =
-    numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
+  const totalWidth = numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
 
   // Calculate positions of well boundaries
   // Wells are centered around x = 0
@@ -61,10 +61,7 @@ export function createMultiSquareWellPotential(
     }
 
     // Check if x is between wells (barrier region)
-    if (
-      x > wellBoundaries[0].left &&
-      x < wellBoundaries[numberOfWells - 1].right
-    ) {
+    if (x > wellBoundaries[0]!.left && x < wellBoundaries[numberOfWells - 1]!.right) {
       return wellDepth; // Inside barrier
     }
 
@@ -100,24 +97,14 @@ export function solveMultiSquareWell(
   solver: Schrodinger1DSolver, // Numerical solver instance
 ): BoundStateResult {
   // Create the potential function
-  const potential = createMultiSquareWellPotential(
-    numberOfWells,
-    wellWidth,
-    wellDepth,
-    wellSeparation,
-  );
+  const potential = createMultiSquareWellPotential(numberOfWells, wellWidth, wellDepth, wellSeparation);
 
   // Use numerical solver to find bound states
   // The solver will be passed in from Schrodinger1DSolver
   // and will use the currently selected method (DVR, FGH, Matrix Numerov, etc.)
 
   try {
-    const result = solver.solveNumerical(
-      potential,
-      mass,
-      numStates,
-      gridConfig,
-    );
+    const result = solver.solveNumerical(potential, mass, numStates, gridConfig);
 
     return {
       ...result,
@@ -125,7 +112,7 @@ export function solveMultiSquareWell(
       // (since we have an exact potential definition)
     };
   } catch (error) {
-    console.error("Error solving multi-square well:", error);
+    Logger.error("Error solving multi-square well:", error);
 
     // Return empty result on error
     const xGrid: number[] = [];
@@ -161,8 +148,7 @@ export function getMultiSquareWellGeometry(
   barriers: Array<{ left: number; right: number }>;
   totalWidth: number;
 } {
-  const totalWidth =
-    numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
+  const totalWidth = numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
   const startX = -totalWidth / 2;
 
   const wells: Array<{ left: number; right: number }> = [];

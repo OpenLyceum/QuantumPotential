@@ -4,8 +4,8 @@
  */
 
 import { Node, Rectangle } from "scenerystack/scenery";
-import QuantumConstants from "../../model/QuantumConstants.js";
 import QPPWColors from "../../../QPPWColors.js";
+import QuantumConstants from "../../model/QuantumConstants.js";
 
 export type PhaseColorVisualizationOptions = {
   dataToViewX: (x: number) => number;
@@ -46,11 +46,7 @@ export class PhaseColorVisualization extends Node {
   /**
    * Plot phase-colored wavefunction for a single eigenstate
    */
-  public plotWavefunction(
-    xGrid: number[],
-    wavefunction: number[],
-    globalPhase: number,
-  ): void {
+  public plotWavefunction(xGrid: number[], wavefunction: number[], globalPhase: number): void {
     const { dataToViewX, dataToViewY } = this.options;
     const y0 = dataToViewY(0);
     const numStrips = xGrid.length - 1;
@@ -67,11 +63,11 @@ export class PhaseColorVisualization extends Node {
 
     // Update each strip
     for (let i = 0; i < numStrips; i++) {
-      const x1 = dataToViewX(xGrid[i] * QuantumConstants.M_TO_NM);
-      const x2 = dataToViewX(xGrid[i + 1] * QuantumConstants.M_TO_NM);
+      const x1 = dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
+      const x2 = dataToViewX(xGrid[i + 1]! * QuantumConstants.M_TO_NM);
       const stripWidth = x2 - x1;
 
-      const psi = wavefunction[i];
+      const psi = wavefunction[i]!;
       const magnitude = Math.abs(psi);
 
       // Apply global time evolution phase
@@ -99,7 +95,7 @@ export class PhaseColorVisualization extends Node {
       const stripHeight = Math.abs(y0 - yTop);
 
       // Update the rectangle from the pool
-      const strip = this.phaseColorStrips[i];
+      const strip = this.phaseColorStrips[i]!;
       strip.setRect(x1, Math.min(y0, yTop), stripWidth, stripHeight);
       strip.fill = color;
       strip.visible = stripHeight > 0.1; // Only show if visible
@@ -107,18 +103,14 @@ export class PhaseColorVisualization extends Node {
 
     // Hide any extra strips we're not using
     for (let i = numStrips; i < this.phaseColorStrips.length; i++) {
-      this.phaseColorStrips[i].visible = false;
+      this.phaseColorStrips[i]!.visible = false;
     }
   }
 
   /**
    * Plot phase-colored superposition from real and imaginary parts
    */
-  public plotSuperposition(
-    xGrid: number[],
-    realPart: number[],
-    imagPart: number[],
-  ): void {
+  public plotSuperposition(xGrid: number[], realPart: number[], imagPart: number[]): void {
     const { dataToViewX, dataToViewY } = this.options;
     const y0 = dataToViewY(0);
     const numStrips = xGrid.length - 1;
@@ -135,12 +127,12 @@ export class PhaseColorVisualization extends Node {
 
     // Update each strip
     for (let i = 0; i < numStrips; i++) {
-      const x1 = dataToViewX(xGrid[i] * QuantumConstants.M_TO_NM);
-      const x2 = dataToViewX(xGrid[i + 1] * QuantumConstants.M_TO_NM);
+      const x1 = dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
+      const x2 = dataToViewX(xGrid[i + 1]! * QuantumConstants.M_TO_NM);
       const stripWidth = x2 - x1;
 
-      const real = realPart[i];
-      const imag = imagPart[i];
+      const real = realPart[i]!;
+      const imag = imagPart[i]!;
       const magnitude = Math.sqrt(real * real + imag * imag);
 
       // Calculate local phase: arg(ψ) = atan2(Im(ψ), Re(ψ))
@@ -160,7 +152,7 @@ export class PhaseColorVisualization extends Node {
       const stripHeight = Math.abs(y0 - yTop);
 
       // Update the rectangle from the pool
-      const strip = this.phaseColorStrips[i];
+      const strip = this.phaseColorStrips[i]!;
       strip.setRect(x1, Math.min(y0, yTop), stripWidth, stripHeight);
       strip.fill = color;
       strip.visible = stripHeight > 0.1; // Only show if visible
@@ -168,7 +160,7 @@ export class PhaseColorVisualization extends Node {
 
     // Hide any extra strips we're not using
     for (let i = numStrips; i < this.phaseColorStrips.length; i++) {
-      this.phaseColorStrips[i].visible = false;
+      this.phaseColorStrips[i]!.visible = false;
     }
   }
 }

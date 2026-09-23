@@ -22,9 +22,7 @@ export abstract class BaseViewState {
   public readonly showPotentialEnergyProperty: Property<boolean>;
 
   // Display mode (common to all screens)
-  public abstract readonly displayModeProperty: Property<
-    DisplayMode | "probabilityDensity" | "waveFunction"
-  >;
+  public abstract readonly displayModeProperty: Property<DisplayMode | "probabilityDensity" | "waveFunction">;
 
   protected constructor() {
     // Initialize display settings with default values

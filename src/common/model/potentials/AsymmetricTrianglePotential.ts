@@ -3,9 +3,9 @@
  * V(x) = F·x for x > 0, V(x) = ∞ for x < 0
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { AsymmetricTrianglePotentialSolution } from "../analytical-solutions/asymmetric-triangle-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class AsymmetricTrianglePotential extends AnalyticalPotential {
   private slope: number;
@@ -18,11 +18,7 @@ export class AsymmetricTrianglePotential extends AnalyticalPotential {
    * @param mass - Particle mass in kg
    */
   constructor(slope: number, wellWidth: number, mass: number) {
-    const solution = new AsymmetricTrianglePotentialSolution(
-      slope,
-      wellWidth,
-      mass,
-    );
+    const solution = new AsymmetricTrianglePotentialSolution(slope, wellWidth, mass);
     super(solution, mass);
     this.slope = slope;
     this.wellWidth = wellWidth;

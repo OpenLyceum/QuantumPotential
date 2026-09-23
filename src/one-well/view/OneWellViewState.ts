@@ -3,7 +3,7 @@
  */
 
 import { Property } from "scenerystack/axon";
-import { BaseViewState, DisplayMode } from "../../common/view/BaseViewState.js";
+import { BaseViewState, type DisplayMode } from "../../common/view/BaseViewState.js";
 
 export class OneWellViewState extends BaseViewState {
   // One Well-specific display mode (includes "phaseColor" mode)

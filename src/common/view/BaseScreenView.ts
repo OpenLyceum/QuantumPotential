@@ -3,36 +3,26 @@
  * It provides common functionality including standard layout for quantum well simulations.
  */
 
-import {
-  ScreenView,
-  ScreenViewOptions,
-  ScreenSummaryContent,
-} from "scenerystack/sim";
-import { ResetAllButton } from "scenerystack/scenery-phet";
-import { Node, Text, VBox, RichText } from "scenerystack/scenery";
-import { PhetFont } from "scenerystack/scenery-phet";
-import {
-  TReadOnlyProperty,
-  DerivedProperty,
-  Property,
-} from "scenerystack/axon";
-import QPPWColors from "../../QPPWColors.js";
-import { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
-import { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import { EnergyChartNode } from "./EnergyChartNode.js";
-import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
-import {
-  ControlPanelNode,
-  ControlPanelNodeOptions,
-} from "./ControlPanelNode.js";
-import { SimulationControlBar } from "./SimulationControlBar.js";
-import { BaseModel } from "../model/BaseModel.js";
-import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
-import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
+import { DerivedProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { StringUtils } from "scenerystack/phetcommon";
+import { Node, RichText, Text, VBox } from "scenerystack/scenery";
+import { PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
+import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
+import stringManager from "../../i18n/StringManager.js";
+import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
+import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
+import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
+import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
+import type { BaseModel } from "../model/BaseModel.js";
 import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
+import { EnergyChartNode } from "./EnergyChartNode.js";
+import { SimulationControlBar } from "./SimulationControlBar.js";
+import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
 
 /**
  * Screen-specific string properties for info dialog and screen summary.
@@ -49,14 +39,13 @@ export type ScreenStringProperties = {
  * Options for screen summary content.
  */
 export type ScreenSummaryOptions = {
-  screenName: string;
-  screenDescription: string;
+  // What this screen is for; read first in the screen summary's play-area paragraph
+  screenDescriptionStringProperty: TReadOnlyProperty<string>;
 };
 
 export abstract class BaseScreenView extends ScreenView {
   protected readonly resetButton: ResetAllButton;
-  protected readonly model:
-    BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+  protected readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
 
   // Common components (may be undefined for screens that don't use them)
   protected energyChart?: EnergyChartNode;
@@ -75,10 +64,7 @@ export abstract class BaseScreenView extends ScreenView {
     options?: ScreenViewOptions,
   ) {
     // Create screen summary content before calling super()
-    const screenSummaryContent = BaseScreenView.createScreenSummaryContent(
-      model,
-      screenSummaryOptions,
-    );
+    const screenSummaryContent = BaseScreenView.createScreenSummaryContent(model, screenSummaryOptions);
 
     super({
       ...options,
@@ -105,7 +91,7 @@ export abstract class BaseScreenView extends ScreenView {
       bottom: this.layoutBounds.maxY - 10,
 
       // PDOM
-      innerContent: "Reset All",
+      innerContent: stringManager.getA11yStrings().controls.resetAllStringProperty,
       // TODO: Add helpText when PhET accessibility is fully configured
       // helpText: "Return all parameters to their initial values. Keyboard shortcut: Alt+R.",
     });
@@ -164,12 +150,7 @@ export abstract class BaseScreenView extends ScreenView {
     }
 
     // Create control panel with optional configuration
-    this.controlPanel = new ControlPanelNode(
-      model,
-      viewState,
-      this.listBoxParent,
-      controlPanelOptions,
-    );
+    this.controlPanel = new ControlPanelNode(model, viewState, this.listBoxParent, controlPanelOptions);
     this.controlPanel.left = chartsWidth + margin * 2;
     this.controlPanel.top = margin;
 
@@ -302,7 +283,7 @@ export abstract class BaseScreenView extends ScreenView {
    * @param dt - The time step in seconds
    */
 
-  public step(_dt: number): void {
+  public override step(_dt: number): void {
     // Base implementation - subclasses should override
   }
 
@@ -314,48 +295,48 @@ export abstract class BaseScreenView extends ScreenView {
    */
   private static createScreenSummaryContent(
     model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
-    _options: ScreenSummaryOptions,
+    options: ScreenSummaryOptions,
   ): ScreenSummaryContent {
-    // Create dynamic description of current state
-    const currentStateProperty = new DerivedProperty(
-      [model.potentialTypeProperty, model.selectedEnergyLevelIndexProperty],
-      (potentialType, levelIndex) => {
-        const energyLevels = model.getEnergyLevels();
-        const potentialName = QPPWDescriber.getPotentialTypeName(potentialType);
+    const summaryStrings = stringManager.getA11yStrings().screenSummary;
 
-        if (energyLevels.length === 0) {
-          return `Currently exploring a ${potentialName} potential well. No bound states found.`;
+    // Live description of the current state. The locale string Properties are dependencies so the
+    // sentence is rebuilt on a language change as well as on a model change.
+    const currentStateProperty = new DerivedProperty(
+      [
+        model.potentialTypeProperty,
+        model.selectedEnergyLevelIndexProperty,
+        summaryStrings.currentStatePatternStringProperty,
+        summaryStrings.currentStateNoStatesPatternStringProperty,
+      ],
+      (potentialType, levelIndex, currentStatePattern, noStatesPattern) => {
+        const energyLevels = model.getEnergyLevels();
+        const potential = QPPWDescriber.getPotentialTypeName(potentialType);
+
+        // The selection can briefly exceed the level count until the model clamps it on its next step
+        const energy = energyLevels[levelIndex];
+        if (energy === undefined) {
+          return StringUtils.fillIn(noStatesPattern, { potential: potential });
         }
 
-        const energy = energyLevels[levelIndex];
-        const levelNumber = levelIndex + 1;
-        const totalLevels = energyLevels.length;
-
-        return (
-          `Currently exploring a ${potentialName} potential well. ` +
-          `Selected energy level ${levelNumber} of ${totalLevels} ` +
-          `with energy ${energy.toFixed(3)} electron volts.`
-        );
+        return StringUtils.fillIn(currentStatePattern, {
+          potential: potential,
+          level: levelIndex + 1,
+          total: energyLevels.length,
+          energy: energy.toFixed(3),
+        });
       },
     );
 
-    // Create dynamic description of parameters
     const parametersProperty = new DerivedProperty(
-      [model.particleMassProperty, model.wellWidthProperty],
-      (mass, width) => {
-        return (
-          `Particle mass: ${mass.toFixed(2)} electron masses. ` +
-          `Well width: ${width.toFixed(2)} nanometers.`
-        );
-      },
+      [model.particleMassProperty, model.wellWidthProperty, summaryStrings.parametersPatternStringProperty],
+      (mass, width, pattern) => StringUtils.fillIn(pattern, { mass: mass.toFixed(2), width: width.toFixed(2) }),
     );
 
-    // Create the ScreenSummaryContent with our dynamic properties
     return new ScreenSummaryContent({
-      playAreaContent: [currentStateProperty, parametersProperty],
-      controlAreaContent: new Property(
-        "Use controls to adjust potential type, particle mass, well dimensions, and other parameters.",
-      ),
+      playAreaContent: options.screenDescriptionStringProperty,
+      controlAreaContent: summaryStrings.controlAreaStringProperty,
+      currentDetailsContent: [currentStateProperty, parametersProperty],
+      interactionHintContent: summaryStrings.interactionHintStringProperty,
     });
   }
 
@@ -372,10 +353,7 @@ export abstract class BaseScreenView extends ScreenView {
    * @param playAreaChildren - Nodes to add to the play area (charts, visualizations)
    * @param controlAreaChildren - Nodes to add to the control area (control panels)
    */
-  protected setupPDOMStructure(
-    playAreaChildren: Node[],
-    controlAreaChildren: Node[],
-  ): void {
+  protected setupPDOMStructure(playAreaChildren: Node[], controlAreaChildren: Node[]): void {
     // Add children to the parent ScreenView's PDOM nodes
     this.pdomPlayAreaNode.pdomOrder = playAreaChildren;
     this.pdomControlAreaNode.pdomOrder = controlAreaChildren;

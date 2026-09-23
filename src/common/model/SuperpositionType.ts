@@ -7,14 +7,16 @@ import qppw from "../../QPPWNamespace.js";
 /**
  * Type of superposition state
  */
-export enum SuperpositionType {
-  PSI_I_PSI_J = "psiIPsiJ",
-  SINGLE = "eigenfunction",
-  LOCALIZED_NARROW = "localizedNarrow",
-  LOCALIZED_WIDE = "localizedWide",
-  COHERENT = "coherent",
-  CUSTOM = "custom",
-}
+export const SuperpositionType = {
+  PSI_I_PSI_J: "psiIPsiJ",
+  SINGLE: "eigenfunction",
+  LOCALIZED_NARROW: "localizedNarrow",
+  LOCALIZED_WIDE: "localizedWide",
+  COHERENT: "coherent",
+  CUSTOM: "custom",
+} as const;
+
+export type SuperpositionType = (typeof SuperpositionType)[keyof typeof SuperpositionType];
 
 /**
  * Configuration for a superposition state

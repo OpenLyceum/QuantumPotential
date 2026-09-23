@@ -3,9 +3,22 @@
  * It provides StringProperty instances for all translatable strings in the application.
  */
 
-import { LocalizedString, ReadOnlyProperty } from "scenerystack";
-import strings_en from "./strings_en.json";
-import strings_fr from "./strings_fr.json";
+import { LocalizedString, type ReadOnlyProperty } from "scenerystack";
+import stringsEn from "./strings_en.json";
+import stringsEs from "./strings_es.json";
+import stringsFr from "./strings_fr.json";
+
+// ── Compile-time key-parity check ─────────────────────────────────────────────
+// English is the canonical shape; every other locale must match it exactly.
+// TypeScript errors here if any locale file is missing (or adds) a key relative to English.
+// biome-ignore lint/complexity/noVoid: intentional compile-time type assertion
+void (stringsFr satisfies typeof stringsEn);
+// biome-ignore lint/complexity/noVoid: intentional compile-time type assertion
+void (stringsEn satisfies typeof stringsFr);
+// biome-ignore lint/complexity/noVoid: intentional compile-time type assertion
+void (stringsEs satisfies typeof stringsEn);
+// biome-ignore lint/complexity/noVoid: intentional compile-time type assertion
+void (stringsEn satisfies typeof stringsEs);
 
 /**
  * Manages all localized strings for the simulation
@@ -23,8 +36,9 @@ export class StringManager {
   private constructor() {
     // Create localized string properties
     this.stringProperties = LocalizedString.getNestedStringProperties({
-      en: strings_en,
-      fr: strings_fr,
+      en: stringsEn,
+      fr: stringsFr,
+      es: stringsEs,
     });
   }
 
@@ -53,10 +67,8 @@ export class StringManager {
     return {
       introStringProperty: this.stringProperties.introScreenStringProperty,
       oneWellStringProperty: this.stringProperties.oneWellScreenStringProperty,
-      twoWellsStringProperty:
-        this.stringProperties.twoWellsScreenStringProperty,
-      manyWellsStringProperty:
-        this.stringProperties.manyWellsScreenStringProperty,
+      twoWellsStringProperty: this.stringProperties.twoWellsScreenStringProperty,
+      manyWellsStringProperty: this.stringProperties.manyWellsScreenStringProperty,
     };
   }
 
@@ -65,19 +77,13 @@ export class StringManager {
    */
   public getPreferencesLabels() {
     return {
-      preferencesStringProperty:
-        this.stringProperties.preferencesStringProperty,
-      numericalMethodStringProperty:
-        this.stringProperties.numericalMethodStringProperty,
-      numericalMethodDescriptionStringProperty:
-        this.stringProperties.numericalMethodDescriptionStringProperty,
-      autoPauseWhenTabHiddenStringProperty:
-        this.stringProperties.autoPauseWhenTabHiddenStringProperty,
-      autoPauseDescriptionStringProperty:
-        this.stringProperties.autoPauseDescriptionStringProperty,
+      preferencesStringProperty: this.stringProperties.preferencesStringProperty,
+      numericalMethodStringProperty: this.stringProperties.numericalMethodStringProperty,
+      numericalMethodDescriptionStringProperty: this.stringProperties.numericalMethodDescriptionStringProperty,
+      autoPauseWhenTabHiddenStringProperty: this.stringProperties.autoPauseWhenTabHiddenStringProperty,
+      autoPauseDescriptionStringProperty: this.stringProperties.autoPauseDescriptionStringProperty,
       gridPointsStringProperty: this.stringProperties.gridPointsStringProperty,
-      gridPointsDescriptionStringProperty:
-        this.stringProperties.gridPointsDescriptionStringProperty,
+      gridPointsDescriptionStringProperty: this.stringProperties.gridPointsDescriptionStringProperty,
     };
   }
 
@@ -87,13 +93,11 @@ export class StringManager {
   public getNumericalMethodNames() {
     return {
       numerovStringProperty: this.stringProperties.numerovStringProperty,
-      matrixNumerovStringProperty:
-        this.stringProperties.matrixNumerovStringProperty,
+      matrixNumerovStringProperty: this.stringProperties.matrixNumerovStringProperty,
       dvrStringProperty: this.stringProperties.dvrStringProperty,
       fghStringProperty: this.stringProperties.fghStringProperty,
       spectralStringProperty: this.stringProperties.spectralStringProperty,
-      quantumBoundStringProperty:
-        this.stringProperties.quantumBoundStringProperty,
+      quantumBoundStringProperty: this.stringProperties.quantumBoundStringProperty,
     };
   }
 
@@ -102,16 +106,12 @@ export class StringManager {
    */
   public getNumericalMethodDescriptions() {
     return {
-      numerovStringProperty:
-        this.stringProperties.numerovDescriptionStringProperty,
-      matrixNumerovStringProperty:
-        this.stringProperties.matrixNumerovDescriptionStringProperty,
+      numerovStringProperty: this.stringProperties.numerovDescriptionStringProperty,
+      matrixNumerovStringProperty: this.stringProperties.matrixNumerovDescriptionStringProperty,
       dvrStringProperty: this.stringProperties.dvrDescriptionStringProperty,
       fghStringProperty: this.stringProperties.fghDescriptionStringProperty,
-      spectralStringProperty:
-        this.stringProperties.spectralDescriptionStringProperty,
-      quantumBoundStringProperty:
-        this.stringProperties.quantumBoundDescriptionStringProperty,
+      spectralStringProperty: this.stringProperties.spectralDescriptionStringProperty,
+      quantumBoundStringProperty: this.stringProperties.quantumBoundDescriptionStringProperty,
     };
   }
 
@@ -683,8 +683,7 @@ export class StringManager {
   }
 
   get valueWithElectronVoltsPerNanometerStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties
-      .valueWithElectronVoltsPerNanometerStringProperty;
+    return this.stringProperties.valueWithElectronVoltsPerNanometerStringProperty;
   }
 
   get percentageValueStringProperty(): ReadOnlyProperty<string> {
@@ -696,37 +695,34 @@ export class StringManager {
    */
   public getKeyboardShortcutsStrings() {
     return {
-      titleStringProperty:
-        this.stringProperties.keyboardShortcutsTitleStringProperty,
-      simulationControlsStringProperty:
-        this.stringProperties.keyboardShortcutsSimulationControlsStringProperty,
-      playPauseDescriptionStringProperty:
-        this.stringProperties
-          .keyboardShortcutsPlayPauseDescriptionStringProperty,
-      resetDescriptionStringProperty:
-        this.stringProperties.keyboardShortcutsResetDescriptionStringProperty,
-      energyLevelNavigationStringProperty:
-        this.stringProperties
-          .keyboardShortcutsEnergyLevelNavigationStringProperty,
+      energyLevelNavigationStringProperty: this.stringProperties.keyboardShortcutsEnergyLevelNavigationStringProperty,
       arrowUpRightDescriptionStringProperty:
-        this.stringProperties
-          .keyboardShortcutsArrowUpRightDescriptionStringProperty,
+        this.stringProperties.keyboardShortcutsArrowUpRightDescriptionStringProperty,
       arrowDownLeftDescriptionStringProperty:
-        this.stringProperties
-          .keyboardShortcutsArrowDownLeftDescriptionStringProperty,
-      homeDescriptionStringProperty:
-        this.stringProperties.keyboardShortcutsHomeDescriptionStringProperty,
-      endDescriptionStringProperty:
-        this.stringProperties.keyboardShortcutsEndDescriptionStringProperty,
-      graphInteractionsStringProperty:
-        this.stringProperties.keyboardShortcutsGraphInteractionsStringProperty,
-      doubleClickResetZoomStringProperty:
-        this.stringProperties
-          .keyboardShortcutsDoubleClickResetZoomStringProperty,
-      mouseWheelZoomStringProperty:
-        this.stringProperties.keyboardShortcutsMouseWheelZoomStringProperty,
-      dragToPanStringProperty:
-        this.stringProperties.keyboardShortcutsDragToPanStringProperty,
+        this.stringProperties.keyboardShortcutsArrowDownLeftDescriptionStringProperty,
+      homeDescriptionStringProperty: this.stringProperties.keyboardShortcutsHomeDescriptionStringProperty,
+      endDescriptionStringProperty: this.stringProperties.keyboardShortcutsEndDescriptionStringProperty,
+    };
+  }
+
+  /**
+   * Accessibility strings (PDOM names, descriptions, help text and live alerts), plus the visible
+   * chart/tool labels that sit alongside them. Nested exactly like the `a11y` group in the locale
+   * files; `*Pattern` strings take `{{placeholders}}` for StringUtils.fillIn.
+   */
+  public getA11yStrings(): typeof this.stringProperties.a11y {
+    return this.stringProperties.a11y;
+  }
+
+  /**
+   * Screen-summary descriptions, one per screen.
+   */
+  public getScreenSummaryDescriptions() {
+    return {
+      introStringProperty: this.stringProperties.introDescriptionStringProperty,
+      oneWellStringProperty: this.stringProperties.oneWellScreenSummaryStringProperty,
+      twoWellsStringProperty: this.stringProperties.twoWellsScreenSummaryStringProperty,
+      manyWellsStringProperty: this.stringProperties.manyWellsScreenSummaryStringProperty,
     };
   }
 

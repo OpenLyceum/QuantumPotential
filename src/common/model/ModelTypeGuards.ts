@@ -3,11 +3,11 @@
  * These functions provide type-safe checks without manual type assertions.
  */
 
-import type { ScreenModel } from "./ScreenModels.js";
 import type { IntroModel } from "../../intro/model/IntroModel.js";
+import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
-import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
+import type { ScreenModel } from "./ScreenModels.js";
 
 /**
  * Type guard to check if a model is IntroModel.
@@ -23,10 +23,7 @@ export function isIntroModel(model: ScreenModel): model is IntroModel {
  * OneWellModel has coherent displacement and superposition features.
  */
 export function isOneWellModel(model: ScreenModel): model is OneWellModel {
-  return (
-    "coherentDisplacementProperty" in model &&
-    "superpositionTypeProperty" in model
-  );
+  return "coherentDisplacementProperty" in model && "superpositionTypeProperty" in model;
 }
 
 /**
@@ -34,9 +31,7 @@ export function isOneWellModel(model: ScreenModel): model is OneWellModel {
  * TwoWellsModel has well separation but not multiple wells.
  */
 export function isTwoWellsModel(model: ScreenModel): model is TwoWellsModel {
-  return (
-    "wellSeparationProperty" in model && !("numberOfWellsProperty" in model)
-  );
+  return "wellSeparationProperty" in model && !("numberOfWellsProperty" in model);
 }
 
 /**
@@ -51,9 +46,7 @@ export function isManyWellsModel(model: ScreenModel): model is ManyWellsModel {
  * Type guard to check if a model has barrier height property.
  * This is specific to certain potentials in OneWellModel and IntroModel.
  */
-export function hasBarrierHeight(
-  model: ScreenModel,
-): model is OneWellModel | IntroModel {
+export function hasBarrierHeight(model: ScreenModel): model is OneWellModel | IntroModel {
   return "barrierHeightProperty" in model;
 }
 
@@ -61,9 +54,7 @@ export function hasBarrierHeight(
  * Type guard to check if a model has potential offset property.
  * This is specific to certain potentials in OneWellModel and IntroModel.
  */
-export function hasPotentialOffset(
-  model: ScreenModel,
-): model is OneWellModel | IntroModel {
+export function hasPotentialOffset(model: ScreenModel): model is OneWellModel | IntroModel {
   return "potentialOffsetProperty" in model;
 }
 
@@ -71,9 +62,7 @@ export function hasPotentialOffset(
  * Type guard to check if a model has well separation property.
  * This applies to both TwoWellsModel and ManyWellsModel.
  */
-export function hasWellSeparation(
-  model: ScreenModel,
-): model is TwoWellsModel | ManyWellsModel {
+export function hasWellSeparation(model: ScreenModel): model is TwoWellsModel | ManyWellsModel {
   return "wellSeparationProperty" in model;
 }
 
@@ -81,9 +70,7 @@ export function hasWellSeparation(
  * Type guard to check if a model has superposition configuration.
  * This applies to OneWellModel, TwoWellsModel, and ManyWellsModel.
  */
-export function hasSuperpositionConfig(
-  model: ScreenModel,
-): model is OneWellModel | TwoWellsModel | ManyWellsModel {
+export function hasSuperpositionConfig(model: ScreenModel): model is OneWellModel | TwoWellsModel | ManyWellsModel {
   return "superpositionConfigProperty" in model;
 }
 
@@ -107,9 +94,7 @@ export function hasElectricField(model: ScreenModel): model is ManyWellsModel {
  * Type guard to check if a model has the getClassicalTurningPoints method.
  * This applies to OneWellModel and IntroModel.
  */
-export function hasClassicalTurningPoints(
-  model: ScreenModel,
-): model is OneWellModel | IntroModel {
+export function hasClassicalTurningPoints(model: ScreenModel): model is OneWellModel | IntroModel {
   return "getClassicalTurningPoints" in model;
 }
 
@@ -117,8 +102,6 @@ export function hasClassicalTurningPoints(
  * Type guard to check if a model has the getClassicallyForbiddenProbability method.
  * This applies to OneWellModel and IntroModel.
  */
-export function hasClassicallyForbiddenProbability(
-  model: ScreenModel,
-): model is OneWellModel | IntroModel {
+export function hasClassicallyForbiddenProbability(model: ScreenModel): model is OneWellModel | IntroModel {
   return "getClassicallyForbiddenProbability" in model;
 }

@@ -3,14 +3,14 @@
  * Handles chart setup, coordinate transformations, and shared visual elements.
  */
 
-import { Node, Line } from "scenerystack/scenery";
-import { Shape } from "scenerystack/kite";
 import { NumberProperty } from "scenerystack/axon";
+import { ChartRectangle, ChartTransform } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
-import { ChartTransform, ChartRectangle } from "scenerystack/bamboo";
+import { Shape } from "scenerystack/kite";
+import { Line, Node } from "scenerystack/scenery";
+import QPPWColors from "../../QPPWColors.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
-import QPPWColors from "../../QPPWColors.js";
 
 export type ChartMargins = {
   left: number;
@@ -54,11 +54,7 @@ export abstract class BaseChartNode extends Node {
   protected readonly zeroLine: Line;
   protected axesNode!: Node;
 
-  protected constructor(
-    model: ScreenModel,
-    viewState: ScreenViewState,
-    options: ChartOptions = {},
-  ) {
+  protected constructor(model: ScreenModel, viewState: ScreenViewState, options: ChartOptions = {}) {
     super();
 
     this.model = model;
@@ -72,10 +68,8 @@ export abstract class BaseChartNode extends Node {
       bottom: 50,
     };
 
-    this.plotWidth =
-      this.chartWidth - this.chartMargins.left - this.chartMargins.right;
-    this.plotHeight =
-      this.chartHeight - this.chartMargins.top - this.chartMargins.bottom;
+    this.plotWidth = this.chartWidth - this.chartMargins.left - this.chartMargins.right;
+    this.plotHeight = this.chartHeight - this.chartMargins.top - this.chartMargins.bottom;
 
     // Initialize view range properties
     const xRange = options.xRange ?? { min: -4, max: 4 };
@@ -106,12 +100,7 @@ export abstract class BaseChartNode extends Node {
 
     // Create a clipped content node for all plot elements
     this.plotContentNode = new Node({
-      clipArea: Shape.rectangle(
-        this.chartMargins.left,
-        this.chartMargins.top,
-        this.plotWidth,
-        this.plotHeight,
-      ),
+      clipArea: Shape.rectangle(this.chartMargins.left, this.chartMargins.top, this.plotWidth, this.plotHeight),
     });
     this.addChild(this.plotContentNode);
 
@@ -131,12 +120,8 @@ export abstract class BaseChartNode extends Node {
    * Update the ChartTransform when view ranges change
    */
   protected updateChartTransform(): void {
-    this.chartTransform.setModelXRange(
-      new Range(this.xMinProperty.value, this.xMaxProperty.value),
-    );
-    this.chartTransform.setModelYRange(
-      new Range(this.yMinProperty.value, this.yMaxProperty.value),
-    );
+    this.chartTransform.setModelXRange(new Range(this.xMinProperty.value, this.xMaxProperty.value));
+    this.chartTransform.setModelYRange(new Range(this.yMinProperty.value, this.yMaxProperty.value));
   }
 
   /**
@@ -149,12 +134,7 @@ export abstract class BaseChartNode extends Node {
     // Only show zero line if zero is within the visible range
     if (y <= 0 && yMax >= 0) {
       const zeroY = this.dataToViewY(0);
-      this.zeroLine.setLine(
-        this.chartMargins.left,
-        zeroY,
-        this.chartMargins.left + this.plotWidth,
-        zeroY,
-      );
+      this.zeroLine.setLine(this.chartMargins.left, zeroY, this.chartMargins.left + this.plotWidth, zeroY);
       this.zeroLine.visible = true;
     } else {
       this.zeroLine.visible = false;
@@ -167,9 +147,7 @@ export abstract class BaseChartNode extends Node {
   protected dataToViewX(x: number): number {
     return (
       this.chartMargins.left +
-      ((x - this.xMinProperty.value) /
-        (this.xMaxProperty.value - this.xMinProperty.value)) *
-        this.plotWidth
+      ((x - this.xMinProperty.value) / (this.xMaxProperty.value - this.xMinProperty.value)) * this.plotWidth
     );
   }
 
@@ -180,9 +158,7 @@ export abstract class BaseChartNode extends Node {
     return (
       this.chartMargins.top +
       this.plotHeight -
-      ((y - this.yMinProperty.value) /
-        (this.yMaxProperty.value - this.yMinProperty.value)) *
-        this.plotHeight
+      ((y - this.yMinProperty.value) / (this.yMaxProperty.value - this.yMinProperty.value)) * this.plotHeight
     );
   }
 
@@ -192,8 +168,7 @@ export abstract class BaseChartNode extends Node {
   protected viewToDataX(viewX: number): number {
     return (
       this.xMinProperty.value +
-      ((viewX - this.chartMargins.left) / this.plotWidth) *
-        (this.xMaxProperty.value - this.xMinProperty.value)
+      ((viewX - this.chartMargins.left) / this.plotWidth) * (this.xMaxProperty.value - this.xMinProperty.value)
     );
   }
 
@@ -212,20 +187,14 @@ export abstract class BaseChartNode extends Node {
    * Clamp x-coordinate to the chart's x-axis range
    */
   protected clampX(x: number): number {
-    return Math.max(
-      this.xMinProperty.value,
-      Math.min(this.xMaxProperty.value, x),
-    );
+    return Math.max(this.xMinProperty.value, Math.min(this.xMaxProperty.value, x));
   }
 
   /**
    * Clamp y-coordinate to the chart's y-axis range
    */
   protected clampY(y: number): number {
-    return Math.max(
-      this.yMinProperty.value,
-      Math.min(this.yMaxProperty.value, y),
-    );
+    return Math.max(this.yMinProperty.value, Math.min(this.yMaxProperty.value, y));
   }
 
   /**

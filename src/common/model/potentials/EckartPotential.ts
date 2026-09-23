@@ -3,9 +3,9 @@
  * V(x) = V₀/cosh²(x/a) + V₁
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { EckartPotentialSolution } from "../analytical-solutions/eckart-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class EckartPotential extends AnalyticalPotential {
   private potentialDepth: number;
@@ -19,18 +19,8 @@ export class EckartPotential extends AnalyticalPotential {
    * @param wellWidth - Well width parameter (a) in meters
    * @param mass - Particle mass in kg
    */
-  constructor(
-    potentialDepth: number,
-    barrierHeight: number,
-    wellWidth: number,
-    mass: number,
-  ) {
-    const solution = new EckartPotentialSolution(
-      potentialDepth,
-      barrierHeight,
-      wellWidth,
-      mass,
-    );
+  constructor(potentialDepth: number, barrierHeight: number, wellWidth: number, mass: number) {
+    const solution = new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, mass);
     super(solution, mass);
     this.potentialDepth = potentialDepth;
     this.barrierHeight = barrierHeight;

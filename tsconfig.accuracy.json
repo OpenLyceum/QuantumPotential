@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": false,
+    // The legacy accuracy/diagnostic scripts under tests/accuracy/ predate the fleet's strict
+    // index-access flags. They are run by hand (npm run test:accuracy etc.), not by CI.
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "types": ["node"]
+  },
+  "include": ["tests/accuracy"]
+}

@@ -13,12 +13,8 @@
  *   Proc. R. Soc. A 472: 20150534. https://doi.org/10.1098/rspa.2015.0534
  */
 
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-} from "../PotentialFunction.js";
 import { solveDVR } from "../DVRSolver.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 
 /**
  * Check if a wavefunction has odd parity: ψ(-x) = -ψ(x)
@@ -39,8 +35,8 @@ function isOddParity(wavefunction: number[], _xGrid: number[]): boolean {
     const rightIdx = midIdx + i;
 
     if (leftIdx >= 0 && rightIdx < wavefunction.length) {
-      const leftVal = wavefunction[leftIdx];
-      const rightVal = wavefunction[rightIdx];
+      const leftVal = wavefunction[leftIdx]!;
+      const rightVal = wavefunction[rightIdx]!;
       const magnitude = Math.max(Math.abs(leftVal), Math.abs(rightVal));
 
       if (magnitude > 1e-10) {
@@ -100,35 +96,25 @@ export function solveCoulomb1DNumerical(
   const numStatesToRequest = numStates * 3;
 
   // Solve on full domain
-  const result = solver(
-    coulomb1DPotential,
-    mass,
-    numStatesToRequest,
-    gridConfig,
-    false,
-  );
+  const result = solver(coulomb1DPotential, mass, numStatesToRequest, gridConfig, false);
 
   // Filter for odd-parity states
   const oddEnergies: number[] = [];
   const oddWavefunctions: number[][] = [];
 
-  for (
-    let i = 0;
-    i < result.energies.length && oddEnergies.length < numStates;
-    i++
-  ) {
-    if (isOddParity(result.wavefunctions[i], result.xGrid)) {
-      oddEnergies.push(result.energies[i]);
-      oddWavefunctions.push(result.wavefunctions[i]);
+  for (let i = 0; i < result.energies.length && oddEnergies.length < numStates; i++) {
+    if (isOddParity(result.wavefunctions[i]!, result.xGrid)) {
+      oddEnergies.push(result.energies[i]!);
+      oddWavefunctions.push(result.wavefunctions[i]!);
     }
   }
 
   // Sort by energy (should already be sorted, but make sure)
   const indices = oddEnergies.map((_, i) => i);
-  indices.sort((a, b) => oddEnergies[a] - oddEnergies[b]);
+  indices.sort((a, b) => oddEnergies[a]! - oddEnergies[b]!);
 
-  const sortedEnergies = indices.map((i) => oddEnergies[i]);
-  const sortedWavefunctions = indices.map((i) => oddWavefunctions[i]);
+  const sortedEnergies = indices.map((i) => oddEnergies[i]!);
+  const sortedWavefunctions = indices.map((i) => oddWavefunctions[i]!);
 
   return {
     energies: sortedEnergies,

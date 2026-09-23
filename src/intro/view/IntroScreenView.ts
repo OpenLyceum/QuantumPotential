@@ -3,19 +3,16 @@
  * It displays quantum wells without play/pause controls or superposition options.
  */
 
-import { ScreenViewOptions } from "scenerystack/sim";
+import type { TReadOnlyProperty } from "scenerystack/axon";
 import { Node } from "scenerystack/scenery";
-import { TReadOnlyProperty } from "scenerystack/axon";
-import {
-  BaseScreenView,
-  ScreenStringProperties,
-} from "../../common/view/BaseScreenView.js";
-import { IntroModel } from "../model/IntroModel.js";
+import type { ScreenViewOptions } from "scenerystack/sim";
+import { BaseScreenView, type ScreenStringProperties } from "../../common/view/BaseScreenView.js";
 import { EnergyChartNode } from "../../common/view/EnergyChartNode.js";
 import { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import { WavenumberChartNode } from "../../common/view/WavenumberChartNode.js";
-import { IntroControlPanelNode } from "./IntroControlPanelNode.js";
 import stringManager from "../../i18n/StringManager.js";
+import type { IntroModel } from "../model/IntroModel.js";
+import { IntroControlPanelNode } from "./IntroControlPanelNode.js";
 import { IntroViewState } from "./IntroViewState.js";
 
 export class IntroScreenView extends BaseScreenView {
@@ -28,9 +25,7 @@ export class IntroScreenView extends BaseScreenView {
     super(
       model,
       {
-        screenName: "Intro",
-        screenDescription:
-          "Intro screen for exploring basic quantum bound states with simplified controls.",
+        screenDescriptionStringProperty: stringManager.getScreenSummaryDescriptions().introStringProperty,
       },
       options,
     );
@@ -83,12 +78,10 @@ export class IntroScreenView extends BaseScreenView {
     this.energyChart.top = 10;
 
     this.probabilityChart.left = margin;
-    this.probabilityChart.top =
-      this.energyChart.top + energyChartHeight + chartSpacing;
+    this.probabilityChart.top = this.energyChart.top + energyChartHeight + chartSpacing;
 
     this.waveFunctionChart.left = margin;
-    this.waveFunctionChart.top =
-      this.probabilityChart.top + probabilityChartHeight + chartSpacing;
+    this.waveFunctionChart.top = this.probabilityChart.top + probabilityChartHeight + chartSpacing;
 
     this.wavenumberChart.left = 600;
     this.wavenumberChart.top = 400;
@@ -102,7 +95,6 @@ export class IntroScreenView extends BaseScreenView {
       this.viewState,
       this.listBoxParent,
       this.probabilityChart,
-      this.waveFunctionChart,
     );
     this.introControlPanel.left = chartsWidth + margin * 2;
     this.introControlPanel.top = margin;
@@ -126,12 +118,7 @@ export class IntroScreenView extends BaseScreenView {
     // Set PDOM navigation order for play area and control area
     this.setupPDOMStructure(
       // Play area children
-      [
-        this.energyChart!,
-        this.probabilityChart,
-        this.waveFunctionChart!,
-        this.wavenumberChart,
-      ],
+      [this.energyChart!, this.probabilityChart, this.waveFunctionChart!, this.wavenumberChart],
       // Control area children
       [this.introControlPanel],
     );
@@ -146,8 +133,7 @@ export class IntroScreenView extends BaseScreenView {
       descriptionStringProperty: stringManager.introDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.introKeyConceptsStringProperty,
       interactionsStringProperty: stringManager.introInteractionsStringProperty,
-      educationalContentStringProperty:
-        stringManager.introEducationalContentStringProperty,
+      educationalContentStringProperty: stringManager.introEducationalContentStringProperty,
     };
   }
 

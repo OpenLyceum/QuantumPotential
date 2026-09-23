@@ -3,9 +3,9 @@
  * V(x) = V₀(1 - 2|x|/L) for |x| < L/2, V(x) = V_offset otherwise
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { TriangularPotentialSolution } from "../analytical-solutions/triangular-potential.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class TriangularPotential extends AnalyticalPotential {
   private wellDepth: number;
@@ -19,18 +19,8 @@ export class TriangularPotential extends AnalyticalPotential {
    * @param energyOffset - Energy offset outside the well in Joules
    * @param mass - Particle mass in kg
    */
-  constructor(
-    wellDepth: number,
-    wellWidth: number,
-    energyOffset: number,
-    mass: number,
-  ) {
-    const solution = new TriangularPotentialSolution(
-      wellDepth,
-      wellWidth,
-      energyOffset,
-      mass,
-    );
+  constructor(wellDepth: number, wellWidth: number, energyOffset: number, mass: number) {
+    const solution = new TriangularPotentialSolution(wellDepth, wellWidth, energyOffset, mass);
     super(solution, mass);
     this.wellDepth = wellDepth;
     this.wellWidth = wellWidth;

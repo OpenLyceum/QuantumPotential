@@ -3,8 +3,7 @@
  * Colors are defined as ProfileColorProperty instances which can adapt to different color profiles.
  */
 
-import { ProfileColorProperty } from "scenerystack/scenery";
-import { Color } from "scenerystack/scenery";
+import { Color, ProfileColorProperty } from "scenerystack/scenery";
 import qppw from "./QPPWNamespace.js";
 
 const QPPWColors = {
@@ -31,50 +30,30 @@ const QPPWColors = {
     projector: new Color(0, 100, 200), // Darker blue for projector
   }),
 
-  wavefunctionImaginaryProperty: new ProfileColorProperty(
-    qppw,
-    "wavefunctionImaginary",
-    {
-      default: new Color(255, 100, 0), // Orange
-      projector: new Color(200, 80, 0), // Darker orange for projector
-    },
-  ),
+  wavefunctionImaginaryProperty: new ProfileColorProperty(qppw, "wavefunctionImaginary", {
+    default: new Color(255, 100, 0), // Orange
+    projector: new Color(200, 80, 0), // Darker orange for projector
+  }),
 
-  wavefunctionProbabilityProperty: new ProfileColorProperty(
-    qppw,
-    "wavefunctionProbability",
-    {
-      default: new Color(255, 200, 0), // Gold/yellow
-      projector: new Color(200, 150, 0), // Darker yellow for projector
-    },
-  ),
+  wavefunctionProbabilityProperty: new ProfileColorProperty(qppw, "wavefunctionProbability", {
+    default: new Color(255, 200, 0), // Gold/yellow
+    projector: new Color(200, 150, 0), // Darker yellow for projector
+  }),
 
-  wavefunctionMagnitudeProperty: new ProfileColorProperty(
-    qppw,
-    "wavefunctionMagnitude",
-    {
-      default: new Color(160, 32, 240), // Purple
-      projector: new Color(128, 0, 128), // Darker purple for projector
-    },
-  ),
+  wavefunctionMagnitudeProperty: new ProfileColorProperty(qppw, "wavefunctionMagnitude", {
+    default: new Color(160, 32, 240), // Purple
+    projector: new Color(128, 0, 128), // Darker purple for projector
+  }),
 
-  wavefunctionProbabilityFillProperty: new ProfileColorProperty(
-    qppw,
-    "wavefunctionProbabilityFill",
-    {
-      default: new Color(255, 215, 0, 0.2), // Semi-transparent gold
-      projector: new Color(200, 150, 0, 0.3), // Semi-transparent darker gold for projector
-    },
-  ),
+  wavefunctionProbabilityFillProperty: new ProfileColorProperty(qppw, "wavefunctionProbabilityFill", {
+    default: new Color(255, 215, 0, 0.2), // Semi-transparent gold
+    projector: new Color(200, 150, 0, 0.3), // Semi-transparent darker gold for projector
+  }),
 
-  classicalProbabilityProperty: new ProfileColorProperty(
-    qppw,
-    "classicalProbability",
-    {
-      default: new Color(0, 255, 200), // Cyan/turquoise
-      projector: new Color(0, 180, 140), // Darker cyan for projector
-    },
-  ),
+  classicalProbabilityProperty: new ProfileColorProperty(qppw, "classicalProbability", {
+    default: new Color(0, 255, 200), // Cyan/turquoise
+    projector: new Color(0, 180, 140), // Darker cyan for projector
+  }),
 
   // Potential well colors
   potentialWellProperty: new ProfileColorProperty(qppw, "potentialWell", {
@@ -93,14 +72,10 @@ const QPPWColors = {
     projector: new Color(0, 150, 100), // Darker green for projector
   }),
 
-  energyLevelSelectedProperty: new ProfileColorProperty(
-    qppw,
-    "energyLevelSelected",
-    {
-      default: new Color(255, 255, 100), // Bright yellow
-      projector: new Color(200, 200, 0), // Darker yellow for projector
-    },
-  ),
+  energyLevelSelectedProperty: new ProfileColorProperty(qppw, "energyLevelSelected", {
+    default: new Color(255, 255, 100), // Bright yellow
+    projector: new Color(200, 200, 0), // Darker yellow for projector
+  }),
 
   // Grid and axis colors
   gridLineProperty: new ProfileColorProperty(qppw, "gridLine", {
@@ -131,117 +106,69 @@ const QPPWColors = {
   }),
 
   // Control panel specific colors (for ComboBox, buttons, etc.)
-  controlPanelBackgroundColorProperty: new ProfileColorProperty(
-    qppw,
-    "controlPanelBackground",
-    {
-      default: new Color(30, 30, 50), // Slightly lighter than main background
-      projector: new Color(250, 250, 255), // Almost white for projector
-    },
-  ),
+  controlPanelBackgroundColorProperty: new ProfileColorProperty(qppw, "controlPanelBackground", {
+    default: new Color(30, 30, 50), // Slightly lighter than main background
+    projector: new Color(250, 250, 255), // Almost white for projector
+  }),
 
-  controlPanelStrokeColorProperty: new ProfileColorProperty(
-    qppw,
-    "controlPanelStroke",
-    {
-      default: new Color(120, 120, 160), // Light purple-gray
-      projector: new Color(100, 100, 140), // Darker for projector
-    },
-  ),
+  controlPanelStrokeColorProperty: new ProfileColorProperty(qppw, "controlPanelStroke", {
+    default: new Color(120, 120, 160), // Light purple-gray
+    projector: new Color(100, 100, 140), // Darker for projector
+  }),
 
   // Forbidden region colors (for classically forbidden areas)
-  forbiddenRegionLightProperty: new ProfileColorProperty(
-    qppw,
-    "forbiddenRegionLight",
-    {
-      default: new Color(255, 200, 200, 0.1), // Very faint red
-      projector: new Color(255, 200, 200, 0.15), // Slightly more visible for projector
-    },
-  ),
+  forbiddenRegionLightProperty: new ProfileColorProperty(qppw, "forbiddenRegionLight", {
+    default: new Color(255, 200, 200, 0.1), // Very faint red
+    projector: new Color(255, 200, 200, 0.15), // Slightly more visible for projector
+  }),
 
-  forbiddenRegionDarkProperty: new ProfileColorProperty(
-    qppw,
-    "forbiddenRegionDark",
-    {
-      default: new Color(255, 200, 200, 0.3), // Semi-transparent red
-      projector: new Color(255, 200, 200, 0.4), // More visible for projector
-    },
-  ),
+  forbiddenRegionDarkProperty: new ProfileColorProperty(qppw, "forbiddenRegionDark", {
+    default: new Color(255, 200, 200, 0.3), // Semi-transparent red
+    projector: new Color(255, 200, 200, 0.4), // More visible for projector
+  }),
 
   // Measurement tool colors
-  areaMeasurementLightProperty: new ProfileColorProperty(
-    qppw,
-    "areaMeasurementLight",
-    {
-      default: new Color(100, 150, 255, 0.1), // Very faint blue
-      projector: new Color(100, 150, 255, 0.15), // Slightly more visible for projector
-    },
-  ),
+  areaMeasurementLightProperty: new ProfileColorProperty(qppw, "areaMeasurementLight", {
+    default: new Color(100, 150, 255, 0.1), // Very faint blue
+    projector: new Color(100, 150, 255, 0.15), // Slightly more visible for projector
+  }),
 
-  areaMeasurementDarkProperty: new ProfileColorProperty(
-    qppw,
-    "areaMeasurementDark",
-    {
-      default: new Color(100, 150, 255, 0.3), // Semi-transparent blue
-      projector: new Color(100, 150, 255, 0.4), // More visible for projector
-    },
-  ),
+  areaMeasurementDarkProperty: new ProfileColorProperty(qppw, "areaMeasurementDark", {
+    default: new Color(100, 150, 255, 0.3), // Semi-transparent blue
+    projector: new Color(100, 150, 255, 0.4), // More visible for projector
+  }),
 
   // Curvature tool colors
-  curvatureToolStrokeProperty: new ProfileColorProperty(
-    qppw,
-    "curvatureToolStroke",
-    {
-      default: new Color(255, 100, 100, 0.8), // Semi-transparent red
-      projector: new Color(200, 80, 80, 0.9), // Darker red for projector
-    },
-  ),
+  curvatureToolStrokeProperty: new ProfileColorProperty(qppw, "curvatureToolStroke", {
+    default: new Color(255, 100, 100, 0.8), // Semi-transparent red
+    projector: new Color(200, 80, 80, 0.9), // Darker red for projector
+  }),
 
-  curvatureToolFillLightProperty: new ProfileColorProperty(
-    qppw,
-    "curvatureToolFillLight",
-    {
-      default: new Color(255, 100, 100, 0.9), // Semi-transparent red
-      projector: new Color(200, 80, 80, 1), // Darker red for projector
-    },
-  ),
+  curvatureToolFillLightProperty: new ProfileColorProperty(qppw, "curvatureToolFillLight", {
+    default: new Color(255, 100, 100, 0.9), // Semi-transparent red
+    projector: new Color(200, 80, 80, 1), // Darker red for projector
+  }),
 
-  curvatureToolFillDarkProperty: new ProfileColorProperty(
-    qppw,
-    "curvatureToolFillDark",
-    {
-      default: new Color(255, 100, 100, 1), // Solid red
-      projector: new Color(200, 80, 80, 1), // Darker red for projector
-    },
-  ),
+  curvatureToolFillDarkProperty: new ProfileColorProperty(qppw, "curvatureToolFillDark", {
+    default: new Color(255, 100, 100, 1), // Solid red
+    projector: new Color(200, 80, 80, 1), // Darker red for projector
+  }),
 
   // Derivative tool colors
-  derivativeToolStrokeProperty: new ProfileColorProperty(
-    qppw,
-    "derivativeToolStroke",
-    {
-      default: new Color(100, 200, 100, 0.8), // Semi-transparent green
-      projector: new Color(80, 160, 80, 0.9), // Darker green for projector
-    },
-  ),
+  derivativeToolStrokeProperty: new ProfileColorProperty(qppw, "derivativeToolStroke", {
+    default: new Color(100, 200, 100, 0.8), // Semi-transparent green
+    projector: new Color(80, 160, 80, 0.9), // Darker green for projector
+  }),
 
-  derivativeToolFillLightProperty: new ProfileColorProperty(
-    qppw,
-    "derivativeToolFillLight",
-    {
-      default: new Color(100, 200, 100, 0.9), // Semi-transparent green
-      projector: new Color(80, 160, 80, 1), // Darker green for projector
-    },
-  ),
+  derivativeToolFillLightProperty: new ProfileColorProperty(qppw, "derivativeToolFillLight", {
+    default: new Color(100, 200, 100, 0.9), // Semi-transparent green
+    projector: new Color(80, 160, 80, 1), // Darker green for projector
+  }),
 
-  derivativeToolFillDarkProperty: new ProfileColorProperty(
-    qppw,
-    "derivativeToolFillDark",
-    {
-      default: new Color(100, 200, 100, 1), // Solid green
-      projector: new Color(80, 160, 80, 1), // Darker green for projector
-    },
-  ),
+  derivativeToolFillDarkProperty: new ProfileColorProperty(qppw, "derivativeToolFillDark", {
+    default: new Color(100, 200, 100, 1), // Solid green
+    projector: new Color(80, 160, 80, 1), // Darker green for projector
+  }),
 
   // Phase visualization
   phaseIndicatorProperty: new ProfileColorProperty(qppw, "phaseIndicator", {
@@ -250,23 +177,15 @@ const QPPWColors = {
   }),
 
   // Screen icon colors
-  iconBackgroundTopProperty: new ProfileColorProperty(
-    qppw,
-    "iconBackgroundTop",
-    {
-      default: new Color(26, 26, 58), // Dark blue-purple
-      projector: new Color(240, 240, 255), // Light for projector
-    },
-  ),
+  iconBackgroundTopProperty: new ProfileColorProperty(qppw, "iconBackgroundTop", {
+    default: new Color(26, 26, 58), // Dark blue-purple
+    projector: new Color(240, 240, 255), // Light for projector
+  }),
 
-  iconBackgroundBottomProperty: new ProfileColorProperty(
-    qppw,
-    "iconBackgroundBottom",
-    {
-      default: new Color(10, 10, 31), // Very dark blue
-      projector: new Color(255, 255, 255), // White for projector
-    },
-  ),
+  iconBackgroundBottomProperty: new ProfileColorProperty(qppw, "iconBackgroundBottom", {
+    default: new Color(10, 10, 31), // Very dark blue
+    projector: new Color(255, 255, 255), // White for projector
+  }),
 
   iconWellStrokeProperty: new ProfileColorProperty(qppw, "iconWellStroke", {
     default: new Color(150, 150, 200), // Light purple-gray
@@ -278,28 +197,20 @@ const QPPWColors = {
     projector: new Color(0, 150, 200), // Darker cyan for projector
   }),
 
-  iconProbabilityFillProperty: new ProfileColorProperty(
-    qppw,
-    "iconProbabilityFill",
-    {
-      default: new Color(100, 200, 255, 0.5), // Semi-transparent blue
-      projector: new Color(80, 160, 200, 0.6), // Darker for projector
-    },
-  ),
+  iconProbabilityFillProperty: new ProfileColorProperty(qppw, "iconProbabilityFill", {
+    default: new Color(100, 200, 255, 0.5), // Semi-transparent blue
+    projector: new Color(80, 160, 200, 0.6), // Darker for projector
+  }),
 
   iconBarrierEdgeProperty: new ProfileColorProperty(qppw, "iconBarrierEdge", {
     default: new Color(180, 50, 50), // Red
     projector: new Color(150, 40, 40), // Darker red for projector
   }),
 
-  iconBarrierCenterProperty: new ProfileColorProperty(
-    qppw,
-    "iconBarrierCenter",
-    {
-      default: new Color(255, 107, 61), // Orange-red
-      projector: new Color(200, 85, 50), // Darker orange-red for projector
-    },
-  ),
+  iconBarrierCenterProperty: new ProfileColorProperty(qppw, "iconBarrierCenter", {
+    default: new Color(255, 107, 61), // Orange-red
+    projector: new Color(200, 85, 50), // Darker orange-red for projector
+  }),
 
   iconTunnelEffectProperty: new ProfileColorProperty(qppw, "iconTunnelEffect", {
     default: new Color(160, 32, 240), // Purple
@@ -330,6 +241,12 @@ const QPPWColors = {
   band4Property: new ProfileColorProperty(qppw, "band4", {
     default: new Color(255, 150, 255), // Magenta
     projector: new Color(200, 100, 200), // Darker magenta for projector
+  }),
+
+  // Secondary (description) text in the Preferences dialog, which always has a light background
+  preferencesDescriptionTextProperty: new ProfileColorProperty(qppw, "preferencesDescriptionText", {
+    default: new Color(80, 80, 80),
+    projector: new Color(80, 80, 80),
   }),
 };
 

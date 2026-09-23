@@ -3,8 +3,8 @@
  * Features a simple potential well with a wave function visualization.
  */
 
-import { Rectangle, Node, Path, LinearGradient } from "scenerystack/scenery";
 import { Shape } from "scenerystack/kite";
+import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
 import QPPWColors from "../../QPPWColors.js";
 
@@ -69,19 +69,13 @@ export class IntroScreenIcon extends ScreenIcon {
     });
 
     // Create probability density fill
-    const probabilityShape = new Shape().moveTo(
-      WAVE_PADDING,
-      PROBABILITY_BASELINE,
-    );
+    const probabilityShape = new Shape().moveTo(WAVE_PADDING, PROBABILITY_BASELINE);
     for (let x = WAVE_PADDING; x <= WAVE_PADDING + WAVE_WIDTH; x += 1) {
       const normalizedX = (x - WAVE_PADDING) / WAVE_WIDTH;
-      const amplitude =
-        Math.pow(Math.sin(normalizedX * Math.PI), 2) * PROBABILITY_AMPLITUDE;
+      const amplitude = Math.sin(normalizedX * Math.PI) ** 2 * PROBABILITY_AMPLITUDE;
       probabilityShape.lineTo(x, PROBABILITY_BASELINE - amplitude);
     }
-    probabilityShape
-      .lineTo(WAVE_PADDING + WAVE_WIDTH, PROBABILITY_BASELINE)
-      .close();
+    probabilityShape.lineTo(WAVE_PADDING + WAVE_WIDTH, PROBABILITY_BASELINE).close();
 
     const probabilityFill = new Path(probabilityShape, {
       fill: QPPWColors.iconProbabilityFillProperty,

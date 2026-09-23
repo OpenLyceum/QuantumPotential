@@ -101,7 +101,7 @@ class CustomDotMatrix {
    * Get element at (i, j).
    */
   get(i: number, j: number): number {
-    return this.entries[i * this.n + j];
+    return this.entries[i * this.n + j]!;
   }
 
   /**
@@ -170,7 +170,7 @@ class CustomDotMatrix {
    */
   timesEquals(scalar: number): CustomDotMatrix {
     for (let i = 0; i < this.entries.length; i++) {
-      this.entries[i] *= scalar;
+      this.entries[i]! *= scalar;
     }
     return this;
   }
@@ -281,7 +281,7 @@ class CustomDotMatrix {
     const N = values.length;
     const result = new CustomDotMatrix(N, N);
     for (let i = 0; i < N; i++) {
-      result.set(i, i, values[i]);
+      result.set(i, i, values[i]!);
     }
     return result;
   }
@@ -325,7 +325,7 @@ export function matrixToArray(matrix: CustomDotMatrix): number[][] {
   for (let i = 0; i < m; i++) {
     array[i] = [];
     for (let j = 0; j < n; j++) {
-      array[i][j] = matrix.get(i, j);
+      array[i]![j] = matrix.get(i, j);
     }
   }
 
@@ -368,13 +368,9 @@ export function extractInteriorMatrix(H: CustomDotMatrix): CustomDotMatrix {
  * @param matrix - Symmetric N×N matrix (can be Matrix or number[][])
  * @returns Object with eigenvalues array and eigenvectors (array of column vectors)
  */
-export function diagonalize(
-  matrix: CustomDotMatrix | number[][],
-): EigenDecompositionResult {
+export function diagonalize(matrix: CustomDotMatrix | number[][]): EigenDecompositionResult {
   // Convert to 2D array for Jacobi algorithm
-  const A = Array.isArray(matrix)
-    ? matrix.map((row) => [...row])
-    : matrixToArray(matrix);
+  const A = Array.isArray(matrix) ? matrix.map((row) => [...row]) : matrixToArray(matrix);
   const N = A.length;
 
   // Initialize eigenvector matrix as identity
@@ -382,7 +378,7 @@ export function diagonalize(
   for (let i = 0; i < N; i++) {
     V[i] = [];
     for (let j = 0; j < N; j++) {
-      V[i][j] = i === j ? 1 : 0;
+      V[i]![j] = i === j ? 1 : 0;
     }
   }
 
@@ -396,7 +392,7 @@ export function diagonalize(
     let sum = 0;
     for (let i = 0; i < N; i++) {
       for (let j = i + 1; j < N; j++) {
-        sum += A[i][j] * A[i][j];
+        sum += A[i]![j]! * A[i]![j]!;
       }
     }
     return Math.sqrt(2 * sum); // Factor of 2 for symmetry
@@ -406,7 +402,7 @@ export function diagonalize(
   let frobeniusNorm = 0;
   for (let i = 0; i < N; i++) {
     for (let j = 0; j < N; j++) {
-      frobeniusNorm += A[i][j] * A[i][j];
+      frobeniusNorm += A[i]![j]! * A[i]![j]!;
     }
   }
   frobeniusNorm = Math.sqrt(frobeniusNorm);
@@ -425,7 +421,7 @@ export function diagonalize(
     // Sweep through all off-diagonal elements in order
     for (let p = 0; p < N - 1; p++) {
       for (let q = p + 1; q < N; q++) {
-        const Apq = A[p][q];
+        const Apq = A[p]![q]!;
 
         // Skip if element is already very small
         if (Math.abs(Apq) < 1e-40) {
@@ -433,8 +429,8 @@ export function diagonalize(
         }
 
         // Compute rotation angle
-        const App = A[p][p];
-        const Aqq = A[q][q];
+        const App = A[p]![p]!;
+        const Aqq = A[q]![q]!;
 
         let c: number, s: number;
         const diff = Aqq - App;
@@ -453,28 +449,28 @@ export function diagonalize(
         const newApp = c * c * App - 2 * s * c * Apq + s * s * Aqq;
         const newAqq = s * s * App + 2 * s * c * Apq + c * c * Aqq;
 
-        A[p][p] = newApp;
-        A[q][q] = newAqq;
-        A[p][q] = 0;
-        A[q][p] = 0;
+        A[p]![p] = newApp;
+        A[q]![q] = newAqq;
+        A[p]![q] = 0;
+        A[q]![p] = 0;
 
         for (let i = 0; i < N; i++) {
           if (i !== p && i !== q) {
-            const Aip = A[i][p];
-            const Aiq = A[i][q];
-            A[i][p] = c * Aip - s * Aiq;
-            A[p][i] = A[i][p];
-            A[i][q] = s * Aip + c * Aiq;
-            A[q][i] = A[i][q];
+            const Aip = A[i]![p]!;
+            const Aiq = A[i]![q]!;
+            A[i]![p] = c * Aip - s * Aiq;
+            A[p]![i] = A[i]![p]!;
+            A[i]![q] = s * Aip + c * Aiq;
+            A[q]![i] = A[i]![q]!;
           }
         }
 
         // Update eigenvector matrix
         for (let i = 0; i < N; i++) {
-          const Vip = V[i][p];
-          const Viq = V[i][q];
-          V[i][p] = c * Vip - s * Viq;
-          V[i][q] = s * Vip + c * Viq;
+          const Vip = V[i]![p]!;
+          const Viq = V[i]![q]!;
+          V[i]![p] = c * Vip - s * Viq;
+          V[i]![q] = s * Vip + c * Viq;
         }
       }
     }
@@ -485,12 +481,12 @@ export function diagonalize(
   const eigenvectors: number[][] = [];
 
   for (let i = 0; i < N; i++) {
-    eigenvalues.push(A[i][i]);
+    eigenvalues.push(A[i]![i]!);
 
     // Extract column i of V as eigenvector i
     const eigenvector: number[] = [];
     for (let j = 0; j < N; j++) {
-      eigenvector.push(V[j][i]);
+      eigenvector.push(V[j]![i]!);
     }
     eigenvectors.push(eigenvector);
   }
@@ -510,7 +506,7 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
   // Calculate ∫|ψ|² dx using trapezoidal rule
   let integral = 0;
   for (let i = 0; i < psi.length - 1; i++) {
-    integral += (psi[i] * psi[i] + psi[i + 1] * psi[i + 1]) / 2;
+    integral += (psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2;
   }
   integral *= dx;
 
@@ -525,6 +521,20 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
 }
 
 /**
+ * Normalize a wavefunction sampled on an arbitrary (possibly non-uniform) grid, using the trapezoidal
+ * rule over the actual abscissae. Used after interpolating to a finer display grid: a cubic spline
+ * does not preserve ∫|ψ|² dx (by ~10 % near a Coulomb cusp).
+ */
+export function normalizeOnGrid(psi: number[], xGrid: number[]): number[] {
+  let integral = 0;
+  for (let i = 0; i < psi.length - 1; i++) {
+    integral += ((psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2) * (xGrid[i + 1]! - xGrid[i]!);
+  }
+  const normalization = Math.sqrt(integral);
+  return normalization < 1e-30 ? psi : psi.map((val) => val / normalization);
+}
+
+/**
  * Normalize a wavefunction using Clenshaw-Curtis quadrature.
  * Used for Chebyshev spectral methods where the grid is non-uniform.
  *
@@ -533,11 +543,7 @@ export function normalizeWavefunction(psi: number[], dx: number): number[] {
  * @param xMax - Maximum value of physical domain
  * @returns Normalized wavefunction
  */
-export function normalizeWavefunctionChebyshev(
-  psi: number[],
-  xMin: number,
-  xMax: number,
-): number[] {
+export function normalizeWavefunctionChebyshev(psi: number[], xMin: number, xMax: number): number[] {
   const N = psi.length;
 
   // Clenshaw-Curtis quadrature weights for ξ ∈ [-1,1]
@@ -556,7 +562,7 @@ export function normalizeWavefunctionChebyshev(
   // Compute ∫|ψ|² dx
   let integral = 0;
   for (let i = 0; i < N; i++) {
-    integral += weights[i] * psi[i] * psi[i] * jacobian;
+    integral += weights[i]! * psi[i]! * psi[i]! * jacobian;
   }
 
   const normalization = Math.sqrt(integral);
@@ -606,11 +612,31 @@ function complexMultiply(a: Complex, b: Complex): Complex {
 }
 
 /**
+ * Direct discrete Fourier transform, X_k = Σ_n x_n e^(−2πikn/N). O(N²); used by fft() for lengths
+ * that are not a power of 2.
+ */
+function dft(x: Complex[]): Complex[] {
+  const N = x.length;
+  const result: Complex[] = [];
+  for (let k = 0; k < N; k++) {
+    let real = 0;
+    let imaginary = 0;
+    for (let n = 0; n < N; n++) {
+      const angle = (-2 * Math.PI * ((k * n) % N)) / N;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      real += x[n]!.real * cos - x[n]!.imaginary * sin;
+      imaginary += x[n]!.real * sin + x[n]!.imaginary * cos;
+    }
+    result.push({ real, imaginary });
+  }
+  return result;
+}
+
+/**
  * Fast Fourier Transform (FFT)
- * Cooley-Tukey radix-2 decimation-in-time algorithm
- *
- * NOTE: This implementation requires input length to be a power of 2.
- *
+ * Cooley-Tukey radix-2 decimation-in-time for power-of-2 lengths; other lengths use the direct DFT
+ * (the radix-2 split previously read past the end of the arrays and threw for them).
  *
  * @param x - Input array of complex numbers
  * @returns FFT of input
@@ -622,16 +648,18 @@ export function fft(x: Complex[]): Complex[] {
   if (N <= 1) {
     return x;
   }
+  if ((N & (N - 1)) !== 0) {
+    return dft(x);
+  }
 
-  // TODO : Add check for power of 2 length
   // Divide
   const even: Complex[] = [];
   const odd: Complex[] = [];
   for (let i = 0; i < N; i++) {
     if (i % 2 === 0) {
-      even.push(x[i]);
+      even.push(x[i]!);
     } else {
-      odd.push(x[i]);
+      odd.push(x[i]!);
     }
   }
 
@@ -648,12 +676,9 @@ export function fft(x: Complex[]): Complex[] {
       imaginary: Math.sin(angle),
     };
 
-    const temp = complexMultiply(twiddle, fftOdd[frequencyIndex]);
-    result[frequencyIndex] = complexAdd(fftEven[frequencyIndex], temp);
-    result[frequencyIndex + N / 2] = complexSubtract(
-      fftEven[frequencyIndex],
-      temp,
-    );
+    const temp = complexMultiply(twiddle, fftOdd[frequencyIndex]!);
+    result[frequencyIndex] = complexAdd(fftEven[frequencyIndex]!, temp);
+    result[frequencyIndex + N / 2] = complexSubtract(fftEven[frequencyIndex]!, temp);
   }
 
   return result;
@@ -727,7 +752,7 @@ export function numericalFourierTransform(
   pMax?: number,
 ): { pGrid: number[]; phiP: number[] } {
   const N = numMomentumPoints || xGrid.length;
-  const dx = xGrid.length > 1 ? xGrid[1] - xGrid[0] : 1;
+  const dx = xGrid.length > 1 ? xGrid[1]! - xGrid[0]! : 1;
   const HBAR = 1.054571817e-34; // Planck's constant / (2π)
 
   // Determine momentum grid
@@ -778,7 +803,7 @@ export function numericalFourierTransform(
   const halfN = Math.floor(N / 2);
   for (let i = 0; i < N; i++) {
     const shiftedIndex = (i + halfN) % N;
-    phiPShifted[i] = phiP[shiftedIndex];
+    phiPShifted[i] = phiP[shiftedIndex]!;
   }
 
   return { pGrid: momentumValues, phiP: phiPShifted };
@@ -812,16 +837,14 @@ export function cubicSplineInterpolation(
 
   const h: number[] = []; // Interval widths
   for (let i = 0; i < n - 1; i++) {
-    h.push(xGrid[i + 1] - xGrid[i]);
+    h.push(xGrid[i + 1]! - xGrid[i]!);
   }
 
   // Set up tridiagonal system for second derivatives
   // Natural boundary conditions: M_0 = M_{n-1} = 0
   const alpha: number[] = new Array(n - 1);
   for (let i = 1; i < n - 1; i++) {
-    alpha[i] =
-      (3 / h[i]) * (yValues[i + 1] - yValues[i]) -
-      (3 / h[i - 1]) * (yValues[i] - yValues[i - 1]);
+    alpha[i] = (3 / h[i]!) * (yValues[i + 1]! - yValues[i]!) - (3 / h[i - 1]!) * (yValues[i]! - yValues[i - 1]!);
   }
 
   // Solve tridiagonal system for second derivatives M_i
@@ -834,9 +857,9 @@ export function cubicSplineInterpolation(
   z[0] = 0;
 
   for (let i = 1; i < n - 1; i++) {
-    l[i] = 2 * (xGrid[i + 1] - xGrid[i - 1]) - h[i - 1] * mu[i - 1];
-    mu[i] = h[i] / l[i];
-    z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+    l[i] = 2 * (xGrid[i + 1]! - xGrid[i - 1]!) - h[i - 1]! * mu[i - 1]!;
+    mu[i] = h[i]! / l[i]!;
+    z[i] = (alpha[i]! - h[i - 1]! * z[i - 1]!) / l[i]!;
   }
 
   l[n - 1] = 1;
@@ -846,7 +869,7 @@ export function cubicSplineInterpolation(
   M[n - 1] = 0;
 
   for (let j = n - 2; j >= 0; j--) {
-    M[j] = z[j] - mu[j] * M[j + 1];
+    M[j] = z[j]! - mu[j]! * M[j + 1]!;
   }
 
   // Compute spline coefficients
@@ -856,10 +879,9 @@ export function cubicSplineInterpolation(
   const d: number[] = new Array(n - 1);
 
   for (let i = 0; i < n - 1; i++) {
-    c[i] = M[i];
-    b[i] =
-      (yValues[i + 1] - yValues[i]) / h[i] - (h[i] * (M[i + 1] + 2 * M[i])) / 3;
-    d[i] = (M[i + 1] - M[i]) / (3 * h[i]);
+    c[i] = M[i]!;
+    b[i] = (yValues[i + 1]! - yValues[i]!) / h[i]! - (h[i]! * (M[i + 1]! + 2 * M[i]!)) / 3;
+    d[i] = (M[i + 1]! - M[i]!) / (3 * h[i]!);
   }
 
   // Generate fine grid
@@ -867,8 +889,8 @@ export function cubicSplineInterpolation(
   const fineYValues: number[] = [];
 
   for (let i = 0; i < n - 1; i++) {
-    const x0 = xGrid[i];
-    const x1 = xGrid[i + 1];
+    const x0 = xGrid[i]!;
+    const x1 = xGrid[i + 1]!;
 
     // Generate upsampleFactor points in this interval
     // (include start point, exclude end point except for last interval)
@@ -880,7 +902,7 @@ export function cubicSplineInterpolation(
       const dx = x - x0;
 
       // Evaluate cubic spline
-      const y = a[i] + b[i] * dx + c[i] * dx * dx + d[i] * dx * dx * dx;
+      const y = a[i]! + b[i]! * dx + c[i]! * dx * dx + d[i]! * dx * dx * dx;
 
       fineXGrid.push(x);
       fineYValues.push(y);

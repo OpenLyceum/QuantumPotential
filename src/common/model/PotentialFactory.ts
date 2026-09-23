@@ -1,43 +1,45 @@
 import {
-  AnalyticalSolution,
-  InfiniteSquareWellSolution,
-  FiniteSquareWellSolution,
-  HarmonicOscillatorSolution,
-  MorsePotentialSolution,
-  PoschlTellerPotentialSolution,
-  RosenMorsePotentialSolution,
-  EckartPotentialSolution,
+  type AnalyticalSolution,
   AsymmetricTrianglePotentialSolution,
   Coulomb1DPotentialSolution,
   Coulomb3DPotentialSolution,
+  EckartPotentialSolution,
+  FiniteSquareWellSolution,
+  HarmonicOscillatorSolution,
+  InfiniteSquareWellSolution,
+  MorsePotentialSolution,
+  PoschlTellerPotentialSolution,
+  RosenMorsePotentialSolution,
   TriangularPotentialSolution,
 } from "./analytical-solutions/index.js";
-
+import { PotentialType, type WellParameters } from "./PotentialFunction.js";
 import {
-  BasePotential,
-  InfiniteSquareWellPotential,
+  AsymmetricTrianglePotential,
+  type BasePotential,
+  Coulomb1DPotential,
+  Coulomb3DPotential,
+  EckartPotential,
   FiniteSquareWellPotential,
   HarmonicOscillatorPotential,
+  InfiniteSquareWellPotential,
   MorsePotential,
   PoschlTellerPotential,
   RosenMorsePotential,
-  EckartPotential,
-  AsymmetricTrianglePotential,
-  Coulomb1DPotential,
-  Coulomb3DPotential,
   TriangularPotential,
 } from "./potentials/index.js";
-
-import { PotentialType, WellParameters } from "./PotentialFunction.js";
 
 /**
  * Configuration for creating analytical solutions and potential classes.
  */
 interface PotentialConfig {
   /** Constructor for analytical solution class */
-  solutionClass: new (...args: number[]) => AnalyticalSolution;
+  solutionClass: new (
+    ...args: number[]
+  ) => AnalyticalSolution;
   /** Constructor for potential class */
-  potentialClass: new (...args: number[]) => BasePotential;
+  potentialClass: new (
+    ...args: number[]
+  ) => BasePotential;
   /** Extract constructor arguments from well parameters */
   extractArgs: (params: WellParameters, mass: number) => number[];
   /** Required parameter names */
@@ -73,12 +75,7 @@ const POTENTIAL_CONFIGS: Partial<Record<PotentialType, PotentialConfig>> = {
   [PotentialType.MORSE]: {
     solutionClass: MorsePotentialSolution,
     potentialClass: MorsePotential,
-    extractArgs: (p, m) => [
-      p.dissociationEnergy!,
-      p.wellWidth!,
-      p.equilibriumPosition!,
-      m,
-    ],
+    extractArgs: (p, m) => [p.dissociationEnergy!, p.wellWidth!, p.equilibriumPosition!, m],
     requiredParams: ["dissociationEnergy", "wellWidth", "equilibriumPosition"],
   },
 
@@ -92,24 +89,14 @@ const POTENTIAL_CONFIGS: Partial<Record<PotentialType, PotentialConfig>> = {
   [PotentialType.ROSEN_MORSE]: {
     solutionClass: RosenMorsePotentialSolution,
     potentialClass: RosenMorsePotential,
-    extractArgs: (p, m) => [
-      p.potentialDepth!,
-      p.barrierHeight!,
-      p.wellWidth!,
-      m,
-    ],
+    extractArgs: (p, m) => [p.potentialDepth!, p.barrierHeight!, p.wellWidth!, m],
     requiredParams: ["potentialDepth", "barrierHeight", "wellWidth"],
   },
 
   [PotentialType.ECKART]: {
     solutionClass: EckartPotentialSolution,
     potentialClass: EckartPotential,
-    extractArgs: (p, m) => [
-      p.potentialDepth!,
-      p.barrierHeight!,
-      p.wellWidth!,
-      m,
-    ],
+    extractArgs: (p, m) => [p.potentialDepth!, p.barrierHeight!, p.wellWidth!, m],
     requiredParams: ["potentialDepth", "barrierHeight", "wellWidth"],
   },
 
@@ -146,26 +133,20 @@ const POTENTIAL_CONFIGS: Partial<Record<PotentialType, PotentialConfig>> = {
  * Factory for creating analytical solutions and potential instances.
  * Eliminates code duplication in Schrodinger1DSolver.
  */
-export class PotentialFactory {
+export const PotentialFactory = {
   /**
    * Check if all required parameters are present.
    */
-  private static hasRequiredParams(
-    params: WellParameters,
-    required: (keyof WellParameters)[],
-  ): boolean {
+  hasRequiredParams(params: WellParameters, required: (keyof WellParameters)[]): boolean {
     return required.every((key) => params[key] !== undefined);
-  }
+  },
 
   /**
    * Create an analytical solution instance.
    * Returns null if the potential type doesn't support analytical solutions
    * or required parameters are missing.
    */
-  static createAnalyticalSolution(
-    wellParams: WellParameters,
-    mass: number,
-  ): AnalyticalSolution | null {
+  createAnalyticalSolution(wellParams: WellParameters, mass: number): AnalyticalSolution | null {
     const config = POTENTIAL_CONFIGS[wellParams.type];
 
     if (!config) {
@@ -178,17 +159,14 @@ export class PotentialFactory {
 
     const args = config.extractArgs(wellParams, mass);
     return new config.solutionClass(...args);
-  }
+  },
 
   /**
    * Create a potential class instance.
    * Returns null if the potential type isn't supported
    * or required parameters are missing.
    */
-  static createPotential(
-    wellParams: WellParameters,
-    mass: number,
-  ): BasePotential | null {
+  createPotential(wellParams: WellParameters, mass: number): BasePotential | null {
     const config = POTENTIAL_CONFIGS[wellParams.type];
 
     if (!config) {
@@ -201,5 +179,5 @@ export class PotentialFactory {
 
     const args = config.extractArgs(wellParams, mass);
     return new config.potentialClass(...args);
-  }
-}
+  },
+};

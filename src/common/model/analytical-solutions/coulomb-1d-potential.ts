@@ -40,95 +40,53 @@
  *   The ρ factor ensures linear behavior near origin: ψ(x) ≈ Cx as x → 0
  */
 
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
-import { associatedLaguerre } from "./math-utilities.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { associatedLaguerre } from "./math-utilities.js";
 
 /**
  * Class-based implementation of 1D Coulomb potential analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
 export class Coulomb1DPotentialSolution extends AnalyticalSolution {
-  constructor(
-    private coulombStrength: number,
-    private mass: number,
-  ) {
+  private coulombStrength: number;
+  private mass: number;
+
+  constructor(coulombStrength: number, mass: number) {
     super();
+    this.coulombStrength = coulombStrength;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    return solveCoulomb1DPotential(
-      this.coulombStrength,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    return solveCoulomb1DPotential(this.coulombStrength, this.mass, numStates, gridConfig);
   }
 
   createPotential(): PotentialFunction {
     return createCoulomb1DPotential(this.coulombStrength);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateCoulomb1DClassicalProbability(
-      this.coulombStrength,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateCoulomb1DClassicalProbability(this.coulombStrength, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateCoulomb1DWavefunctionZeros(
-      this.coulombStrength,
-      this.mass,
-      stateIndex,
-    );
+    return calculateCoulomb1DWavefunctionZeros(this.coulombStrength, this.mass, stateIndex);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
-    const points = calculateCoulomb1DTurningPoints(
-      this.coulombStrength,
-      energy,
-    );
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
+    const points = calculateCoulomb1DTurningPoints(this.coulombStrength, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateCoulomb1DWavefunctionFirstDerivative(
-      this.coulombStrength,
-      this.mass,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateCoulomb1DWavefunctionFirstDerivative(this.coulombStrength, this.mass, stateIndex, xGrid);
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateCoulomb1DWavefunctionSecondDerivative(
-      this.coulombStrength,
-      this.mass,
-      stateIndex,
-      xGrid,
-    );
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
+    return calculateCoulomb1DWavefunctionSecondDerivative(this.coulombStrength, this.mass, stateIndex, xGrid);
   }
 
   calculateWavefunctionMinMax(
@@ -137,14 +95,7 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
-    return calculateCoulomb1DWavefunctionMinMax(
-      this.coulombStrength,
-      this.mass,
-      stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
+    return calculateCoulomb1DWavefunctionMinMax(this.coulombStrength, this.mass, stateIndex, xMin, xMax, numPoints);
   }
 
   calculateSuperpositionMinMax(
@@ -175,7 +126,7 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
     return computeNumericalFourierTransform(
       boundStateResult,
       mass,
-      Math.abs(boundStateResult.energies[0]),
+      Math.abs(boundStateResult.energies[0]!),
       numMomentumPoints,
       pMax,
     );
@@ -207,8 +158,7 @@ export function solveCoulomb1DPotential(
   // Calculate energies: E_n = -mα²/(2ℏ²(n+1/2)²) for n = 0, 1, 2, ...
   const energies: number[] = [];
   for (let n = 0; n < numStates; n++) {
-    const energy =
-      -(mass * alpha * alpha) / (2 * HBAR * HBAR * (n + 0.5) * (n + 0.5));
+    const energy = -(mass * alpha * alpha) / (2 * HBAR * HBAR * (n + 0.5) * (n + 0.5));
     energies.push(energy);
   }
 
@@ -234,7 +184,7 @@ export function solveCoulomb1DPotential(
 
     // Effective principal quantum number for 1D
     const nEff = n + 0.5;
-    const a_n = nEff * a0;
+    const aN = nEff * a0;
 
     // Normalization constant for 1D Coulomb
     // For ψ_n(x) = N * ρ * exp(-ρ/2) * L_n^1(ρ) where ρ = 2|x|/a_n
@@ -244,11 +194,11 @@ export function solveCoulomb1DPotential(
     //          = N² * a_n * ∫_0^∞ ρ² * exp(-ρ) * |L_n^1(ρ)|² dρ
     // For L_n^1, the integral ∫_0^∞ ρ² * exp(-ρ) * |L_n^1(ρ)|² dρ = 2(n+1)²
     // Therefore: N² * a_n * 2(n+1)² = 1
-    const normalization = Math.sqrt(1.0 / (2 * a_n * (n + 1) * (n + 1)));
+    const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
     for (const x of xGrid) {
       const absX = Math.abs(x);
-      const rho = (2 * absX) / a_n;
+      const rho = (2 * absX) / aN;
 
       // Wavefunction: ψ(x) = sign(x) * ρ * N * exp(-ρ/2) * L_n^1(ρ)
       // The factor of ρ ensures linear behavior near x=0: ψ(x) ≈ C*x
@@ -281,9 +231,7 @@ export function solveCoulomb1DPotential(
  * @param coulombStrength - Coulomb strength parameter α in J·m
  * @returns Potential function V(x) in Joules
  */
-export function createCoulomb1DPotential(
-  coulombStrength: number,
-): (x: number) => number {
+export function createCoulomb1DPotential(coulombStrength: number): (x: number) => number {
   const alpha = coulombStrength;
 
   return (x: number) => {
@@ -317,7 +265,7 @@ export function calculateCoulomb1DClassicalProbability(
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
   for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i];
+    const x = xGrid[i]!;
     const absX = Math.abs(x);
 
     if (absX < 1e-15) {
@@ -337,7 +285,7 @@ export function calculateCoulomb1DClassicalProbability(
 
   // Calculate unnormalized probability
   for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i];
+    const x = xGrid[i]!;
     const absX = Math.abs(x);
 
     if (absX < 1e-15) {
@@ -356,9 +304,9 @@ export function calculateCoulomb1DClassicalProbability(
       const probability = 1 / Math.sqrt((2 * safeKE) / mass);
       classicalProbability.push(probability);
 
-      if (i > 0 && classicalProbability[i - 1] > 0) {
-        const dx = xGrid[i] - xGrid[i - 1];
-        integralSum += ((probability + classicalProbability[i - 1]) * dx) / 2;
+      if (i > 0 && classicalProbability[i - 1]! > 0) {
+        const dx = xGrid[i]! - xGrid[i - 1]!;
+        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
       }
     }
   }
@@ -366,7 +314,7 @@ export function calculateCoulomb1DClassicalProbability(
   // Normalize
   if (integralSum > 0) {
     for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i] /= integralSum;
+      classicalProbability[i]! /= integralSum;
     }
   }
 
@@ -418,7 +366,7 @@ export function calculateCoulomb1DWavefunctionZeros(
   const n = stateIndex;
   const nEff = n + 0.5;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const a_n = nEff * a0;
+  const aN = nEff * a0;
 
   // Ground state (n=0) has no interior zeros (L_0^1(ρ) = 1 - ρ has one zero at ρ=1)
   // but the ρ factor gives a zero at x=0, which we don't count as an interior zero
@@ -429,13 +377,12 @@ export function calculateCoulomb1DWavefunctionZeros(
 
   // Search in positive x only (use symmetry for negative x)
   let prevX = 1e-15; // Start just above zero to avoid singularity
-  const prevRho = (2 * prevX) / a_n;
-  let prevVal =
-    prevRho * Math.exp(-prevRho / 2) * associatedLaguerre(n, 1, prevRho);
+  const prevRho = (2 * prevX) / aN;
+  let prevVal = prevRho * Math.exp(-prevRho / 2) * associatedLaguerre(n, 1, prevRho);
 
   for (let i = 1; i <= numSamples / 2; i++) {
     const x = prevX + i * dx;
-    const rho = (2 * x) / a_n;
+    const rho = (2 * x) / aN;
     const laguerre = associatedLaguerre(n, 1, rho);
     const val = rho * Math.exp(-rho / 2) * laguerre;
 
@@ -446,7 +393,7 @@ export function calculateCoulomb1DWavefunctionZeros(
       let right = x;
       for (let iter = 0; iter < 20; iter++) {
         const mid = (left + right) / 2;
-        const midRho = (2 * mid) / a_n;
+        const midRho = (2 * mid) / aN;
         const midLaguerre = associatedLaguerre(n, 1, midRho);
         const valMid = midRho * Math.exp(-midRho / 2) * midLaguerre;
 
@@ -501,8 +448,8 @@ export function calculateCoulomb1DWavefunctionFirstDerivative(
   const n = stateIndex;
   const nEff = n + 0.5;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const a_n = nEff * a0;
-  const normalization = Math.sqrt(1.0 / (2 * a_n * (n + 1) * (n + 1)));
+  const aN = nEff * a0;
+  const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   const firstDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -510,7 +457,7 @@ export function calculateCoulomb1DWavefunctionFirstDerivative(
   // Helper function to evaluate wavefunction
   const evaluatePsi = (x: number): number => {
     const absX = Math.abs(x);
-    const rho = (2 * absX) / a_n;
+    const rho = (2 * absX) / aN;
     const laguerre = associatedLaguerre(n, 1, rho);
     const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
     return Math.sign(x) * radialPart;
@@ -561,8 +508,8 @@ export function calculateCoulomb1DWavefunctionSecondDerivative(
   const n = stateIndex;
   const nEff = n + 0.5;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const a_n = nEff * a0;
-  const normalization = Math.sqrt(1.0 / (2 * a_n * (n + 1) * (n + 1)));
+  const aN = nEff * a0;
+  const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   const secondDerivative: number[] = [];
   const h = 1e-12; // Small step for numerical differentiation
@@ -570,7 +517,7 @@ export function calculateCoulomb1DWavefunctionSecondDerivative(
   // Helper function to evaluate wavefunction
   const evaluatePsi = (x: number): number => {
     const absX = Math.abs(x);
-    const rho = (2 * absX) / a_n;
+    const rho = (2 * absX) / aN;
     const laguerre = associatedLaguerre(n, 1, rho);
     const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
     return Math.sign(x) * radialPart;
@@ -626,8 +573,8 @@ export function calculateCoulomb1DWavefunctionMinMax(
   const n = stateIndex;
   const nEff = n + 0.5;
   const a0 = (HBAR * HBAR) / (mass * alpha);
-  const a_n = nEff * a0;
-  const normalization = Math.sqrt(1.0 / (2 * a_n * (n + 1) * (n + 1)));
+  const aN = nEff * a0;
+  const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
   let min = Infinity;
   let max = -Infinity;
@@ -640,7 +587,7 @@ export function calculateCoulomb1DWavefunctionMinMax(
   // Helper function to calculate psi at a given x
   const calculatePsi = (x: number): number => {
     const absX = Math.abs(x);
-    const rho = (2 * absX) / a_n;
+    const rho = (2 * absX) / aN;
     const laguerre = associatedLaguerre(n, 1, rho);
     const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
     return Math.sign(x) * radialPart;
@@ -658,8 +605,12 @@ export function calculateCoulomb1DWavefunctionMinMax(
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -718,16 +669,16 @@ export function calculateCoulomb1DSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
 
       const nEff = n + 0.5;
-      const a_n = nEff * a0;
-      const normalization = Math.sqrt(1.0 / (2 * a_n * (n + 1) * (n + 1)));
+      const aN = nEff * a0;
+      const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
 
       // Calculate wavefunction value
       const absX = Math.abs(x);
-      const rho = (2 * absX) / a_n;
+      const rho = (2 * absX) / aN;
       const laguerre = associatedLaguerre(n, 1, rho);
       const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
       const psi = Math.sign(x) * radialPart;
@@ -738,11 +689,16 @@ export function calculateCoulomb1DSuperpositionMinMax(
       const sinPhase = Math.sin(phase);
 
       // Complex multiplication: real part
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };

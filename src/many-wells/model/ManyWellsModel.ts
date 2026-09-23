@@ -7,14 +7,13 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
-import {
-  WellParameters,
-  NumericalMethod,
-} from "../../common/model/Schrodinger1DSolver.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
-import QPPWPreferences from "../../QPPWPreferences.js";
+import Logger from "../../common/utils/Logger.js";
+import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
 
 export class ManyWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -130,62 +129,32 @@ export class ManyWellsModel extends BaseModel {
   public readonly electricFieldProperty: NumberProperty;
 
   public constructor() {
-    super();
-
-    // Override potential type to default to multi-square well
-    this.potentialTypeProperty.value = PotentialType.MULTI_SQUARE_WELL;
-
-    // Override well width range for multi-square well
-    this.wellWidthProperty.setValueAndRange(
-      ManyWellsModel.DEFAULT_WELL_WIDTH,
-      new Range(
-        ManyWellsModel.MANY_WELL_WIDTH_MIN,
-        ManyWellsModel.MANY_WELL_WIDTH_MAX,
-      ),
-    );
+    super({
+      potentialType: PotentialType.MULTI_SQUARE_WELL,
+      wellWidth: ManyWellsModel.DEFAULT_WELL_WIDTH,
+      wellWidthRange: new Range(ManyWellsModel.MANY_WELL_WIDTH_MIN, ManyWellsModel.MANY_WELL_WIDTH_MAX),
+      // Default to an equal superposition of the first two states
+      superpositionConfig: {
+        type: SuperpositionType.PSI_I_PSI_J,
+        amplitudes: [ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE],
+        phases: [0, 0],
+      },
+    });
 
     // Initialize number of wells
-    this.numberOfWellsProperty = new NumberProperty(
-      ManyWellsModel.DEFAULT_NUMBER_OF_WELLS,
-      {
-        range: new Range(
-          ManyWellsModel.NUMBER_OF_WELLS_MIN,
-          ManyWellsModel.NUMBER_OF_WELLS_MAX,
-        ),
-      },
-    );
+    this.numberOfWellsProperty = new NumberProperty(ManyWellsModel.DEFAULT_NUMBER_OF_WELLS, {
+      range: new Range(ManyWellsModel.NUMBER_OF_WELLS_MIN, ManyWellsModel.NUMBER_OF_WELLS_MAX),
+    });
 
     // Initialize model-specific well parameters
-    this.wellSeparationProperty = new NumberProperty(
-      ManyWellsModel.DEFAULT_WELL_SEPARATION,
-      {
-        range: new Range(
-          ManyWellsModel.WELL_SEPARATION_MIN,
-          ManyWellsModel.WELL_SEPARATION_MAX,
-        ),
-      },
-    ); // in nanometers (spacing between wells)
+    this.wellSeparationProperty = new NumberProperty(ManyWellsModel.DEFAULT_WELL_SEPARATION, {
+      range: new Range(ManyWellsModel.WELL_SEPARATION_MIN, ManyWellsModel.WELL_SEPARATION_MAX),
+    }); // in nanometers (spacing between wells)
 
     // Initialize electric field
-    this.electricFieldProperty = new NumberProperty(
-      ManyWellsModel.DEFAULT_ELECTRIC_FIELD,
-      {
-        range: new Range(
-          ManyWellsModel.ELECTRIC_FIELD_MIN,
-          ManyWellsModel.ELECTRIC_FIELD_MAX,
-        ),
-      },
-    ); // in eV/nm
-
-    // Override superposition config default
-    this.superpositionConfigProperty.value = {
-      type: SuperpositionType.PSI_I_PSI_J,
-      amplitudes: [
-        ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE,
-        ManyWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE,
-      ], // Default to equal superposition
-      phases: [0, 0],
-    };
+    this.electricFieldProperty = new NumberProperty(ManyWellsModel.DEFAULT_ELECTRIC_FIELD, {
+      range: new Range(ManyWellsModel.ELECTRIC_FIELD_MIN, ManyWellsModel.ELECTRIC_FIELD_MAX),
+    }); // in eV/nm
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -244,8 +213,7 @@ export class ManyWellsModel extends BaseModel {
    */
   protected override calculateBoundStates(): void {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate number of states based on potential type
     const numStates = ManyWellsModel.NUM_STATES; // Default for multi-well potentials
@@ -256,10 +224,7 @@ export class ManyWellsModel extends BaseModel {
 
     if (method === "fgh") {
       // FGH: round to nearest power of 2 for FFT efficiency
-      numGridPoints = Math.pow(
-        ManyWellsModel.HALF_DIVISOR,
-        Math.round(Math.log2(numGridPoints)),
-      );
+      numGridPoints = ManyWellsModel.HALF_DIVISOR ** Math.round(Math.log2(numGridPoints));
     }
 
     const gridConfig = {
@@ -279,20 +244,15 @@ export class ManyWellsModel extends BaseModel {
       // Add type-specific parameters
       switch (this.potentialTypeProperty.value) {
         case PotentialType.MULTI_SQUARE_WELL: {
-          potentialParams.wellDepth =
-            this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation =
-            this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
         case PotentialType.MULTI_COULOMB_1D: {
           // For Coulomb potentials, use coulombStrength parameter α = k*e²
           potentialParams.coulombStrength =
-            ManyWellsModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
-          potentialParams.wellSeparation =
-            this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+            ManyWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
+          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
         default:
@@ -300,22 +260,13 @@ export class ManyWellsModel extends BaseModel {
       }
 
       // Solve using the analytical (or numerical) solution
-      this.boundStateResult = this.solver.solveAnalyticalIfPossible(
-        potentialParams,
-        mass,
-        numStates,
-        gridConfig,
-      );
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
+      this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
-      console.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }
@@ -329,36 +280,24 @@ export class ManyWellsModel extends BaseModel {
    * @param energyIndex - Index of the energy level (0-indexed)
    * @returns Array of classical probability density values, or null if unavailable
    */
-  public override getClassicalProbabilityDensity(
-    energyIndex: number,
-  ): number[] | null {
+  public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
     if (!this.boundStateResult) {
       this.calculateBoundStates();
     }
 
-    if (
-      !this.boundStateResult ||
-      energyIndex < 0 ||
-      energyIndex >= this.boundStateResult.energies.length
-    ) {
+    if (!this.boundStateResult || energyIndex < 0 || energyIndex >= this.boundStateResult.energies.length) {
       return null;
     }
 
-    const energy = this.boundStateResult.energies[energyIndex];
+    const energy = this.boundStateResult.energies[energyIndex]!;
     const xGrid = this.boundStateResult.xGrid;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate potential at each grid point
     const potential = this.calculatePotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
-    return this.calculateClassicalProbabilityDensity(
-      potential,
-      energy,
-      mass,
-      xGrid,
-    );
+    return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
   }
 
   /**
@@ -369,15 +308,13 @@ export class ManyWellsModel extends BaseModel {
   private calculatePotentialEnergy(xGrid: number[]): number[] {
     const numberOfWells = this.numberOfWellsProperty.value;
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const wellDepth =
-      this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-    const wellSeparation =
-      this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+    const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+    const wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
 
     const potential: number[] = [];
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i];
+      const x = xGrid[i]!;
       let V: number;
 
       switch (this.potentialTypeProperty.value) {
@@ -387,18 +324,14 @@ export class ManyWellsModel extends BaseModel {
           const period = wellWidth + wellSeparation;
 
           // Calculate total extent of the well array
-          const totalExtent =
-            numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
+          const totalExtent = numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
           const arrayStart = -totalExtent / ManyWellsModel.HALF_DIVISOR;
 
           let inWell = false;
 
           // Check if x is inside any of the wells
           for (let wellIndex = 0; wellIndex < numberOfWells; wellIndex++) {
-            const wellCenter =
-              arrayStart +
-              wellIndex * period +
-              wellWidth / ManyWellsModel.HALF_DIVISOR;
+            const wellCenter = arrayStart + wellIndex * period + wellWidth / ManyWellsModel.HALF_DIVISOR;
             const wellStart = wellCenter - halfWellWidth;
             const wellEnd = wellCenter + halfWellWidth;
 
@@ -415,9 +348,7 @@ export class ManyWellsModel extends BaseModel {
         case PotentialType.MULTI_COULOMB_1D: {
           // Multiple Coulomb centers arranged periodically
           const coulombStrength =
-            ManyWellsModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
+            ManyWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
 
           // Calculate total extent of the Coulomb centers
           const totalExtent = (numberOfWells - 1) * wellSeparation;

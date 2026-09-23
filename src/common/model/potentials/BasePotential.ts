@@ -10,7 +10,7 @@
  * @abstract
  */
 
-import { PotentialFunction, PotentialType } from "../PotentialFunction.js";
+import type { PotentialFunction, PotentialType } from "../PotentialFunction.js";
 
 export abstract class BasePotential {
   protected mass: number;

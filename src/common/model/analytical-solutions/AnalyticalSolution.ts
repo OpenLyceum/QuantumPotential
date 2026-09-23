@@ -13,12 +13,7 @@
  * @abstract
  */
 
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 
 export abstract class AnalyticalSolution {
   /**
@@ -52,11 +47,7 @@ export abstract class AnalyticalSolution {
    * @param xGrid - Array of x positions in meters
    * @returns Array of normalized classical probability density values (in 1/meters)
    */
-  abstract calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[];
+  abstract calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[];
 
   /**
    * Calculate the positions of wavefunction zeros (nodes).
@@ -68,10 +59,7 @@ export abstract class AnalyticalSolution {
    * @param energy - Energy of the eigenstate in Joules (may be needed for some potentials)
    * @returns Array of x positions (in meters) where the wavefunction is zero
    */
-  abstract calculateWavefunctionZeros(
-    stateIndex: number,
-    energy: number,
-  ): number[];
+  abstract calculateWavefunctionZeros(stateIndex: number, energy: number): number[];
 
   /**
    * Calculate the classical turning points.
@@ -91,9 +79,7 @@ export abstract class AnalyticalSolution {
    *          allowed region: [{left: x1, right: x2}, {left: x3, right: x4}, ...]
    *          For simple single-well potentials, this will be a single-element array.
    */
-  abstract calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }>;
+  abstract calculateTurningPoints(energy: number): Array<{ left: number; right: number }>;
 
   /**
    * Calculate the first derivative of the wavefunction.
@@ -106,10 +92,7 @@ export abstract class AnalyticalSolution {
    * @param xGrid - Array of x positions in meters where derivatives should be evaluated
    * @returns Array of first derivative values
    */
-  abstract calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[];
+  abstract calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[];
 
   /**
    * Calculate the second derivative of the wavefunction.
@@ -124,10 +107,7 @@ export abstract class AnalyticalSolution {
    * @param xGrid - Array of x positions in meters where derivatives should be evaluated
    * @returns Array of second derivative values
    */
-  abstract calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[];
+  abstract calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[];
 
   /**
    * Calculate the minimum and maximum values of a wavefunction in a given region.

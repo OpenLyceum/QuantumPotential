@@ -3,42 +3,35 @@
  * It excludes the superposition combo box and phase color display mode.
  */
 
-import { Node, Text, VBox, HBox, HSeparator } from "scenerystack/scenery";
-import { Panel, Checkbox, ComboBox, HSlider } from "scenerystack/sun";
 import { Dimension2 } from "scenerystack/dot";
-import { IntroModel } from "../model/IntroModel.js";
-import { IntroViewState } from "./IntroViewState.js";
-import { PotentialType } from "../../common/model/PotentialFunction.js";
-import QPPWColors from "../../QPPWColors.js";
+import { StringUtils } from "scenerystack/phetcommon";
+import { HBox, HSeparator, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import stringManager from "../../i18n/StringManager.js";
+import { Checkbox, ComboBox, type ComboBoxItem, HSlider, Panel } from "scenerystack/sun";
+import { PotentialType } from "../../common/model/PotentialFunction.js";
 import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
-
-type ComboBoxItem<T> = {
-  value: T;
-  createNode: () => Node;
-};
+import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
+import stringManager from "../../i18n/StringManager.js";
+import QPPWColors from "../../QPPWColors.js";
+import type { IntroModel } from "../model/IntroModel.js";
+import type { IntroViewState } from "./IntroViewState.js";
 
 export class IntroControlPanelNode extends Node {
   private readonly model: IntroModel;
   private readonly viewState: IntroViewState;
-  private readonly probabilityChartNode?: import("../../common/view/WaveFunctionChartNode.js").WaveFunctionChartNode;
-  // @ts-expect-error - Kept for potential future use, currently tool checkboxes are in chart node
-  private readonly waveFunctionChartNode?: import("../../common/view/WaveFunctionChartNode.js").WaveFunctionChartNode;
+  private readonly probabilityChartNode: WaveFunctionChartNode | undefined;
 
   public constructor(
     model: IntroModel,
     viewState: IntroViewState,
     listBoxParent: Node,
-    probabilityChartNode?: import("../../common/view/WaveFunctionChartNode.js").WaveFunctionChartNode,
-    waveFunctionChartNode?: import("../../common/view/WaveFunctionChartNode.js").WaveFunctionChartNode,
+    probabilityChartNode?: WaveFunctionChartNode,
   ) {
     super();
 
     this.model = model;
     this.viewState = viewState;
     this.probabilityChartNode = probabilityChartNode;
-    this.waveFunctionChartNode = waveFunctionChartNode;
 
     // Create all control groups
     const energyChartGroup = this.createEnergyChartGroup(listBoxParent);
@@ -174,29 +167,21 @@ export class IntroControlPanelNode extends Node {
       },
     ];
 
-    const potentialComboBox = new ComboBox(
-      this.model.potentialTypeProperty,
-      potentialItems,
-      listBoxParent,
-      {
-        xMargin: 8,
-        yMargin: 6,
-        cornerRadius: 4,
-        buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
-        buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
-        listFill: QPPWColors.controlPanelBackgroundColorProperty,
-        listStroke: QPPWColors.controlPanelStrokeColorProperty,
-        highlightFill: QPPWColors.controlPanelStrokeColorProperty,
-      },
-    );
+    const potentialComboBox = new ComboBox(this.model.potentialTypeProperty, potentialItems, listBoxParent, {
+      xMargin: 8,
+      yMargin: 6,
+      cornerRadius: 4,
+      buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
+      buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
+      listFill: QPPWColors.controlPanelBackgroundColorProperty,
+      listStroke: QPPWColors.controlPanelStrokeColorProperty,
+      highlightFill: QPPWColors.controlPanelStrokeColorProperty,
+    });
 
-    const potentialLabelText = new Text(
-      stringManager.potentialWellStringProperty,
-      {
-        font: new PhetFont(14),
-        fill: QPPWColors.textFillProperty,
-      },
-    );
+    const potentialLabelText = new Text(stringManager.potentialWellStringProperty, {
+      font: new PhetFont(14),
+      fill: QPPWColors.textFillProperty,
+    });
 
     const potentialRowNode = new HBox({
       spacing: 10,
@@ -253,7 +238,7 @@ export class IntroControlPanelNode extends Node {
     const areaToolCheckboxContent = this.probabilityChartNode
       ? new Checkbox(
           this.probabilityChartNode.showAreaToolProperty,
-          new Text("Measure Area", {
+          new Text(stringManager.getA11yStrings().visible.measureAreaStringProperty, {
             font: new PhetFont(12),
             fill: QPPWColors.textFillProperty,
           }),
@@ -272,7 +257,7 @@ export class IntroControlPanelNode extends Node {
     // Note: Curvature and Derivative checkboxes are now integrated within the WaveFunctionChartNode
     const rmsIndicatorCheckboxContent = new Checkbox(
       this.viewState.showRMSIndicatorProperty,
-      new Text("Show Average & RMS", {
+      new Text(stringManager.getA11yStrings().visible.showAverageAndRmsStringProperty, {
         font: new PhetFont(12),
         fill: QPPWColors.textFillProperty,
       }),
@@ -285,11 +270,7 @@ export class IntroControlPanelNode extends Node {
     });
 
     // Build children array (no display mode controls since intro screen shows separate charts)
-    const children: Node[] = [
-      classicalProbabilityCheckbox,
-      showZerosCheckbox,
-      rmsIndicatorCheckbox,
-    ];
+    const children: Node[] = [classicalProbabilityCheckbox, showZerosCheckbox, rmsIndicatorCheckbox];
 
     // Add area tool checkbox if it exists
     if (areaToolCheckbox) {
@@ -319,24 +300,19 @@ export class IntroControlPanelNode extends Node {
     });
 
     this.model.particleMassProperty.link((mass: number) => {
-      massValueText.string = `${mass.toFixed(2)} mₑ`;
+      massValueText.string = StringUtils.fillIn(stringManager.valueWithElectronMassStringProperty, {
+        value: mass.toFixed(2),
+      });
     });
 
-    const massSlider = new HSlider(
-      this.model.particleMassProperty,
-      this.model.particleMassProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const massSlider = new HSlider(this.model.particleMassProperty, this.model.particleMassProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Particle Mass",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "particle mass",
-          "Affects energy levels and wavefunction wavelength. Heavier particles have lower energies.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
+      descriptionContent: QPPWDescriber.getSliderHelpText("particleMass"),
+    });
 
     const massRowVBox = new VBox({
       spacing: 4,
@@ -360,24 +336,19 @@ export class IntroControlPanelNode extends Node {
     });
 
     this.model.wellWidthProperty.link((width: number) => {
-      widthValueText.string = `${width.toFixed(2)} nm`;
+      widthValueText.string = StringUtils.fillIn(stringManager.valueWithNanometersStringProperty, {
+        value: width.toFixed(2),
+      });
     });
 
-    const widthSlider = new HSlider(
-      this.model.wellWidthProperty,
-      this.model.wellWidthProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const widthSlider = new HSlider(this.model.wellWidthProperty, this.model.wellWidthProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Well Width",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "well width",
-          "Changes spatial extent of potential well. Wider wells have more closely spaced energy levels.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: QPPWDescriber.getParameterNameProperty("wellWidth"),
+      descriptionContent: QPPWDescriber.getSliderHelpText("wellWidth"),
+    });
 
     const widthRowVBox = new VBox({
       spacing: 4,
@@ -401,24 +372,19 @@ export class IntroControlPanelNode extends Node {
     });
 
     this.model.wellDepthProperty.link((depth: number) => {
-      depthValueText.string = `${depth.toFixed(2)} eV`;
+      depthValueText.string = StringUtils.fillIn(stringManager.valueWithElectronVoltsStringProperty, {
+        value: depth.toFixed(2),
+      });
     });
 
-    const depthSlider = new HSlider(
-      this.model.wellDepthProperty,
-      this.model.wellDepthProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const depthSlider = new HSlider(this.model.wellDepthProperty, this.model.wellDepthProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Well Depth",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "well depth",
-          "Changes potential energy at bottom of well. Deeper wells support more bound states.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: QPPWDescriber.getParameterNameProperty("wellDepth"),
+      descriptionContent: QPPWDescriber.getSliderHelpText("wellDepth"),
+    });
 
     const depthRowVBox = new VBox({
       spacing: 4,
@@ -442,24 +408,19 @@ export class IntroControlPanelNode extends Node {
     });
 
     this.model.barrierHeightProperty.link((height: number) => {
-      barrierHeightValueText.string = `${height.toFixed(2)} eV`;
+      barrierHeightValueText.string = StringUtils.fillIn(stringManager.valueWithElectronVoltsStringProperty, {
+        value: height.toFixed(2),
+      });
     });
 
-    const barrierHeightSlider = new HSlider(
-      this.model.barrierHeightProperty,
-      this.model.barrierHeightProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const barrierHeightSlider = new HSlider(this.model.barrierHeightProperty, this.model.barrierHeightProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Barrier Height",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "barrier height",
-          "Controls height of potential barrier. Affects tunneling probability and energy levels.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: QPPWDescriber.getParameterNameProperty("barrierHeight"),
+      descriptionContent: QPPWDescriber.getSliderHelpText("barrierHeight"),
+    });
 
     const barrierHeightRowVBox = new VBox({
       spacing: 4,
@@ -483,24 +444,19 @@ export class IntroControlPanelNode extends Node {
     });
 
     this.model.potentialOffsetProperty.link((offset: number) => {
-      offsetValueText.string = `${offset.toFixed(2)} eV`;
+      offsetValueText.string = StringUtils.fillIn(stringManager.valueWithElectronVoltsStringProperty, {
+        value: offset.toFixed(2),
+      });
     });
 
-    const offsetSlider = new HSlider(
-      this.model.potentialOffsetProperty,
-      this.model.potentialOffsetProperty.range!,
-      {
-        trackSize: new Dimension2(150, 4),
-        thumbSize: new Dimension2(15, 30),
+    const offsetSlider = new HSlider(this.model.potentialOffsetProperty, this.model.potentialOffsetProperty.range!, {
+      trackSize: new Dimension2(150, 4),
+      thumbSize: new Dimension2(15, 30),
 
-        // PDOM
-        accessibleName: "Potential Offset",
-        descriptionContent: QPPWDescriber.getSliderHelpText(
-          "potential offset",
-          "Shifts entire potential up or down. Changes absolute energy values of all states.",
-        ),
-      },
-    );
+      // PDOM
+      accessibleName: QPPWDescriber.getParameterNameProperty("potentialOffset"),
+      descriptionContent: QPPWDescriber.getSliderHelpText("potentialOffset"),
+    });
 
     const offsetRowVBox = new VBox({
       spacing: 4,
@@ -534,8 +490,7 @@ export class IntroControlPanelNode extends Node {
       depthRowVBox.visible = showDepth;
 
       // Barrier height slider visibility (only for Rosen-Morse and Eckart)
-      const showBarrierHeight =
-        type === PotentialType.ROSEN_MORSE || type === PotentialType.ECKART;
+      const showBarrierHeight = type === PotentialType.ROSEN_MORSE || type === PotentialType.ECKART;
       barrierHeightRowVBox.visible = showBarrierHeight;
 
       // Offset slider visibility (only for triangular potential)
@@ -546,14 +501,7 @@ export class IntroControlPanelNode extends Node {
     return new VBox({
       spacing: 8,
       align: "left",
-      children: [
-        titleText,
-        massRowVBox,
-        widthRowVBox,
-        depthRowVBox,
-        barrierHeightRowVBox,
-        offsetRowVBox,
-      ],
+      children: [titleText, massRowVBox, widthRowVBox, depthRowVBox, barrierHeightRowVBox, offsetRowVBox],
     });
   }
 }

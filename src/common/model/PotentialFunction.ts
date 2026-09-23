@@ -7,23 +7,25 @@ import qppw from "../../QPPWNamespace.js";
 /**
  * Type of potential well for analytical solution selection
  */
-export enum PotentialType {
-  INFINITE_WELL = "infiniteWell",
-  FINITE_WELL = "finiteWell",
-  HARMONIC_OSCILLATOR = "harmonicOscillator",
-  MORSE = "morse",
-  POSCHL_TELLER = "poschlTeller",
-  ROSEN_MORSE = "rosenMorse",
-  ECKART = "eckart",
-  ASYMMETRIC_TRIANGLE = "asymmetricTriangle",
-  COULOMB_1D = "coulomb1D",
-  COULOMB_3D = "coulomb3D",
-  DOUBLE_SQUARE_WELL = "doubleSquareWell",
-  MULTI_SQUARE_WELL = "multiSquareWell",
-  MULTI_COULOMB_1D = "multiCoulomb1D",
-  TRIANGULAR = "triangular",
-  CUSTOM = "custom",
-}
+export const PotentialType = {
+  INFINITE_WELL: "infiniteWell",
+  FINITE_WELL: "finiteWell",
+  HARMONIC_OSCILLATOR: "harmonicOscillator",
+  MORSE: "morse",
+  POSCHL_TELLER: "poschlTeller",
+  ROSEN_MORSE: "rosenMorse",
+  ECKART: "eckart",
+  ASYMMETRIC_TRIANGLE: "asymmetricTriangle",
+  COULOMB_1D: "coulomb1D",
+  COULOMB_3D: "coulomb3D",
+  DOUBLE_SQUARE_WELL: "doubleSquareWell",
+  MULTI_SQUARE_WELL: "multiSquareWell",
+  MULTI_COULOMB_1D: "multiCoulomb1D",
+  TRIANGULAR: "triangular",
+  CUSTOM: "custom",
+} as const;
+
+export type PotentialType = (typeof PotentialType)[keyof typeof PotentialType];
 
 /**
  * Configuration for potential well parameters (for analytical solutions)
@@ -79,14 +81,7 @@ export type GridConfig = {
 /**
  * Valid solver method identifiers
  */
-export type SolverMethod =
-  | "analytical"
-  | "numerov"
-  | "matrix_numerov"
-  | "dvr"
-  | "fgh"
-  | "spectral"
-  | "quantum_bound";
+export type SolverMethod = "analytical" | "numerov" | "matrix_numerov" | "dvr" | "fgh" | "spectral" | "quantum_bound";
 
 /**
  * Result from solving the Schrödinger equation
@@ -144,4 +139,4 @@ export type WavenumberTransformResult = {
 
 qppw.register("PotentialFunction", { PotentialType });
 
-export default PotentialFunction;
+export type { PotentialFunction as default };

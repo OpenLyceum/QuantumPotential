@@ -13,29 +13,26 @@ type PerformanceMetrics = {
   total: number;
 };
 
-export class PerformanceMonitor {
-  private static metrics: Map<string, number[]> = new Map();
-  private static enabled: boolean = true;
+const metrics: Map<string, number[]> = new Map();
+let monitorEnabled = true;
 
-  /**
-   * Frame time threshold in milliseconds (60fps = 16.67ms per frame).
-   * Operations exceeding this threshold will trigger a warning.
-   */
-  private static readonly FRAME_TIME_THRESHOLD = 16.67;
+/** Operations slower than one 60 fps frame (ms) are reported as slow. */
+const FRAME_TIME_THRESHOLD = 16.67;
 
+export const PerformanceMonitor = {
   /**
    * Enable or disable performance monitoring.
    */
-  static setEnabled(enabled: boolean): void {
-    PerformanceMonitor.enabled = enabled;
-  }
+  setEnabled(enabled: boolean): void {
+    monitorEnabled = enabled;
+  },
 
   /**
    * Check if performance monitoring is enabled.
    */
-  static isEnabled(): boolean {
-    return PerformanceMonitor.enabled;
-  }
+  isEnabled(): boolean {
+    return monitorEnabled;
+  },
 
   /**
    * Measure the execution time of a synchronous function.
@@ -50,8 +47,8 @@ export class PerformanceMonitor {
    *   return solver.solveNumerical(potential, mass, numStates, grid);
    * });
    */
-  static measure<T>(name: string, fn: () => T): T {
-    if (!PerformanceMonitor.enabled) {
+  measure<T>(name: string, fn: () => T): T {
+    if (!monitorEnabled) {
       return fn();
     }
 
@@ -62,18 +59,18 @@ export class PerformanceMonitor {
       const duration = performance.now() - start;
 
       // Store the metric
-      const existing = PerformanceMonitor.metrics.get(name) || [];
+      const existing = metrics.get(name) || [];
       existing.push(duration);
-      PerformanceMonitor.metrics.set(name, existing);
+      metrics.set(name, existing);
 
       // Warn if operation is slow (exceeds one frame at 60fps)
-      if (duration > PerformanceMonitor.FRAME_TIME_THRESHOLD) {
+      if (duration > FRAME_TIME_THRESHOLD) {
         Logger.warn(
-          `Slow operation: ${name} took ${duration.toFixed(2)}ms (>${PerformanceMonitor.FRAME_TIME_THRESHOLD.toFixed(2)}ms threshold)`,
+          `Slow operation: ${name} took ${duration.toFixed(2)}ms (>${FRAME_TIME_THRESHOLD.toFixed(2)}ms threshold)`,
         );
       }
     }
-  }
+  },
 
   /**
    * Measure the execution time of an async function.
@@ -88,8 +85,8 @@ export class PerformanceMonitor {
    *   return await fetch('/api/data').then(r => r.json());
    * });
    */
-  static async measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    if (!PerformanceMonitor.enabled) {
+  async measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
+    if (!monitorEnabled) {
       return fn();
     }
 
@@ -100,18 +97,18 @@ export class PerformanceMonitor {
       const duration = performance.now() - start;
 
       // Store the metric
-      const existing = PerformanceMonitor.metrics.get(name) || [];
+      const existing = metrics.get(name) || [];
       existing.push(duration);
-      PerformanceMonitor.metrics.set(name, existing);
+      metrics.set(name, existing);
 
       // Warn if operation is slow
-      if (duration > PerformanceMonitor.FRAME_TIME_THRESHOLD) {
+      if (duration > FRAME_TIME_THRESHOLD) {
         Logger.warn(
-          `Slow async operation: ${name} took ${duration.toFixed(2)}ms (>${PerformanceMonitor.FRAME_TIME_THRESHOLD.toFixed(2)}ms threshold)`,
+          `Slow async operation: ${name} took ${duration.toFixed(2)}ms (>${FRAME_TIME_THRESHOLD.toFixed(2)}ms threshold)`,
         );
       }
     }
-  }
+  },
 
   /**
    * Get statistics for a specific operation.
@@ -120,8 +117,8 @@ export class PerformanceMonitor {
    * @param name - Identifier for the operation
    * @returns Performance statistics or null if no data exists
    */
-  static getStats(name: string): PerformanceMetrics | null {
-    const values = PerformanceMonitor.metrics.get(name);
+  getStats(name: string): PerformanceMetrics | null {
+    const values = metrics.get(name);
     if (!values || values.length === 0) {
       return null;
     }
@@ -134,17 +131,17 @@ export class PerformanceMonitor {
       min: Math.min(...values),
       total,
     };
-  }
+  },
 
   /**
    * Get statistics for all tracked operations.
    *
    * @returns Map of operation names to their statistics
    */
-  static getAllStats(): Map<string, PerformanceMetrics> {
+  getAllStats(): Map<string, PerformanceMetrics> {
     const allStats = new Map<string, PerformanceMetrics>();
 
-    for (const [name, values] of PerformanceMonitor.metrics.entries()) {
+    for (const [name, values] of metrics.entries()) {
       if (values.length > 0) {
         const total = values.reduce((a, b) => a + b, 0);
         allStats.set(name, {
@@ -158,28 +155,28 @@ export class PerformanceMonitor {
     }
 
     return allStats;
-  }
+  },
 
   /**
    * Clear metrics for a specific operation.
    *
    * @param name - Identifier for the operation
    */
-  static clearStats(name: string): void {
-    PerformanceMonitor.metrics.delete(name);
-  }
+  clearStats(name: string): void {
+    metrics.delete(name);
+  },
 
   /**
    * Clear all collected metrics.
    */
-  static clearAllStats(): void {
-    PerformanceMonitor.metrics.clear();
-  }
+  clearAllStats(): void {
+    metrics.clear();
+  },
 
   /**
    * Log a summary of all performance metrics to the console.
    */
-  static logSummary(): void {
+  logSummary(): void {
     const allStats = PerformanceMonitor.getAllStats();
 
     if (allStats.size === 0) {
@@ -196,7 +193,7 @@ export class PerformanceMonitor {
       );
     }
     Logger.info("===================================");
-  }
-}
+  },
+};
 
 export default PerformanceMonitor;

@@ -93,7 +93,6 @@ src/common/model/
 ├── SpectralSolver.ts            # Chebyshev spectral method
 ├── DoubleWellNumerovSolver.ts   # Specialized double well solver
 ├── Schrodinger1DSolver.ts       # Main solver class
-├── AccuracyTests.ts             # Accuracy verification tests
 ├── BaseModel.ts                 # Base model class
 └── SuperpositionType.ts         # Superposition type definitions
 

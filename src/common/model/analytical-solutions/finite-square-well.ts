@@ -35,16 +35,12 @@
  * The derivation follows from requiring wavefunction and derivative continuity at x = ±L/2.
  */
 
+import Logger from "../../utils/Logger.js";
+import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
-import {
-  BoundStateResult,
-  GridConfig,
-  PotentialFunction,
-  FourierTransformResult,
-} from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { findRootHybrid } from "./root-finding-utils.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
+import { findRootHybrid } from "./root-finding-utils.js";
 
 /**
  * Create the potential function for a finite square well.
@@ -54,10 +50,7 @@ import { computeNumericalFourierTransform } from "./fourier-transform-helper.js"
  * @param wellDepth - Depth of the well (V₀) in Joules (positive value)
  * @returns Potential function V(x) in Joules
  */
-export function createFiniteWellPotential(
-  wellWidth: number,
-  wellDepth: number,
-): PotentialFunction {
+export function createFiniteWellPotential(wellWidth: number, wellDepth: number): PotentialFunction {
   const halfWidth = wellWidth / 2;
   return (x: number) => {
     if (Math.abs(x) <= halfWidth) {
@@ -140,7 +133,9 @@ export function calculateFiniteWellWavefunctionZeros(
     let m = 0;
     while (true) {
       const x = ((2 * m + 1) * Math.PI) / (2 * k);
-      if (x >= halfWidth) break; // Outside well
+      if (x >= halfWidth) {
+        break; // Outside well
+      }
       if (x > 0) {
         zeros.push(-x); // Symmetric about origin
         zeros.push(x);
@@ -154,7 +149,9 @@ export function calculateFiniteWellWavefunctionZeros(
     let m = 1;
     while (true) {
       const x = (m * Math.PI) / k;
-      if (x >= halfWidth) break; // Outside well
+      if (x >= halfWidth) {
+        break; // Outside well
+      }
       zeros.push(-x); // Symmetric about origin
       zeros.push(x);
       m++;
@@ -233,19 +230,13 @@ export function calculateFiniteWellWavefunctionFirstDerivative(
     const cosVal = Math.cos(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} cos²(kx) dx = L/2 + sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = cos²(kL/2) / κ
-    const integral =
-      halfWidth +
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (cosVal * cosVal) / kappa;
+    const integral = halfWidth + Math.sin(2 * k * halfWidth) / (2 * k) + (cosVal * cosVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   } else {
     const sinVal = Math.sin(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} sin²(kx) dx = L/2 - sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = sin²(kL/2) / κ
-    const integral =
-      halfWidth -
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (sinVal * sinVal) / kappa;
+    const integral = halfWidth - Math.sin(2 * k * halfWidth) / (2 * k) + (sinVal * sinVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   }
 
@@ -329,19 +320,13 @@ export function calculateFiniteWellWavefunctionSecondDerivative(
     const cosVal = Math.cos(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} cos²(kx) dx = L/2 + sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = cos²(kL/2) / κ
-    const integral =
-      halfWidth +
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (cosVal * cosVal) / kappa;
+    const integral = halfWidth + Math.sin(2 * k * halfWidth) / (2 * k) + (cosVal * cosVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   } else {
     const sinVal = Math.sin(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} sin²(kx) dx = L/2 - sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = sin²(kL/2) / κ
-    const integral =
-      halfWidth -
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (sinVal * sinVal) / kappa;
+    const integral = halfWidth - Math.sin(2 * k * halfWidth) / (2 * k) + (sinVal * sinVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   }
 
@@ -421,19 +406,13 @@ export function calculateFiniteWellWavefunctionMinMax(
     const cosVal = Math.cos(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} cos²(kx) dx = L/2 + sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = cos²(kL/2) / κ
-    const integral =
-      halfWidth +
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (cosVal * cosVal) / kappa;
+    const integral = halfWidth + Math.sin(2 * k * halfWidth) / (2 * k) + (cosVal * cosVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   } else {
     const sinVal = Math.sin(k * halfWidth);
     // Inside: ∫_{-L/2}^{L/2} sin²(kx) dx = L/2 - sin(kL)/(2k)
     // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = sin²(kL/2) / κ
-    const integral =
-      halfWidth -
-      Math.sin(2 * k * halfWidth) / (2 * k) +
-      (sinVal * sinVal) / kappa;
+    const integral = halfWidth - Math.sin(2 * k * halfWidth) / (2 * k) + (sinVal * sinVal) / kappa;
     normalization = 1 / Math.sqrt(integral);
   }
 
@@ -483,8 +462,12 @@ export function calculateFiniteWellWavefunctionMinMax(
       derivative = (psiPlus - psiMinus) / (2 * h);
     }
 
-    if (psi < min) min = psi;
-    if (psi > max) max = psi;
+    if (psi < min) {
+      min = psi;
+    }
+    if (psi > max) {
+      max = psi;
+    }
 
     // Detect extrema by sign change in derivative
     const currentDerivativeSign = Math.sign(derivative);
@@ -543,8 +526,8 @@ export function calculateFiniteWellSuperpositionMinMax(
     let realPart = 0;
 
     for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n];
-      const energy = energies[n];
+      const [cReal, cImag] = coefficients[n]!;
+      const energy = energies[n]!;
       const parity = parities[n];
 
       const k = Math.sqrt(2 * mass * (energy + wellDepth)) / HBAR;
@@ -555,16 +538,12 @@ export function calculateFiniteWellSuperpositionMinMax(
       if (parity === "even") {
         const cosVal = Math.cos(k * halfWidth);
         const B = cosVal * Math.exp(kappa * halfWidth);
-        const integral =
-          2 * (halfWidth + Math.sin(2 * k * halfWidth) / (4 * k)) +
-          (2 * B * B) / (2 * kappa);
+        const integral = 2 * (halfWidth + Math.sin(2 * k * halfWidth) / (4 * k)) + (2 * B * B) / (2 * kappa);
         normalization = 1 / Math.sqrt(integral);
       } else {
         const sinVal = Math.sin(k * halfWidth);
         const B = sinVal * Math.exp(kappa * halfWidth);
-        const integral =
-          2 * (halfWidth - Math.sin(2 * k * halfWidth) / (4 * k)) +
-          (2 * B * B) / (2 * kappa);
+        const integral = 2 * (halfWidth - Math.sin(2 * k * halfWidth) / (4 * k)) + (2 * B * B) / (2 * kappa);
         normalization = 1 / Math.sqrt(integral);
       }
 
@@ -597,11 +576,16 @@ export function calculateFiniteWellSuperpositionMinMax(
       const sinPhase = Math.sin(phase);
 
       // Complex multiplication: real part
-      realPart += cReal * psi * cosPhase + cImag * psi * sinPhase;
+      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
+      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
     }
 
-    if (realPart < min) min = realPart;
-    if (realPart > max) max = realPart;
+    if (realPart < min) {
+      min = realPart;
+    }
+    if (realPart > max) {
+      max = realPart;
+    }
   }
 
   return { min, max };
@@ -614,22 +598,19 @@ export function calculateFiniteWellSuperpositionMinMax(
 export class FiniteSquareWellSolution extends AnalyticalSolution {
   private parities: ("even" | "odd")[] = [];
 
-  constructor(
-    private wellWidth: number,
-    private wellDepth: number,
-    private mass: number,
-  ) {
+  private wellWidth: number;
+  private wellDepth: number;
+  private mass: number;
+
+  constructor(wellWidth: number, wellDepth: number, mass: number) {
     super();
+    this.wellWidth = wellWidth;
+    this.wellDepth = wellDepth;
+    this.mass = mass;
   }
 
   solve(numStates: number, gridConfig: GridConfig): BoundStateResult {
-    const result = solveFiniteSquareWell(
-      this.wellWidth,
-      this.wellDepth,
-      this.mass,
-      numStates,
-      gridConfig,
-    );
+    const result = solveFiniteSquareWell(this.wellWidth, this.wellDepth, this.mass, numStates, gridConfig);
     // Store parities for later use in class methods
     // Alternate between even and odd based on state index
     this.parities = [];
@@ -643,58 +624,30 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     return createFiniteWellPotential(this.wellWidth, this.wellDepth);
   }
 
-  calculateClassicalProbability(
-    energy: number,
-    mass: number,
-    xGrid: number[],
-  ): number[] {
-    return calculateFiniteWellClassicalProbability(
-      this.wellWidth,
-      this.wellDepth,
-      energy,
-      mass,
-      xGrid,
-    );
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    return calculateFiniteWellClassicalProbability(this.wellWidth, this.wellDepth, energy, mass, xGrid);
   }
 
   calculateWavefunctionZeros(stateIndex: number, energy: number): number[] {
-    const parity =
-      this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
-    return calculateFiniteWellWavefunctionZeros(
-      this.wellWidth,
-      this.wellDepth,
-      this.mass,
-      energy,
-      parity,
-    );
+    const parity = this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
+    return calculateFiniteWellWavefunctionZeros(this.wellWidth, this.wellDepth, this.mass, energy, parity);
   }
 
-  calculateTurningPoints(
-    energy: number,
-  ): Array<{ left: number; right: number }> {
-    const points = calculateFiniteWellTurningPoints(
-      this.wellWidth,
-      this.wellDepth,
-      energy,
-    );
+  calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
+    const points = calculateFiniteWellTurningPoints(this.wellWidth, this.wellDepth, energy);
     return [points]; // Return as array with single element for simple single-well potential
   }
 
-  calculateWavefunctionFirstDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionFirstDerivative(stateIndex: number, xGrid: number[]): number[] {
     // We need energy to calculate the first derivative
     // For now, we'll need to solve to get energies or use a cached value
     // This is a limitation - we'll use the parity from the stored array
-    const parity =
-      this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
+    const parity = this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
 
     // We need the energy, so we'll need to solve if we haven't already
     // For simplicity, compute it on the fly
     const { HBAR } = QuantumConstants;
-    const xi0 =
-      ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
+    const xi0 = ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
 
     let xi: number | null;
     if (parity === "even") {
@@ -709,9 +662,7 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     }
 
     const energy =
-      (HBAR * HBAR * xi * xi) /
-        (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) -
-      this.wellDepth;
+      (HBAR * HBAR * xi * xi) / (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) - this.wellDepth;
 
     return calculateFiniteWellWavefunctionFirstDerivative(
       this.wellWidth,
@@ -723,21 +674,16 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     );
   }
 
-  calculateWavefunctionSecondDerivative(
-    stateIndex: number,
-    xGrid: number[],
-  ): number[] {
+  calculateWavefunctionSecondDerivative(stateIndex: number, xGrid: number[]): number[] {
     // We need energy to calculate the second derivative
     // For now, we'll need to solve to get energies or use a cached value
     // This is a limitation - we'll use the parity from the stored array
-    const parity =
-      this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
+    const parity = this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
 
     // We need the energy, so we'll need to solve if we haven't already
     // For simplicity, compute it on the fly
     const { HBAR } = QuantumConstants;
-    const xi0 =
-      ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
+    const xi0 = ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
 
     let xi: number | null;
     if (parity === "even") {
@@ -752,9 +698,7 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     }
 
     const energy =
-      (HBAR * HBAR * xi * xi) /
-        (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) -
-      this.wellDepth;
+      (HBAR * HBAR * xi * xi) / (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) - this.wellDepth;
 
     return calculateFiniteWellWavefunctionSecondDerivative(
       this.wellWidth,
@@ -772,12 +716,10 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
-    const parity =
-      this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
+    const parity = this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
 
     const { HBAR } = QuantumConstants;
-    const xi0 =
-      ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
+    const xi0 = ((this.wellWidth / 2) * Math.sqrt(2 * this.mass * this.wellDepth)) / HBAR;
 
     let xi: number | null;
     if (parity === "even") {
@@ -791,9 +733,7 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     }
 
     const energy =
-      (HBAR * HBAR * xi * xi) /
-        (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) -
-      this.wellDepth;
+      (HBAR * HBAR * xi * xi) / (2 * this.mass * (this.wellWidth / 2) * (this.wellWidth / 2)) - this.wellDepth;
 
     return calculateFiniteWellWavefunctionMinMax(
       this.wellWidth,
@@ -836,13 +776,7 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     pMax?: number,
   ): FourierTransformResult {
     // Use the helper function with energy scale based on well depth
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.wellDepth,
-      numMomentumPoints,
-      pMax,
-    );
+    return computeNumericalFourierTransform(boundStateResult, mass, this.wellDepth, numMomentumPoints, pMax);
   }
 }
 
@@ -889,7 +823,7 @@ export function solveFiniteSquareWell(
 
   if (actualNumStates <= 0) {
     // Return empty result instead of throwing - well is too shallow
-    console.warn("Finite square well too shallow to support bound states");
+    Logger.warn("Finite square well too shallow to support bound states");
     return {
       energies: [],
       wavefunctions: [],
@@ -925,7 +859,7 @@ export function solveFiniteSquareWell(
 
     // Skip if state could not be found (fallback returned null)
     if (xi === null) {
-      console.warn(`Could not find ${parity} parity state ${n} for xi0=${xi0}`);
+      Logger.warn(`Could not find ${parity} parity state ${n} for xi0=${xi0}`);
       continue;
     }
 
@@ -948,7 +882,7 @@ export function solveFiniteSquareWell(
 
   for (let n = 0; n < actualNumStates; n++) {
     const wavefunction: number[] = [];
-    const E = energies[n];
+    const E = energies[n]!;
     const parity = parities[n];
 
     // Wave numbers
@@ -967,8 +901,7 @@ export function solveFiniteSquareWell(
       // Normalization integral (calculated with A = 1)
       // Inside: ∫_{-L/2}^{L/2} cos²(kx) dx = L/2 + sin(kL)/(2k)
       // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = cos²(kL/2) / κ
-      const integral =
-        halfL + Math.sin(2 * k * halfL) / (2 * k) + (cosVal * cosVal) / kappa;
+      const integral = halfL + Math.sin(2 * k * halfL) / (2 * k) + (cosVal * cosVal) / kappa;
       normalization = 1 / Math.sqrt(integral);
     } else {
       // Match boundary conditions at x = L/2
@@ -977,8 +910,7 @@ export function solveFiniteSquareWell(
       // Normalization integral (calculated with A = 1)
       // Inside: ∫_{-L/2}^{L/2} sin²(kx) dx = L/2 - sin(kL)/(2k)
       // Outside: ∫_{-∞}^{-L/2} + ∫_{L/2}^∞ = sin²(kL/2) / κ
-      const integral =
-        halfL - Math.sin(2 * k * halfL) / (2 * k) + (sinVal * sinVal) / kappa;
+      const integral = halfL - Math.sin(2 * k * halfL) / (2 * k) + (sinVal * sinVal) / kappa;
       normalization = 1 / Math.sqrt(integral);
     }
 
@@ -1068,7 +1000,7 @@ function findEvenParityState(xi0: number, stateIndex: number): number | null {
   }
 
   // All methods failed
-  console.warn(`All methods failed to find even parity state ${stateIndex}`);
+  Logger.warn(`All methods failed to find even parity state ${stateIndex}`);
   return null;
 }
 
@@ -1121,7 +1053,7 @@ function findOddParityState(xi0: number, stateIndex: number): number | null {
   }
 
   // All methods failed
-  console.warn(`All methods failed to find odd parity state ${stateIndex}`);
+  Logger.warn(`All methods failed to find odd parity state ${stateIndex}`);
   return null;
 }
 

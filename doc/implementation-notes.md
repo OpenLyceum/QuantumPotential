@@ -41,7 +41,7 @@ The simulation emphasizes:
 QPPW/
 ├── src/
 │   ├── main.ts                          # Entry point, simulation setup
-│   ├── QPPWPreferences.ts               # User preferences (numerical method, auto-pause)
+│   ├── preferences/                     # QPPWPreferencesModel, QPPWPreferencesNode, qppwQueryParameters
 │   ├── QPPWColors.ts                    # Color scheme definitions
 │   ├── i18n/                            # Internationalization strings
 │   ├── common/                          # Shared code across all screens
@@ -57,7 +57,6 @@ QPPW/
 │   │   │   ├── NumerovSolver.ts         # Shooting Numerov solver
 │   │   │   ├── SpectralSolver.ts        # Chebyshev spectral solver
 │   │   │   ├── QuantumBoundSolver.ts    # Advanced bound state solver
-│   │   │   ├── AccuracyTests.ts         # Validation test suite
 │   │   │   ├── analytical-solutions/    # Exact solutions for specific potentials
 │   │   │   │   ├── infinite-square-well.ts
 │   │   │   │   ├── finite-square-well.ts
@@ -99,11 +98,8 @@ QPPW/
 │       ├── model/ManyWellsModel.ts
 │       └── view/ManyWellsScreenView.ts
 ├── tests/
-│   ├── accuracy-tests.html              # Browser-based test runner
-│   ├── run-terminal-tests.js            # Terminal test runner
-│   ├── test-wavefunction-comprehensive.ts
-│   ├── test-double-well.ts
-│   └── ... (other test files)
+│   ├── *.test.ts, common/model/*.test.ts  # Vitest unit tests (run by CI)
+│   └── accuracy/                          # Hand-run solver accuracy scripts (npm run test:accuracy, …)
 └── doc/
     ├── model.md                         # Educational resource for instructors
     ├── implementation-notes.md          # This file
@@ -664,17 +660,6 @@ npm run test:multi-square-well # Test multi-well systems
 - Accuracy tolerances: 0.1% - 1.0% depending on potential
 - Double well stringent tests: 23 tests including orthogonality, continuity, tunneling
 
-### Browser Tests
-
-Interactive test interface:
-
-```bash
-npm run build
-open tests/accuracy-tests.html
-```
-
-Provides visual test results with pass/fail indicators and error percentages.
-
 ### Validation Approach
 
 1. **Analytical vs. Numerical**:
@@ -1050,14 +1035,14 @@ Contributions are welcome! Please:
 
 ## License
 
-MIT License - see LICENSE file for details.
+GNU Affero General Public License v3.0 or later — see the [org LICENSE](https://github.com/OpenLyceum/.github/blob/main/LICENSE).
 
 ## Contact
 
 For questions, issues, or suggestions:
 
-- GitHub Issues: https://github.com/veillette/QPPW/issues
-- Repository: https://github.com/veillette/QPPW
+- GitHub Issues: https://github.com/OpenLyceum/QuantumPotential/issues
+- Repository: https://github.com/OpenLyceum/QuantumPotential
 
 ---
 

@@ -3,9 +3,9 @@
  * V(x) = (1/2) * k * x²
  */
 
-import { AnalyticalPotential } from "./AnalyticalPotential.js";
-import { PotentialType } from "../PotentialFunction.js";
 import { HarmonicOscillatorSolution } from "../analytical-solutions/harmonic-oscillator.js";
+import { PotentialType } from "../PotentialFunction.js";
+import { AnalyticalPotential } from "./AnalyticalPotential.js";
 
 export class HarmonicOscillatorPotential extends AnalyticalPotential {
   private springConstant: number;

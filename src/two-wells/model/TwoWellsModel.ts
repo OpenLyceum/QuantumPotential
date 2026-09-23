@@ -6,14 +6,13 @@
 import { NumberProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
-import {
-  WellParameters,
-  NumericalMethod,
-} from "../../common/model/Schrodinger1DSolver.js";
-import { PotentialType } from "../../common/model/PotentialFunction.js";
+import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
+import { type GridConfig, PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { NumericalMethod, WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
-import QPPWPreferences from "../../QPPWPreferences.js";
+import Logger from "../../common/utils/Logger.js";
+import QPPWPreferences from "../../preferences/QPPWPreferencesModel.js";
 
 export class TwoWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -153,63 +152,33 @@ export class TwoWellsModel extends BaseModel {
   public readonly tunnelingProbabilityProperty: NumberProperty;
 
   public constructor() {
-    super();
-
-    // Override potential type to default to double square well
-    this.potentialTypeProperty.value = PotentialType.DOUBLE_SQUARE_WELL;
-
-    // Override well width range for double square well
-    this.wellWidthProperty.setValueAndRange(
-      TwoWellsModel.DEFAULT_WELL_WIDTH,
-      new Range(
-        TwoWellsModel.TWO_WELL_WIDTH_MIN,
-        TwoWellsModel.TWO_WELL_WIDTH_MAX,
-      ),
-    );
+    super({
+      potentialType: PotentialType.DOUBLE_SQUARE_WELL,
+      wellWidth: TwoWellsModel.DEFAULT_WELL_WIDTH,
+      wellWidthRange: new Range(TwoWellsModel.TWO_WELL_WIDTH_MIN, TwoWellsModel.TWO_WELL_WIDTH_MAX),
+      // Default to an equal superposition of the first two states
+      superpositionConfig: {
+        type: SuperpositionType.PSI_I_PSI_J,
+        amplitudes: [TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE, TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE],
+        phases: [0, 0],
+      },
+    });
 
     // Initialize model-specific well parameters
-    this.wellSeparationProperty = new NumberProperty(
-      TwoWellsModel.DEFAULT_WELL_SEPARATION,
-      {
-        range: new Range(
-          TwoWellsModel.WELL_SEPARATION_MIN,
-          TwoWellsModel.WELL_SEPARATION_MAX,
-        ),
-      },
-    ); // in nanometers
+    this.wellSeparationProperty = new NumberProperty(TwoWellsModel.DEFAULT_WELL_SEPARATION, {
+      range: new Range(TwoWellsModel.WELL_SEPARATION_MIN, TwoWellsModel.WELL_SEPARATION_MAX),
+    }); // in nanometers
 
     // Initialize barrier parameters
-    this.barrierHeightProperty = new NumberProperty(
-      TwoWellsModel.DEFAULT_BARRIER_HEIGHT,
-      {
-        range: new Range(
-          TwoWellsModel.BARRIER_HEIGHT_MIN,
-          TwoWellsModel.BARRIER_HEIGHT_MAX,
-        ),
-      },
-    ); // in eV
-    this.barrierWidthProperty = new NumberProperty(
-      TwoWellsModel.DEFAULT_BARRIER_WIDTH,
-      {
-        range: new Range(
-          TwoWellsModel.BARRIER_WIDTH_MIN,
-          TwoWellsModel.BARRIER_WIDTH_MAX,
-        ),
-      },
-    ); // in nanometers
+    this.barrierHeightProperty = new NumberProperty(TwoWellsModel.DEFAULT_BARRIER_HEIGHT, {
+      range: new Range(TwoWellsModel.BARRIER_HEIGHT_MIN, TwoWellsModel.BARRIER_HEIGHT_MAX),
+    }); // in eV
+    this.barrierWidthProperty = new NumberProperty(TwoWellsModel.DEFAULT_BARRIER_WIDTH, {
+      range: new Range(TwoWellsModel.BARRIER_WIDTH_MIN, TwoWellsModel.BARRIER_WIDTH_MAX),
+    }); // in nanometers
 
     // Initialize tunneling probability
     this.tunnelingProbabilityProperty = new NumberProperty(0);
-
-    // Override superposition config default
-    this.superpositionConfigProperty.value = {
-      type: SuperpositionType.PSI_I_PSI_J,
-      amplitudes: [
-        TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE,
-        TwoWellsModel.DEFAULT_SUPERPOSITION_AMPLITUDE,
-      ], // Default to equal superposition of first two states (normalized)
-      phases: [0, 0],
-    };
 
     // Setup cache invalidation after all properties are initialized
     this.setupCacheInvalidation();
@@ -275,28 +244,22 @@ export class TwoWellsModel extends BaseModel {
       return;
     }
 
-    const selectedIndex = this.selectedEnergyLevelIndexProperty.value;
-    const energyJoules = boundStates.energies[selectedIndex];
-    const energy = energyJoules * 6.241509074e18; // Convert from Joules to eV
-    const barrierHeight = this.barrierHeightProperty.value;
-    const barrierWidth = this.barrierWidthProperty.value * 1e-9; // Convert to meters
+    // The selection can briefly exceed the level count until step() clamps it; leave the value as is
+    const energyJoules = boundStates.energies[this.selectedEnergyLevelIndexProperty.value];
+    if (energyJoules === undefined) {
+      return;
+    }
+    const barrierHeightJoules = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
+    const barrierWidth = this.barrierWidthProperty.value * QuantumConstants.NM_TO_M;
 
-    if (energy >= barrierHeight) {
+    if (energyJoules >= barrierHeightJoules) {
       // Classical regime - particle goes over the barrier
       this.tunnelingProbabilityProperty.value = 1.0;
     } else {
-      // Quantum tunneling regime
-      const hbar = 1.054571817e-34; // Reduced Planck constant (J·s)
-      const electronMass = 9.10938356e-31; // Electron mass (kg)
-      const eV = 1.602176634e-19; // Electron volt in joules
-
-      const V0 = barrierHeight * eV;
-      const E = energy * eV;
-      const kappa = Math.sqrt((2 * electronMass * (V0 - E)) / (hbar * hbar));
-
-      this.tunnelingProbabilityProperty.value = Math.exp(
-        -2 * kappa * barrierWidth,
-      );
+      // Quantum tunneling regime: T ≈ exp(−2κd), κ = √(2m(V₀ − E))/ℏ
+      const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+      const kappa = Math.sqrt(2 * mass * (barrierHeightJoules - energyJoules)) / QuantumConstants.HBAR;
+      this.tunnelingProbabilityProperty.value = Math.exp(-2 * kappa * barrierWidth);
     }
   }
 
@@ -307,16 +270,14 @@ export class TwoWellsModel extends BaseModel {
    */
   protected override calculateBoundStates(): void {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate number of states based on potential type and energy range
     let numStates = TwoWellsModel.DEFAULT_NUM_STATES; // Default for most potentials
 
     // For infinite well, calculate states up to MAX_ENERGY_EV
     if (this.potentialTypeProperty.value === PotentialType.INFINITE_WELL) {
-      const maxEnergy =
-        TwoWellsModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
+      const maxEnergy = TwoWellsModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
       // E_n = (ℏ²π²n²)/(2mL²), solve for n
       const maxN = Math.floor(
         Math.sqrt(
@@ -327,14 +288,12 @@ export class TwoWellsModel extends BaseModel {
       numStates = Math.max(1, Math.min(maxN, TwoWellsModel.MAX_NUM_STATES)); // Cap at MAX_NUM_STATES for safety
     } else if (this.potentialTypeProperty.value === PotentialType.COULOMB_1D) {
       numStates = TwoWellsModel.NUM_STATES_COULOMB; // Use more states for Coulomb potential
-    } else if (
-      this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL
-    ) {
+    } else if (this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL) {
       numStates = TwoWellsModel.NUM_STATES_DOUBLE_WELL; // Use more states for double well to capture splitting
     }
 
     // Grid configuration
-    let gridConfig;
+    let gridConfig: GridConfig;
 
     if (this.potentialTypeProperty.value === PotentialType.DOUBLE_SQUARE_WELL) {
       // For double square well, use analytical solution with fixed high-resolution grid
@@ -350,10 +309,7 @@ export class TwoWellsModel extends BaseModel {
 
       if (method === "fgh") {
         // FGH: round to nearest power of 2 for FFT efficiency
-        numGridPoints = Math.pow(
-          TwoWellsModel.HALF_DIVISOR,
-          Math.round(Math.log2(numGridPoints)),
-        );
+        numGridPoints = TwoWellsModel.HALF_DIVISOR ** Math.round(Math.log2(numGridPoints));
       }
 
       gridConfig = {
@@ -380,17 +336,13 @@ export class TwoWellsModel extends BaseModel {
           // where k = 1/(4πε₀) ≈ 8.9875517923e9 N·m²/C²
           // α ≈ 2.307e-28 J·m for electron charge
           potentialParams.coulombStrength =
-            TwoWellsModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
+            TwoWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           break;
         }
         case PotentialType.DOUBLE_SQUARE_WELL: {
           // For double square well, we need width, depth, and separation
-          potentialParams.wellDepth =
-            this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation =
-            this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
           break;
         }
         default:
@@ -399,22 +351,13 @@ export class TwoWellsModel extends BaseModel {
       }
 
       // Attempt analytical solution first
-      this.boundStateResult = this.solver.solveAnalyticalIfPossible(
-        potentialParams,
-        mass,
-        numStates,
-        gridConfig,
-      );
-
-      // Ensure selected energy level index is within bounds
-      if (this.boundStateResult) {
-        const maxIndex = this.boundStateResult.energies.length - 1;
-        if (this.selectedEnergyLevelIndexProperty.value > maxIndex) {
-          this.selectedEnergyLevelIndexProperty.value = Math.max(0, maxIndex);
-        }
-      }
+      this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
-      console.error("Error calculating bound states:", error);
+      if (error instanceof NoBoundStatesError) {
+        Logger.debug(error.message);
+      } else {
+        Logger.error("Error calculating bound states:", error);
+      }
       this.boundStateResult = null;
     }
   }
@@ -428,36 +371,24 @@ export class TwoWellsModel extends BaseModel {
    * @param energyIndex - Index of the energy level (0-indexed)
    * @returns Array of classical probability density values, or null if unavailable
    */
-  public override getClassicalProbabilityDensity(
-    energyIndex: number,
-  ): number[] | null {
+  public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
     if (!this.boundStateResult) {
       this.calculateBoundStates();
     }
 
-    if (
-      !this.boundStateResult ||
-      energyIndex < 0 ||
-      energyIndex >= this.boundStateResult.energies.length
-    ) {
+    if (!this.boundStateResult || energyIndex < 0 || energyIndex >= this.boundStateResult.energies.length) {
       return null;
     }
 
-    const energy = this.boundStateResult.energies[energyIndex];
+    const energy = this.boundStateResult.energies[energyIndex]!;
     const xGrid = this.boundStateResult.xGrid;
-    const mass =
-      this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
+    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 
     // Calculate potential at each grid point
     const potential = this.calculatePotentialEnergy(xGrid);
 
     // Use BaseModel's common method to calculate classical probability density
-    return this.calculateClassicalProbabilityDensity(
-      potential,
-      energy,
-      mass,
-      xGrid,
-    );
+    return this.calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
   }
 
   /**
@@ -467,24 +398,19 @@ export class TwoWellsModel extends BaseModel {
    */
   private calculatePotentialEnergy(xGrid: number[]): number[] {
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const wellDepth =
-      this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-    const wellSeparation =
-      this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
+    const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
+    const wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
 
     const potential: number[] = [];
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i];
+      const x = xGrid[i]!;
       let V: number;
 
       switch (this.potentialTypeProperty.value) {
         case PotentialType.INFINITE_WELL:
           // V = 0 inside [-L/2, L/2], infinity outside
-          V =
-            Math.abs(x) <= wellWidth / TwoWellsModel.HALF_DIVISOR
-              ? 0
-              : Infinity;
+          V = Math.abs(x) <= wellWidth / TwoWellsModel.HALF_DIVISOR ? 0 : Infinity;
           break;
 
         case PotentialType.DOUBLE_SQUARE_WELL: {
@@ -500,10 +426,7 @@ export class TwoWellsModel extends BaseModel {
           const rightWellStart = halfSeparation - halfWellWidth;
           const rightWellEnd = halfSeparation + halfWellWidth;
 
-          if (
-            (x >= leftWellStart && x <= leftWellEnd) ||
-            (x >= rightWellStart && x <= rightWellEnd)
-          ) {
+          if ((x >= leftWellStart && x <= leftWellEnd) || (x >= rightWellStart && x <= rightWellEnd)) {
             V = 0; // Inside wells
           } else {
             V = wellDepth; // Outside wells (barrier or exterior)
@@ -514,9 +437,7 @@ export class TwoWellsModel extends BaseModel {
         case PotentialType.COULOMB_1D: {
           // V(x) = -α/|x| where α = ke²
           const coulombStrength =
-            TwoWellsModel.COULOMB_CONSTANT *
-            QuantumConstants.ELEMENTARY_CHARGE *
-            QuantumConstants.ELEMENTARY_CHARGE;
+            TwoWellsModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
           const r = Math.abs(x);
           if (r > TwoWellsModel.COULOMB_MIN_DISTANCE) {
             // Avoid singularity at origin
