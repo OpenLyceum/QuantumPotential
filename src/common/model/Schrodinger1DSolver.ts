@@ -164,89 +164,66 @@ export class Schrodinger1DSolver {
   ): BoundStateResult | null {
     switch (wellParams.type) {
       case PotentialType.DOUBLE_POSCHL_TELLER:
+        return this.solveNumerical(
+          createMultiPoschlTellerPotential(
+            2,
+            wellParams.wellWidth,
+            wellParams.wellDepth,
+            wellParams.wellSeparation,
+            wellParams.electricField ?? 0,
+          ),
+          mass,
+          numStates,
+          gridConfig,
+        );
       case PotentialType.MULTI_POSCHL_TELLER:
-        if (
-          wellParams.wellWidth !== undefined &&
-          wellParams.wellDepth !== undefined &&
-          wellParams.wellSeparation !== undefined &&
-          (wellParams.type === PotentialType.DOUBLE_POSCHL_TELLER || wellParams.numberOfWells !== undefined)
-        ) {
-          return this.solveNumerical(
-            createMultiPoschlTellerPotential(
-              wellParams.type === PotentialType.DOUBLE_POSCHL_TELLER ? 2 : wellParams.numberOfWells!,
-              wellParams.wellWidth,
-              wellParams.wellDepth,
-              wellParams.wellSeparation,
-              wellParams.electricField ?? 0,
-            ),
-            mass,
-            numStates,
-            gridConfig,
-          );
-        }
-        break;
-
+        return this.solveNumerical(
+          createMultiPoschlTellerPotential(
+            wellParams.numberOfWells,
+            wellParams.wellWidth,
+            wellParams.wellDepth,
+            wellParams.wellSeparation,
+            wellParams.electricField ?? 0,
+          ),
+          mass,
+          numStates,
+          gridConfig,
+        );
       case PotentialType.DOUBLE_SQUARE_WELL:
-        if (
-          wellParams.wellWidth !== undefined &&
-          wellParams.wellDepth !== undefined &&
-          wellParams.wellSeparation !== undefined
-        ) {
-          // Always use analytical solution for double square well
-          // Solves the transcendental equations from boundary conditions exactly
-          return solveDoubleSquareWellAnalytical(
-            wellParams.wellWidth,
-            wellParams.wellDepth,
-            wellParams.wellSeparation,
-            mass,
-            numStates,
-            gridConfig,
-          );
-        }
-        break;
-
+        return solveDoubleSquareWellAnalytical(
+          wellParams.wellWidth,
+          wellParams.wellDepth,
+          wellParams.wellSeparation,
+          mass,
+          numStates,
+          gridConfig,
+        );
       case PotentialType.MULTI_SQUARE_WELL:
-        if (
-          wellParams.numberOfWells !== undefined &&
-          wellParams.wellWidth !== undefined &&
-          wellParams.wellDepth !== undefined &&
-          wellParams.wellSeparation !== undefined
-        ) {
-          return solveMultiSquareWell(
-            wellParams.numberOfWells,
-            wellParams.wellWidth,
-            wellParams.wellDepth,
-            wellParams.wellSeparation,
-            mass,
-            numStates,
-            gridConfig,
-            this, // Pass solver instance for numerical methods
-            wellParams.electricField ?? 0,
-          );
-        }
-        break;
-
+        return solveMultiSquareWell(
+          wellParams.numberOfWells,
+          wellParams.wellWidth,
+          wellParams.wellDepth,
+          wellParams.wellSeparation,
+          mass,
+          numStates,
+          gridConfig,
+          this,
+          wellParams.electricField ?? 0,
+        );
       case PotentialType.MULTI_COULOMB_1D:
-        if (
-          wellParams.numberOfWells !== undefined &&
-          wellParams.wellSeparation !== undefined &&
-          wellParams.coulombStrength !== undefined
-        ) {
-          return solveMultiCoulomb1D(
-            wellParams.numberOfWells,
-            wellParams.wellSeparation,
-            wellParams.coulombStrength,
-            mass,
-            numStates,
-            gridConfig,
-            this, // Pass solver instance for numerical methods
-            wellParams.electricField ?? 0,
-          );
-        }
-        break;
+        return solveMultiCoulomb1D(
+          wellParams.numberOfWells,
+          wellParams.wellSeparation,
+          wellParams.coulombStrength,
+          mass,
+          numStates,
+          gridConfig,
+          this,
+          wellParams.electricField ?? 0,
+        );
+      default:
+        return null;
     }
-
-    return null;
   }
 
   /**

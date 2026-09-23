@@ -21,6 +21,7 @@ import { createMultiPoschlTellerPotential } from "../../model/multiPoschlTellerP
 import { PotentialType } from "../../model/PotentialFunction.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
+import { CoalescedUpdate } from "../CoalescedUpdate.js";
 import { type ChartCoordinates, type HandleSpec, PotentialHandleNode } from "./PotentialHandleNode.js";
 
 // Width handles of the smooth wells sit where the curve is at ¾ of its depth, a point that stays on the ±4 nm
@@ -91,27 +92,8 @@ export class PotentialHandlesLayer extends Node {
     );
     this.children = this.handles;
 
-    // Any parameter can move any handle (e.g. the depth moves the width handle up and down)
-    const properties: TReadOnlyProperty<unknown>[] = [
-      model.potentialTypeProperty,
-      model.wellWidthProperty,
-      model.wellDepthProperty,
-    ];
-    if (hasBarrierHeight(model)) {
-      properties.push(model.barrierHeightProperty);
-    }
-    if (hasPotentialOffset(model)) {
-      properties.push(model.potentialOffsetProperty);
-    }
-    if (hasWellSeparation(model)) {
-      properties.push(model.wellSeparationProperty);
-    }
-    if (isManyWellsModel(model)) {
-      properties.push(model.numberOfWellsProperty, model.electricFieldProperty);
-    }
-    for (const property of properties) {
-      property.lazyLink(() => this.update());
-    }
+    const potentialUpdate = new CoalescedUpdate(() => this.update());
+    model.potentialRevisionProperty.lazyLink(() => potentialUpdate.schedule());
     this.update();
   }
 

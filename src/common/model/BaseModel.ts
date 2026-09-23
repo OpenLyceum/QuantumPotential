@@ -7,6 +7,7 @@ import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
+import { calculateRMSStatistics } from "./DistributionStatistics.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
 import { type BoundStateResult, PotentialType, type WavenumberTransformResult } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
@@ -18,6 +19,7 @@ import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType
  * super()) so that each Property's reset() returns to the screen's own default.
  */
 export type BaseModelOptions = {
+  screenKind: "intro" | "oneWell" | "twoWells" | "manyWells";
   potentialType?: PotentialType;
   wellWidth?: number; // nm
   wellDepth?: number; // eV
@@ -26,6 +28,7 @@ export type BaseModelOptions = {
 };
 
 export abstract class BaseModel {
+  public readonly screenKind: BaseModelOptions["screenKind"];
   // ==================== CONSTANTS ====================
 
   /**
@@ -119,6 +122,8 @@ export abstract class BaseModel {
 
   // Potential type selection
   public readonly potentialTypeProperty: Property<PotentialType>;
+  /** Increments after any input that changes the potential or its eigenstates. */
+  public readonly potentialRevisionProperty: NumberProperty;
 
   // Well parameters (used for different potential types)
   public readonly wellWidthProperty: NumberProperty;
@@ -135,8 +140,8 @@ export abstract class BaseModel {
   public readonly superpositionTypeProperty: Property<SuperpositionType>;
   public readonly superpositionConfigProperty: Property<SuperpositionConfig>;
 
-  // Cached bound state results
-  protected boundStateResult: BoundStateResult | null = null;
+  // undefined means stale/uncomputed; null means a completed solve found no states.
+  protected boundStateResult: BoundStateResult | null | undefined = undefined;
   private wavePacketProjection: {
     states: BoundStateResult;
     key: string;
@@ -149,20 +154,22 @@ export abstract class BaseModel {
   // Guard flag to prevent reentry in step method
   private isStepping: boolean = false;
 
-  protected constructor(options?: BaseModelOptions) {
+  protected constructor(options: BaseModelOptions) {
+    this.screenKind = options.screenKind;
     // Initialize simulation state
     this.isPlayingProperty = new Property<boolean>(false);
     this.timeProperty = new NumberProperty(0); // in femtoseconds
     this.timeSpeedProperty = new NumberProperty(1, { range: new Range(0.1, 4) });
 
     // Initialize potential type
-    this.potentialTypeProperty = new Property<PotentialType>(options?.potentialType ?? PotentialType.INFINITE_WELL);
+    this.potentialTypeProperty = new Property<PotentialType>(options.potentialType ?? PotentialType.INFINITE_WELL);
+    this.potentialRevisionProperty = new NumberProperty(0);
 
     // Initialize well parameters with default values
-    this.wellWidthProperty = new NumberProperty(options?.wellWidth ?? 4.0, {
-      range: options?.wellWidthRange ?? new Range(BaseModel.WELL_WIDTH_MIN, BaseModel.WELL_WIDTH_MAX),
+    this.wellWidthProperty = new NumberProperty(options.wellWidth ?? 4.0, {
+      range: options.wellWidthRange ?? new Range(BaseModel.WELL_WIDTH_MIN, BaseModel.WELL_WIDTH_MAX),
     }); // in nanometers
-    this.wellDepthProperty = new NumberProperty(options?.wellDepth ?? 5.0, {
+    this.wellDepthProperty = new NumberProperty(options.wellDepth ?? 5.0, {
       range: new Range(BaseModel.WELL_DEPTH_MIN, BaseModel.WELL_DEPTH_MAX),
     }); // in eV
     this.wellOffsetProperty = new NumberProperty(0.5, {
@@ -182,7 +189,7 @@ export abstract class BaseModel {
     // Initialize superposition state
     this.superpositionTypeProperty = new Property<SuperpositionType>(SuperpositionType.SINGLE);
     this.superpositionConfigProperty = new Property<SuperpositionConfig>(
-      options?.superpositionConfig ?? {
+      options.superpositionConfig ?? {
         type: SuperpositionType.SINGLE,
         amplitudes: [1.0],
         phases: [0],
@@ -201,15 +208,19 @@ export abstract class BaseModel {
    * Subclasses can override this to add additional invalidation listeners.
    */
   protected setupCacheInvalidation(): void {
-    const invalidateCache = () => {
-      this.boundStateResult = null;
-    };
+    const invalidateCache = () => this.invalidateBoundStates();
 
     this.potentialTypeProperty.lazyLink(invalidateCache);
     this.wellWidthProperty.lazyLink(invalidateCache);
     this.wellDepthProperty.lazyLink(invalidateCache);
     this.wellOffsetProperty.lazyLink(invalidateCache);
     this.particleMassProperty.lazyLink(invalidateCache);
+  }
+
+  protected invalidateBoundStates(): void {
+    this.boundStateResult = undefined;
+    this.wavePacketProjection = null;
+    this.potentialRevisionProperty.value++;
   }
 
   /**
@@ -258,7 +269,7 @@ export abstract class BaseModel {
         const speedMultiplier = forced ? 1 : this.timeSpeedProperty.value;
         const dtFemtoseconds = dt * speedMultiplier; // seconds to femtoseconds
         this.timeProperty.value += dtFemtoseconds;
-        // Quantum mechanical time evolution is handled in the view layer
+        // Time-dependent wavefunctions are evaluated by model queries when needed.
       }
     } finally {
       this.isStepping = false;
@@ -365,7 +376,7 @@ export abstract class BaseModel {
    * this and tools use it, so nothing re-derives a potential that could drift from the one being solved.
    */
   public getPotentialEnergy(xGrid: readonly number[]): number[] {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
     const analyticalSolution = this.solver.getAnalyticalSolution();
@@ -384,13 +395,13 @@ export abstract class BaseModel {
 
   /**
    * Get all bound state energies and wavefunctions for the current well.
-   * @returns BoundStateResult with energies (in eV) and wavefunctions
+   * @returns BoundStateResult with energies in joules, or null when no states are available
    */
   public getBoundStates(): BoundStateResult | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
-    return this.boundStateResult;
+    return this.boundStateResult ?? null;
   }
 
   /** Reproject a spatial preset when the bound states or its parameters change. */
@@ -448,14 +459,88 @@ export abstract class BaseModel {
     return convertToWavenumber(fourierResult);
   }
 
+  /** Distribution in cycles/nm, together with the physical quantities used by its chart. */
+  public getWavenumberDistribution(energyIndex: number): {
+    gridNm: number[];
+    density: number[];
+    average: number;
+    spread: number;
+    averageMomentum: number;
+    uncertaintyProduct: number | null;
+  } | null {
+    const transform = this.getWavenumberTransform();
+    const phi = transform?.wavenumberWavefunctions[energyIndex];
+    if (!(transform && phi)) {
+      return null;
+    }
+    const gridNm = transform.kGrid.map((k) => k / (2 * Math.PI * QuantumConstants.M_TO_NM));
+    const density = phi.map((value) => value * value);
+    const stats = calculateRMSStatistics(gridNm, density);
+    if (!stats) {
+      return null;
+    }
+    const positionStats = this.getPositionStatistics(energyIndex);
+    return {
+      gridNm,
+      density,
+      average: stats.avg,
+      spread: stats.rms,
+      averageMomentum: stats.avg * 2 * Math.PI * QuantumConstants.M_TO_NM * QuantumConstants.HBAR,
+      uncertaintyProduct: positionStats ? positionStats.rms * stats.rms * 2 * Math.PI : null,
+    };
+  }
+
+  /** Position mean and spread in nm for an eigenstate or the current superposition. */
+  public getPositionStatistics(energyIndex: number, isSuperposition = false): { avg: number; rms: number } | null {
+    const density = isSuperposition
+      ? this.getTimeEvolvedSuperpositionInNmUnits(this.timeProperty.value * 1e-15)?.probabilityDensity
+      : this.getWavefunctionInNmUnits(energyIndex + 1)?.probabilityDensity;
+    return density ? this.getPositionStatisticsForDensity(density) : null;
+  }
+
+  /** Moments of model-produced density data, avoiding a second wavefunction evaluation in charts. */
+  public getPositionStatisticsForDensity(densityNm: readonly number[]): { avg: number; rms: number } | null {
+    const states = this.getBoundStates();
+    return states
+      ? calculateRMSStatistics(
+          states.xGrid.map((x) => x * QuantumConstants.M_TO_NM),
+          densityNm,
+        )
+      : null;
+  }
+
+  /** Time phase of one eigenstate, in radians. */
+  public getEigenstatePhase(energyIndex: number): number | null {
+    const energy = this.getBoundStates()?.energies[energyIndex];
+    return energy === undefined ? null : -(energy * this.timeProperty.value * 1e-15) / QuantumConstants.HBAR;
+  }
+
+  /** Complex components of a time-evolved eigenstate in nm units. */
+  public getTimeEvolvedEigenstateInNmUnits(energyIndex: number): {
+    realPart: number[];
+    imagPart: number[];
+  } | null {
+    const wavefunction = this.getWavefunctionInNmUnits(energyIndex + 1)?.wavefunction;
+    const phase = this.getEigenstatePhase(energyIndex);
+    if (!wavefunction || phase === null) {
+      return null;
+    }
+    const realFactor = Math.cos(phase);
+    const imaginaryFactor = Math.sin(phase);
+    return {
+      realPart: wavefunction.map((psi) => psi * realFactor),
+      imagPart: wavefunction.map((psi) => psi * imaginaryFactor),
+    };
+  }
+
   /**
    * Calculates the energy eigenvalues for the current well parameters.
    * @param n - The quantum number (1, 2, 3, ...)
-   * @returns The energy in eV
+   * @returns The energy in eV, or null when the state is unavailable
    */
-  public getEnergyLevel(n: number): number {
+  public getEnergyLevel(n: number): number | null {
     // Ensure bound states are calculated
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -465,12 +550,7 @@ export abstract class BaseModel {
       return Schrodinger1DSolver.joulesToEV(energyJoules);
     }
 
-    // Fallback to analytical formula if solver fails
-    const L = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
-    const energy =
-      (n * n * Math.PI * Math.PI * QuantumConstants.HBAR * QuantumConstants.HBAR) /
-      (2 * QuantumConstants.ELECTRON_MASS * L * L);
-    return Schrodinger1DSolver.joulesToEV(energy);
+    return null;
   }
 
   /**
@@ -479,7 +559,7 @@ export abstract class BaseModel {
    */
   public getEnergyLevels(): number[] {
     // Ensure bound states are calculated
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -497,7 +577,7 @@ export abstract class BaseModel {
    * @returns Array of wavefunction values at grid points, or null if unavailable
    */
   public getWavefunction(n: number): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -550,7 +630,7 @@ export abstract class BaseModel {
    * @returns Array of x positions in nanometers
    */
   public getXGrid(): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -571,7 +651,7 @@ export abstract class BaseModel {
    * @returns Array of first derivative values (in m^-3/2), or null if unavailable
    */
   public getWavefunctionFirstDerivative(n: number, xGrid?: number[]): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -602,7 +682,7 @@ export abstract class BaseModel {
    * @returns Array of second derivative values (in m^-5/2), or null if unavailable
    */
   public getWavefunctionSecondDerivative(n: number, xGrid?: number[]): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -643,7 +723,7 @@ export abstract class BaseModel {
     xMaxNm: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -694,7 +774,7 @@ export abstract class BaseModel {
     xMaxNm: number,
     numPoints?: number,
   ): { min: number; max: number } | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 

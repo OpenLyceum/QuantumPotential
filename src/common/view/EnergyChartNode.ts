@@ -15,14 +15,7 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
-import {
-  hasBarrierHeight,
-  hasClassicalTurningPoints,
-  hasElectricField,
-  hasPotentialOffset,
-  hasWellSeparation,
-  isManyWellsModel,
-} from "../model/ModelTypeGuards.js";
+import { hasClassicalTurningPoints } from "../model/ModelTypeGuards.js";
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
@@ -30,6 +23,7 @@ import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import isDevMode from "../utils/isDevMode.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
+import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import { createConfigurePotentialButton } from "./ConfigurePotentialDialog.js";
 import { getEnergyLevelDecimalPlaces } from "./EnergyLevelPrecision.js";
 import { PotentialHandlesLayer } from "./handles/PotentialHandlesLayer.js";
@@ -100,6 +94,10 @@ const POTENTIAL_CURVE_SAMPLES = 1200;
 const LEVEL_PICK_DISTANCE = 12;
 
 export class EnergyChartNode extends BaseChartNode {
+  private readonly potentialUpdate = new CoalescedUpdate(() => {
+    this.updateEnergyAxisRange();
+    this.update();
+  });
   // Visual elements specific to energy chart
   private readonly potentialPath: Path;
   private readonly energyLevelNodes: Map<number, Line>;
@@ -645,17 +643,7 @@ export class EnergyChartNode extends BaseChartNode {
    */
   protected linkToModel(): void {
     this.viewState.showEnergyValuesProperty.lazyLink(() => this.updateLevelLabels());
-    // Update when any parameter changes
-    this.model.potentialTypeProperty.lazyLink(() => {
-      this.updateEnergyAxisRange();
-      this.update();
-    });
-    this.model.wellWidthProperty.lazyLink(() => this.update());
-    this.model.wellDepthProperty.lazyLink(() => this.update());
-    if ("wellOffsetProperty" in this.model) {
-      this.model.wellOffsetProperty.lazyLink(() => this.update());
-    }
-    this.model.particleMassProperty.lazyLink(() => this.update());
+    this.model.potentialRevisionProperty.lazyLink(() => this.potentialUpdate.schedule());
     this.model.selectedEnergyLevelIndexProperty.lazyLink(() => this.updateSelection());
     this.viewState.showTotalEnergyProperty.lazyLink((show: boolean) => {
       this.totalEnergyLine.visible = show;
@@ -663,27 +651,6 @@ export class EnergyChartNode extends BaseChartNode {
     this.viewState.showPotentialEnergyProperty.lazyLink((show: boolean) => {
       this.potentialPath.visible = show;
     });
-
-    // Link to wellSeparationProperty if available (TwoWellsModel and ManyWellsModel)
-    if (hasWellSeparation(this.model)) {
-      this.model.wellSeparationProperty.lazyLink(() => this.update());
-    }
-
-    // Link to numberOfWellsProperty and electricFieldProperty if available (ManyWellsModel only)
-    if (isManyWellsModel(this.model)) {
-      this.model.numberOfWellsProperty.lazyLink(() => this.update());
-      if (hasElectricField(this.model)) {
-        this.model.electricFieldProperty.lazyLink(() => this.update());
-      }
-    }
-
-    // Link to barrierHeightProperty and potentialOffsetProperty if available (OneWellModel only)
-    if (hasBarrierHeight(this.model)) {
-      this.model.barrierHeightProperty.lazyLink(() => this.update());
-    }
-    if (hasPotentialOffset(this.model)) {
-      this.model.potentialOffsetProperty.lazyLink(() => this.update());
-    }
 
     // Update classical probability visualization when property changes
     this.viewState.showClassicalProbabilityProperty.lazyLink(() => this.update());

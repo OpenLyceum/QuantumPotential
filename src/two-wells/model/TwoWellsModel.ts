@@ -137,6 +137,7 @@ export class TwoWellsModel extends BaseModel {
 
   public constructor() {
     super({
+      screenKind: "twoWells",
       potentialType: PotentialType.DOUBLE_SQUARE_WELL,
       wellWidth: TwoWellsModel.DEFAULT_WELL_WIDTH,
       wellDepth: 13,
@@ -177,7 +178,7 @@ export class TwoWellsModel extends BaseModel {
     super.setupCacheInvalidation();
 
     const invalidateCache = () => {
-      this.boundStateResult = null;
+      this.invalidateBoundStates();
     };
 
     this.wellSeparationProperty.lazyLink(invalidateCache);
@@ -310,32 +311,21 @@ export class TwoWellsModel extends BaseModel {
 
     try {
       // Build potential parameters based on type
-      const potentialParams: WellParameters = {
-        type: this.potentialTypeProperty.value,
-        wellWidth: wellWidth,
-      };
-
-      // Add type-specific parameters
-      switch (this.potentialTypeProperty.value) {
-        case PotentialType.INFINITE_WELL:
-          // No additional parameters needed
-          break;
-        case PotentialType.DOUBLE_SQUARE_WELL: {
-          // For double square well, we need width, depth, and separation
-          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
-          break;
-        }
-        case PotentialType.DOUBLE_POSCHL_TELLER:
-          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
-          break;
-        default:
-          // For other potential types, use numerical solution
-          break;
+      const type = this.potentialTypeProperty.value;
+      let potentialParams: WellParameters;
+      if (type === PotentialType.INFINITE_WELL) {
+        potentialParams = { type, wellWidth };
+      } else if (type === PotentialType.DOUBLE_SQUARE_WELL || type === PotentialType.DOUBLE_POSCHL_TELLER) {
+        potentialParams = {
+          type,
+          wellWidth,
+          wellDepth: this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES,
+          wellSeparation: this.wellSeparationProperty.value * QuantumConstants.NM_TO_M,
+        };
+      } else {
+        throw new Error(`Unsupported two-well potential: ${type}`);
       }
 
-      // Attempt analytical solution first
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
       if (error instanceof NoBoundStatesError) {
@@ -357,7 +347,7 @@ export class TwoWellsModel extends BaseModel {
    * @returns Array of classical probability density values, or null if unavailable
    */
   public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 

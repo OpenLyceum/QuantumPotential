@@ -13,7 +13,7 @@ import {
   SINGLE_WELL_PARAMETER_PRESETS,
 } from "../../common/model/PotentialParameterPresets.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import { createSingleWellParameters } from "../../common/model/SingleWellParameters.js";
 import Logger from "../../common/utils/Logger.js";
 
 export class IntroModel extends BaseModel {
@@ -128,7 +128,7 @@ export class IntroModel extends BaseModel {
   private readonly parameterPresets: PotentialParameterPresets<"wellWidth" | "wellDepth" | "barrierHeight">;
 
   public constructor() {
-    super({ wellWidth: 5.5, wellDepth: 12 });
+    super({ screenKind: "intro", wellWidth: 5.5, wellDepth: 12 });
 
     // Initialize model-specific well parameters
     this.barrierHeightProperty = new NumberProperty(IntroModel.DEFAULT_BARRIER_HEIGHT, {
@@ -160,7 +160,7 @@ export class IntroModel extends BaseModel {
     super.setupCacheInvalidation();
 
     const invalidateCache = () => {
-      this.boundStateResult = null;
+      this.invalidateBoundStates();
     };
 
     this.barrierHeightProperty.lazyLink(invalidateCache);
@@ -241,54 +241,15 @@ export class IntroModel extends BaseModel {
     };
 
     try {
-      const potentialParams: WellParameters = {
-        type: this.potentialTypeProperty.value,
-        wellWidth: wellWidth,
-      };
-
-      // Add type-specific parameters
-      switch (this.potentialTypeProperty.value) {
-        case PotentialType.FINITE_WELL:
-          potentialParams.wellDepth = wellDepth;
-          break;
-        case PotentialType.HARMONIC_OSCILLATOR:
-          potentialParams.springConstant =
-            (IntroModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) / (wellWidth * wellWidth);
-          break;
-        case PotentialType.MORSE:
-          potentialParams.dissociationEnergy = wellDepth;
-          potentialParams.equilibriumPosition = 0;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.POSCHL_TELLER:
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.ROSEN_MORSE:
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.ECKART:
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.ASYMMETRIC_TRIANGLE:
-          potentialParams.slope = wellDepth / wellWidth;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.TRIANGULAR:
-          potentialParams.wellDepth = wellDepth;
-          potentialParams.wellWidth = wellWidth;
-          potentialParams.energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES;
-          break;
-        case PotentialType.COULOMB_1D: {
-          potentialParams.coulombStrength =
-            IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
-          break;
-        }
-      }
+      const potentialParams = createSingleWellParameters(
+        this.potentialTypeProperty.value,
+        wellWidth,
+        wellDepth,
+        this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES,
+        this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES,
+        IntroModel.SPRING_CONSTANT_MULTIPLIER,
+        IntroModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE ** 2,
+      );
 
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
@@ -306,7 +267,7 @@ export class IntroModel extends BaseModel {
    * Override from BaseModel to provide potential-specific implementations.
    */
   public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -342,7 +303,7 @@ export class IntroModel extends BaseModel {
     left: number;
     right: number;
   } | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -429,7 +390,7 @@ export class IntroModel extends BaseModel {
    * Calculates the probability of finding the particle in the classically forbidden region.
    */
   public getClassicallyForbiddenProbability(energyLevel: number): number {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 

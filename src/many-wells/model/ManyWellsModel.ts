@@ -124,6 +124,7 @@ export class ManyWellsModel extends BaseModel {
 
   public constructor() {
     super({
+      screenKind: "manyWells",
       potentialType: PotentialType.MULTI_SQUARE_WELL,
       wellWidth: ManyWellsModel.DEFAULT_WELL_WIDTH,
       wellDepth: 12,
@@ -163,7 +164,7 @@ export class ManyWellsModel extends BaseModel {
     super.setupCacheInvalidation();
 
     const invalidateCache = () => {
-      this.boundStateResult = null;
+      this.invalidateBoundStates();
     };
 
     this.numberOfWellsProperty.lazyLink(invalidateCache);
@@ -225,30 +226,19 @@ export class ManyWellsModel extends BaseModel {
 
     try {
       // Build potential parameters based on type
+      const type = this.potentialTypeProperty.value;
+      if (type !== PotentialType.MULTI_SQUARE_WELL && type !== PotentialType.MULTI_POSCHL_TELLER) {
+        throw new Error(`Unsupported many-well potential: ${type}`);
+      }
       const potentialParams: WellParameters = {
-        type: this.potentialTypeProperty.value,
+        type,
         numberOfWells: this.numberOfWellsProperty.value,
-        wellWidth: wellWidth,
-        electricField: this.electricFieldProperty.value / QuantumConstants.NM_TO_M, // V/nm → V/m
+        wellWidth,
+        wellDepth: this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES,
+        wellSeparation: this.wellSeparationProperty.value * QuantumConstants.NM_TO_M,
+        electricField: this.electricFieldProperty.value / QuantumConstants.NM_TO_M,
       };
 
-      // Add type-specific parameters
-      switch (this.potentialTypeProperty.value) {
-        case PotentialType.MULTI_SQUARE_WELL: {
-          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
-          break;
-        }
-        case PotentialType.MULTI_POSCHL_TELLER: {
-          potentialParams.wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellSeparation = this.wellSeparationProperty.value * QuantumConstants.NM_TO_M;
-          break;
-        }
-        default:
-          break;
-      }
-
-      // Solve using the analytical (or numerical) solution
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
       if (error instanceof NoBoundStatesError) {
@@ -279,7 +269,7 @@ export class ManyWellsModel extends BaseModel {
    * @returns Array of classical probability density values, or null if unavailable
    */
   public override getClassicalProbabilityDensity(energyIndex: number): number[] | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 

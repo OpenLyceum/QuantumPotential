@@ -6,6 +6,13 @@
 
 import { describe, expect, it } from "vitest";
 import { BaseModel } from "../src/common/model/BaseModel.js";
+import {
+  hasBarrierHeight,
+  isIntroModel,
+  isManyWellsModel,
+  isOneWellModel,
+  isTwoWellsModel,
+} from "../src/common/model/ModelTypeGuards.js";
 import { PotentialType } from "../src/common/model/PotentialFunction.js";
 import { IntroModel } from "../src/intro/model/IntroModel.js";
 import { ManyWellsModel } from "../src/many-wells/model/ManyWellsModel.js";
@@ -18,6 +25,22 @@ const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType]> = [
   ["TwoWellsModel", () => new TwoWellsModel(), PotentialType.DOUBLE_SQUARE_WELL],
   ["ManyWellsModel", () => new ManyWellsModel(), PotentialType.MULTI_SQUARE_WELL],
 ];
+
+it("identifies screens from their explicit kind", () => {
+  const intro = new IntroModel();
+  const one = new OneWellModel();
+  const two = new TwoWellsModel();
+  const many = new ManyWellsModel();
+  expect(isIntroModel(intro)).toBe(true);
+  expect(isIntroModel(one)).toBe(false);
+  expect(isOneWellModel(one)).toBe(true);
+  expect(isTwoWellsModel(two)).toBe(true);
+  expect(isManyWellsModel(many)).toBe(true);
+  expect(hasBarrierHeight(two)).toBe(true);
+  for (const model of [intro, one, two, many]) {
+    model.dispose();
+  }
+});
 
 describe.each(MODELS)("%s", (_name, create, defaultPotential) => {
   it("starts on its screen's default potential with an in-range well width", () => {

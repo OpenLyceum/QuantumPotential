@@ -29,38 +29,61 @@ export const PotentialType = {
 export type PotentialType = (typeof PotentialType)[keyof typeof PotentialType];
 
 /**
- * Configuration for potential well parameters (for analytical solutions)
+ * Typed parameters passed to analytical and numerical potential solvers.
  */
-export type WellParameters = {
-  /** Type of potential well */
-  type: PotentialType;
-  /** Well width for infinite/finite well (meters) */
-  wellWidth?: number;
-  /** Well depth for finite square well (Joules, positive value) */
-  wellDepth?: number;
-  /** Spring constant for harmonic oscillator (N/m) */
-  springConstant?: number;
-  /** Dissociation energy for Morse potential (Joules) */
-  dissociationEnergy?: number;
-  /** Equilibrium position for Morse potential (meters) */
-  equilibriumPosition?: number;
-  /** Potential depth for Pöschl-Teller, Rosen-Morse, and Eckart potentials (Joules) */
-  potentialDepth?: number;
-  /** Barrier height for Rosen-Morse and Eckart potentials (Joules) */
-  barrierHeight?: number;
-  /** Slope parameter for asymmetric triangle potential (Joules/meter) */
-  slope?: number;
-  /** Coulomb strength parameter α for Coulomb potentials (J·m) */
-  coulombStrength?: number;
-  /** Edge-to-edge separation of adjacent wells (meters) */
-  wellSeparation?: number;
-  /** Energy offset for triangular potential (Joules) */
-  energyOffset?: number;
-  /** Number of wells for multi-well potentials (1-10) */
-  numberOfWells?: number;
-  /** Uniform electric field for multi-well potentials (V/m); adds the tilt V = eℰx */
-  electricField?: number;
-};
+export type SingleWellParameters =
+  | { type: typeof PotentialType.INFINITE_WELL; wellWidth: number }
+  | { type: typeof PotentialType.FINITE_WELL; wellWidth: number; wellDepth: number }
+  | { type: typeof PotentialType.HARMONIC_OSCILLATOR; springConstant: number }
+  | { type: typeof PotentialType.MORSE; dissociationEnergy: number; wellWidth: number; equilibriumPosition: number }
+  | { type: typeof PotentialType.POSCHL_TELLER; potentialDepth: number; wellWidth: number }
+  | { type: typeof PotentialType.ROSEN_MORSE; potentialDepth: number; barrierHeight: number; wellWidth: number }
+  | { type: typeof PotentialType.ECKART; potentialDepth: number; barrierHeight: number; wellWidth: number }
+  | { type: typeof PotentialType.ASYMMETRIC_TRIANGLE; slope: number; wellWidth: number }
+  | { type: typeof PotentialType.COULOMB_1D; coulombStrength: number }
+  | { type: typeof PotentialType.TRIANGULAR; wellDepth: number; wellWidth: number; energyOffset: number };
+
+export type MultiWellParameters =
+  | {
+      type: typeof PotentialType.DOUBLE_SQUARE_WELL;
+      wellWidth: number;
+      wellDepth: number;
+      wellSeparation: number;
+      electricField?: number;
+    }
+  | {
+      type: typeof PotentialType.DOUBLE_POSCHL_TELLER;
+      wellWidth: number;
+      wellDepth: number;
+      wellSeparation: number;
+      electricField?: number;
+    }
+  | {
+      type: typeof PotentialType.MULTI_SQUARE_WELL;
+      numberOfWells: number;
+      wellWidth: number;
+      wellDepth: number;
+      wellSeparation: number;
+      electricField?: number;
+    }
+  | {
+      type: typeof PotentialType.MULTI_POSCHL_TELLER;
+      numberOfWells: number;
+      wellWidth: number;
+      wellDepth: number;
+      wellSeparation: number;
+      electricField?: number;
+    }
+  | {
+      type: typeof PotentialType.MULTI_COULOMB_1D;
+      numberOfWells: number;
+      wellSeparation: number;
+      coulombStrength: number;
+      electricField?: number;
+    };
+
+/** All solver parameters are in SI units. Required fields follow the potential type. */
+export type WellParameters = SingleWellParameters | MultiWellParameters;
 
 /**
  * A function that returns the potential energy at a given position.

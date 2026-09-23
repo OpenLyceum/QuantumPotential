@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { calculateRMSStatistics } from "../../../src/common/model/DistributionStatistics.js";
 import { PotentialType } from "../../../src/common/model/PotentialFunction.js";
-import { calculateRMSStatistics } from "../../../src/common/view/RMSIndicatorUtils.js";
 import { IntroModel } from "../../../src/intro/model/IntroModel.js";
 
 describe("position–momentum uncertainty", () => {
@@ -29,6 +29,8 @@ describe("position–momentum uncertainty", () => {
     )!.rms; // rad/nm
 
     expect(deltaX * deltaK).toBeCloseTo(0.5, 2);
+    expect(model.getWavenumberDistribution(0)?.uncertaintyProduct).toBeCloseTo(0.5, 2);
+    expect(model.getPositionStatistics(0)?.rms).toBeCloseTo(deltaX, 8);
     model.dispose();
   });
 });
@@ -43,4 +45,14 @@ describe("calculateRMSStatistics", () => {
     expect(stats).not.toBeNull();
     expect(Number.isFinite(stats!.rms)).toBe(true);
   });
+});
+
+it("uses the same phase for an eigenstate and a single-state superposition", () => {
+  const model = new IntroModel();
+  model.timeProperty.value = 0.25;
+  const eigenstate = model.getTimeEvolvedEigenstateInNmUnits(0)!;
+  const superposition = model.getTimeEvolvedSuperpositionInNmUnits(0.25e-15)!;
+  expect(eigenstate.realPart[500]).toBeCloseTo(superposition.realPart[500]!, 12);
+  expect(eigenstate.imagPart[500]).toBeCloseTo(superposition.imagPart[500]!, 12);
+  model.dispose();
 });

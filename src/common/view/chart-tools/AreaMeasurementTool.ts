@@ -11,7 +11,6 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
 import QPPWColors from "../../../QPPWColors.js";
-import { hasSuperpositionConfig } from "../../model/ModelTypeGuards.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 import { SuperpositionType } from "../../model/SuperpositionType.js";
@@ -461,7 +460,7 @@ export class AreaMeasurementTool extends Node {
 
     let probabilityDensity: number[];
 
-    if (isSuperposition && hasSuperpositionConfig(this.model)) {
+    if (isSuperposition) {
       // Get superposition probability density in nm units
       const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
       const nmData = this.model.getTimeEvolvedSuperpositionInNmUnits(time);

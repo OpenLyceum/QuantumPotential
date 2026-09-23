@@ -27,7 +27,7 @@ import {
   SINGLE_WELL_PARAMETER_PRESETS,
 } from "../../common/model/PotentialParameterPresets.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
+import { createSingleWellParameters } from "../../common/model/SingleWellParameters.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
 
@@ -207,7 +207,7 @@ export class OneWellModel extends BaseModel {
   private readonly parameterPresets: PotentialParameterPresets<"wellWidth" | "wellDepth" | "barrierHeight">;
 
   public constructor() {
-    super({ wellWidth: 5.5, wellDepth: 12 });
+    super({ screenKind: "oneWell", wellWidth: 5.5, wellDepth: 12 });
 
     // Initialize model-specific well parameters
     this.barrierHeightProperty = new NumberProperty(OneWellModel.DEFAULT_BARRIER_HEIGHT, {
@@ -252,7 +252,7 @@ export class OneWellModel extends BaseModel {
     super.setupCacheInvalidation();
 
     const invalidateCache = () => {
-      this.boundStateResult = null;
+      this.invalidateBoundStates();
       // Also update superposition coefficients when bound states change
       this.updateSuperpositionCoefficients();
     };
@@ -286,7 +286,7 @@ export class OneWellModel extends BaseModel {
     left: number;
     right: number;
   } | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -426,7 +426,7 @@ export class OneWellModel extends BaseModel {
    * Returns a percentage (0-100).
    */
   public getClassicallyForbiddenProbability(energyLevel: number): number {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -539,82 +539,16 @@ export class OneWellModel extends BaseModel {
 
     try {
       // Build potential parameters based on type
-      const potentialParams: WellParameters = {
-        type: this.potentialTypeProperty.value,
-        wellWidth: wellWidth,
-      };
+      const potentialParams = createSingleWellParameters(
+        this.potentialTypeProperty.value,
+        wellWidth,
+        wellDepth,
+        this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES,
+        this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES,
+        OneWellModel.SPRING_CONSTANT_MULTIPLIER,
+        OneWellModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE ** 2,
+      );
 
-      // Add type-specific parameters
-      switch (this.potentialTypeProperty.value) {
-        case PotentialType.INFINITE_WELL:
-          // No additional parameters needed
-          break;
-        case PotentialType.FINITE_WELL:
-          potentialParams.wellDepth = wellDepth;
-          break;
-        case PotentialType.HARMONIC_OSCILLATOR:
-          // Convert well depth to spring constant: k = mω² = m(4V₀/mL²) = 4V₀/L²
-          potentialParams.springConstant =
-            (OneWellModel.SPRING_CONSTANT_MULTIPLIER * wellDepth) / (wellWidth * wellWidth);
-          break;
-        case PotentialType.MORSE:
-          // Morse potential: V(x) = D_e * (1 - exp(-(x - x_e)/a))^2
-          // wellWidth is the width parameter 'a' in meters
-          potentialParams.dissociationEnergy = wellDepth;
-          potentialParams.equilibriumPosition = 0; // Center of the well
-          potentialParams.wellWidth = wellWidth; // width in meters
-          break;
-        case PotentialType.POSCHL_TELLER:
-          // Pöschl-Teller potential: V(x) = -V_0 / cosh²(x/a)
-          // wellWidth is the width parameter 'a' in meters
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.wellWidth = wellWidth; // width in meters
-          break;
-        case PotentialType.ROSEN_MORSE:
-          // Rosen-Morse potential: V(x) = -V_0 / cosh²(x/a) + V_1 * tanh(x/a)
-          // wellWidth is the width parameter 'a' in meters
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellWidth = wellWidth; // width in meters
-          break;
-        case PotentialType.ECKART:
-          // Eckart potential: V(x) = V_0 / (1 + exp(x/a))² - V_1 / (1 + exp(x/a))
-          // wellWidth is the width parameter 'a' in meters
-          potentialParams.potentialDepth = wellDepth;
-          potentialParams.barrierHeight = this.barrierHeightProperty.value * QuantumConstants.EV_TO_JOULES;
-          potentialParams.wellWidth = wellWidth; // width in meters
-          break;
-        case PotentialType.ASYMMETRIC_TRIANGLE:
-          // Slope is the field strength
-          potentialParams.slope = wellDepth / wellWidth;
-          potentialParams.wellWidth = wellWidth;
-          break;
-        case PotentialType.TRIANGULAR:
-          // Triangular potential:
-          // V(x) = height + offset for x < 0
-          // V(x) = offset at x = 0
-          // V(x) = offset + (height/width) * x for 0 < x < width
-          // V(x) = height + offset for x > width
-          potentialParams.wellDepth = wellDepth; // height in Joules
-          potentialParams.wellWidth = wellWidth; // width in meters
-          potentialParams.energyOffset = this.potentialOffsetProperty.value * QuantumConstants.EV_TO_JOULES; // offset in Joules
-          break;
-        case PotentialType.COULOMB_1D: {
-          // For Coulomb potentials, use coulombStrength parameter α = k*e²
-          // where k = 1/(4πε₀) ≈ 8.9875517923e9 N·m²/C²
-          // α ≈ 2.307e-28 J·m for electron charge
-          // Energy then scales naturally with mass: E_n = -mα²/(2ℏ²n²)
-          // With electron mass, this gives E_1 = -13.6 eV
-          potentialParams.coulombStrength =
-            OneWellModel.COULOMB_CONSTANT * QuantumConstants.ELEMENTARY_CHARGE * QuantumConstants.ELEMENTARY_CHARGE;
-          break;
-        }
-        default:
-          // For other potential types, use numerical solution
-          break;
-      }
-
-      // Attempt analytical solution first
       this.boundStateResult = this.solver.solveAnalyticalIfPossible(potentialParams, mass, numStates, gridConfig);
     } catch (error) {
       if (error instanceof NoBoundStatesError) {
@@ -644,7 +578,7 @@ export class OneWellModel extends BaseModel {
       hasBoundStates: !!this.boundStateResult,
     });
 
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -839,7 +773,7 @@ export class OneWellModel extends BaseModel {
     wavefunction: number[];
     energy: number;
   } | null {
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 
@@ -895,7 +829,7 @@ export class OneWellModel extends BaseModel {
     }
 
     // Ensure we have bound states
-    if (!this.boundStateResult) {
+    if (this.boundStateResult === undefined) {
       this.calculateBoundStates();
     }
 

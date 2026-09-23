@@ -18,9 +18,9 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import type { PotentialType } from "../model/PotentialFunction.js";
-import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
-import { calculateRMSStatistics, createDoubleArrowShape } from "./RMSIndicatorUtils.js";
+import { CoalescedUpdate } from "./CoalescedUpdate.js";
+import { createDoubleArrowShape } from "./RMSIndicatorUtils.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
 
 const a11y = stringManager.getA11yStrings();
@@ -196,47 +196,27 @@ export class WavenumberChartNode extends Node {
    */
   private createWavenumberDescription(selectedIndex: number, _potentialType: PotentialType, _width: number): string {
     const strings = a11y.wavenumberChart;
-    const wavenumberResult = this.model.getWavenumberTransform();
-    const phiK = wavenumberResult?.wavenumberWavefunctions[selectedIndex];
-    if (!(wavenumberResult && phiK)) {
+    const distribution = this.model.getWavenumberDistribution(selectedIndex);
+    if (!distribution) {
       return strings.noDataStringProperty.value;
     }
-
-    // Convert k from rad/m to nm^-1
-    const kGridNm = wavenumberResult.kGrid.map((k) => k / (2 * Math.PI * 1e9));
-    const stats = calculateRMSStatistics(
-      kGridNm,
-      phiK.map((value) => value * value),
-    );
-    if (!stats) {
-      return strings.noDataStringProperty.value;
-    }
-
-    // Average momentum p = ℏk
-    const avgMomentum = stats.avg * (2 * Math.PI * 1e9) * QuantumConstants.HBAR;
     const paragraphs = [
       strings.introductionStringProperty.value,
       StringUtils.fillIn(strings.statisticsPatternStringProperty, {
-        average: stats.avg.toFixed(3),
-        rms: stats.rms.toFixed(3),
+        average: distribution.average.toFixed(3),
+        rms: distribution.spread.toFixed(3),
       }),
-      StringUtils.fillIn(strings.momentumPatternStringProperty, { momentum: avgMomentum.toExponential(2) }),
+      StringUtils.fillIn(strings.momentumPatternStringProperty, {
+        momentum: distribution.averageMomentum.toExponential(2),
+      }),
     ];
 
-    // Uncertainty product with the position spread, when available
-    const nmData = this.model.getWavefunctionInNmUnits(selectedIndex + 1);
-    const boundStates = this.model.getBoundStates();
-    if (nmData && boundStates) {
-      const xGridNm = boundStates.xGrid.map((x) => x * 1e9);
-      const positionStats = calculateRMSStatistics(xGridNm, nmData.probabilityDensity);
-      if (positionStats) {
-        paragraphs.push(
-          StringUtils.fillIn(strings.uncertaintyPatternStringProperty, {
-            // Heisenberg's Δx·Δk ≥ ½ holds for angular wavenumber, so convert the plotted 1/λ (nm⁻¹) back to rad/nm
-            product: (positionStats.rms * stats.rms * 2 * Math.PI).toFixed(2),
-          }),
-        );
-      }
+    if (distribution.uncertaintyProduct !== null) {
+      paragraphs.push(
+        StringUtils.fillIn(strings.uncertaintyPatternStringProperty, {
+          product: distribution.uncertaintyProduct.toFixed(2),
+        }),
+      );
     }
 
     return paragraphs.join("\n\n");
@@ -329,11 +309,8 @@ export class WavenumberChartNode extends Node {
    * Links chart updates to model property changes.
    */
   private linkToModel(): void {
-    // Update when any parameter changes
-    this.model.potentialTypeProperty.lazyLink(() => this.update());
-    this.model.wellWidthProperty.lazyLink(() => this.update());
-    this.model.wellDepthProperty.lazyLink(() => this.update());
-    this.model.particleMassProperty.lazyLink(() => this.update());
+    const potentialUpdate = new CoalescedUpdate(() => this.update());
+    this.model.potentialRevisionProperty.lazyLink(() => potentialUpdate.schedule());
     this.model.selectedEnergyLevelIndexProperty.lazyLink(() => this.update());
 
     // Update visibility of RMS indicators if the property exists (IntroViewState only)
@@ -372,8 +349,8 @@ export class WavenumberChartNode extends Node {
 
     this.isUpdating = true;
     try {
-      const wavenumberResult = this.model.getWavenumberTransform();
-      if (!wavenumberResult) {
+      const distribution = this.model.getWavenumberDistribution(this.model.selectedEnergyLevelIndexProperty.value);
+      if (!distribution) {
         // Clear the chart if no data available
         this.wavenumberPath.shape = null;
         this.rmsIndicator.shape = null;
@@ -382,25 +359,8 @@ export class WavenumberChartNode extends Node {
         return;
       }
 
-      const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-      if (selectedIndex < 0 || selectedIndex >= wavenumberResult.wavenumberWavefunctions.length) {
-        return;
-      }
-
-      const kGrid = wavenumberResult.kGrid;
-      const phiK = wavenumberResult.wavenumberWavefunctions[selectedIndex]!;
-
-      // Convert k from rad/m to nm^-1: k_nm = k_m / (2π * 10^9)
-      const kGridNm = kGrid.map((k) => k / (2 * Math.PI * 1e9));
-
-      // Calculate |φ(k)|²
-      const phiKSquared = phiK.map((value) => {
-        // phiK is complex, but for real wavefunctions the FT is also typically real
-        // We calculate the square magnitude
-        const realPart = value;
-        const imagPart = 0; // For real wavefunctions
-        return realPart * realPart + imagPart * imagPart;
-      });
+      const kGridNm = distribution.gridNm;
+      const phiKSquared = distribution.density;
 
       // Update view range based on data
       this.updateViewRange(kGridNm, phiKSquared);
@@ -410,11 +370,9 @@ export class WavenumberChartNode extends Node {
       this.plotWavenumberDistribution(kGridNm, phiKSquared);
 
       // Calculate and display average and RMS wavenumber
-      const stats = calculateRMSStatistics(kGridNm, phiKSquared);
-
       // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
-      if (stats && this.shouldShowRMSIndicators()) {
-        const { avg, rms } = stats;
+      if (this.shouldShowRMSIndicators()) {
+        const { average: avg, spread: rms } = distribution;
         this.avgWavenumberLabel.string = stringManager.averageWavenumberLabelStringProperty.value.replace(
           "{{value}}",
           avg.toFixed(2),

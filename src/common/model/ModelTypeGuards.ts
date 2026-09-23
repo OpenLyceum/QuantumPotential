@@ -1,6 +1,5 @@
 /**
- * Type guard functions for narrowing ScreenModel union types.
- * These functions provide type-safe checks without manual type assertions.
+ * Screen identity guards use the explicit kind; capability guards check optional controls.
  */
 
 import type { IntroModel } from "../../intro/model/IntroModel.js";
@@ -14,8 +13,7 @@ import type { ScreenModel } from "./ScreenModels.js";
  * IntroModel has a simplified display mode (no phase color).
  */
 export function isIntroModel(model: ScreenModel): model is IntroModel {
-  // IntroModel doesn't have superpositionTypeProperty
-  return !("superpositionTypeProperty" in model);
+  return model.screenKind === "intro";
 }
 
 /**
@@ -23,7 +21,7 @@ export function isIntroModel(model: ScreenModel): model is IntroModel {
  * OneWellModel has coherent displacement and superposition features.
  */
 export function isOneWellModel(model: ScreenModel): model is OneWellModel {
-  return "coherentDisplacementProperty" in model && "superpositionTypeProperty" in model;
+  return model.screenKind === "oneWell";
 }
 
 /**
@@ -31,7 +29,7 @@ export function isOneWellModel(model: ScreenModel): model is OneWellModel {
  * TwoWellsModel has well separation but not multiple wells.
  */
 export function isTwoWellsModel(model: ScreenModel): model is TwoWellsModel {
-  return "wellSeparationProperty" in model && !("numberOfWellsProperty" in model);
+  return model.screenKind === "twoWells";
 }
 
 /**
@@ -39,14 +37,14 @@ export function isTwoWellsModel(model: ScreenModel): model is TwoWellsModel {
  * ManyWellsModel has both well separation and number of wells.
  */
 export function isManyWellsModel(model: ScreenModel): model is ManyWellsModel {
-  return "numberOfWellsProperty" in model;
+  return model.screenKind === "manyWells";
 }
 
 /**
  * Type guard to check if a model has barrier height property.
- * This is specific to certain potentials in OneWellModel and IntroModel.
+ * This is used by One Well and Intro potentials and by the Two Wells barrier controls.
  */
-export function hasBarrierHeight(model: ScreenModel): model is OneWellModel | IntroModel {
+export function hasBarrierHeight(model: ScreenModel): model is OneWellModel | IntroModel | TwoWellsModel {
   return "barrierHeightProperty" in model;
 }
 
@@ -70,18 +68,6 @@ export function hasWellSeparation(model: ScreenModel): model is TwoWellsModel | 
  * Type guard to check if a model has superposition configuration.
  * This applies to OneWellModel, TwoWellsModel, and ManyWellsModel.
  */
-export function hasSuperpositionConfig(model: ScreenModel): model is OneWellModel | TwoWellsModel | ManyWellsModel {
-  return "superpositionConfigProperty" in model;
-}
-
-/**
- * Type guard to check if a model has well offset property.
- * This applies to TwoWellsModel.
- */
-export function hasWellOffset(model: ScreenModel): model is TwoWellsModel {
-  return "wellOffsetProperty" in model;
-}
-
 /**
  * Type guard to check if a model has electric field property.
  * This is specific to ManyWellsModel.
