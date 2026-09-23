@@ -307,8 +307,7 @@ export class ManyWellsModel extends BaseModel {
 
     const potential: number[] = [];
 
-    for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i]!;
+    for (const x of xGrid) {
       let V: number;
 
       switch (this.potentialTypeProperty.value) {

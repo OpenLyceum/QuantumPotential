@@ -786,7 +786,7 @@ try {
   }
 
   console.log("  Well Width | Well Depth | Barrier | States");
-  console.log("  " + "-".repeat(50));
+  console.log(`  ${"-".repeat(50)}`);
 
   for (const r of results) {
     console.log(`    ${r.w.toFixed(1)} nm  |  ${r.d.toFixed(1)} eV  |  ${r.b.toFixed(1)} nm  |  ${r.states}`);
@@ -854,7 +854,7 @@ try {
   const wellDepth = 0.1;
   const result = solveDoubleWell(3.0, wellDepth, 0.5, 1.0, 20, 1000);
 
-  assert(result.energies.length >= 1, "Should find at least 1 state even in shallow wells");
+  assert(result.energies.length > 0, "Should find at least 1 state even in shallow wells");
 
   for (let i = 0; i < result.energies.length; i++) {
     assert(

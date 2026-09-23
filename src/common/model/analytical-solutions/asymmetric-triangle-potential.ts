@@ -267,8 +267,7 @@ export function calculateAsymmetricTriangleClassicalProbability(
 
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
-  for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i]!;
+  for (const x of xGrid) {
     if (x >= 0 && x <= x0) {
       const ke = energy - F * x;
       if (ke > maxKE) {

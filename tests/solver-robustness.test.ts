@@ -59,6 +59,55 @@ const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType[]]> = [
   ["ManyWellsModel", () => new ManyWellsModel(), [PotentialType.MULTI_SQUARE_WELL, PotentialType.MULTI_POSCHL_TELLER]],
 ];
 
+/** Trapezoidal ∫|ψ|² dx over the solver grid; returns null when finite and near 1. */
+function normalizationFailure(
+  boundStates: NonNullable<ReturnType<BaseModel["getBoundStates"]>>,
+  setting: string,
+): string | null {
+  const { xGrid } = boundStates;
+  for (const psi of boundStates.wavefunctions) {
+    let norm = 0;
+    for (let i = 0; i < psi.length - 1; i++) {
+      norm += ((psi[i]! ** 2 + psi[i + 1]! ** 2) / 2) * (xGrid[i + 1]! - xGrid[i]!);
+    }
+    if (Math.abs(norm - 1) > 2e-2) {
+      return `∫|ψ|² = ${norm.toFixed(4)}: ${setting}`;
+    }
+  }
+  return null;
+}
+
+/** Run one random trial; returns a failure message or null. */
+function trialFailure(model: BaseModel, potentials: PotentialType[], random: () => number): string | null {
+  model.potentialTypeProperty.value = potentials[Math.floor(random() * potentials.length)]!;
+
+  const setting: string[] = [model.potentialTypeProperty.value];
+  for (const [name, property] of sliderProperties(model)) {
+    const { min, max } = property.range;
+    const value = min + random() * (max - min);
+    property.value = name === "numberOfWellsProperty" ? Math.round(value) : value;
+    setting.push(`${name}=${property.value.toFixed(3)}`);
+  }
+
+  const boundStates = model.getBoundStates();
+  if (!boundStates) {
+    return null;
+  }
+
+  const finite =
+    boundStates.energies.every(Number.isFinite) && boundStates.wavefunctions.every((psi) => psi.every(Number.isFinite));
+  if (!finite) {
+    return setting.join(" ");
+  }
+
+  // Numerically solved states are normalized over their box. (Closed-form states are normalized
+  // over the whole line, so a wide excited state legitimately has < 1 inside the chart window.)
+  if (model instanceof ManyWellsModel) {
+    return normalizationFailure(boundStates, setting.join(" "));
+  }
+  return null;
+}
+
 describe("solver robustness", () => {
   it.each(MODELS)("%s gives finite bound states for random settings", (_name, create, potentials) => {
     const model = create();
@@ -66,38 +115,9 @@ describe("solver robustness", () => {
     const failures: string[] = [];
 
     for (let trial = 0; trial < TRIALS; trial++) {
-      model.potentialTypeProperty.value = potentials[Math.floor(random() * potentials.length)]!;
-
-      const setting: string[] = [model.potentialTypeProperty.value];
-      for (const [name, property] of sliderProperties(model)) {
-        const { min, max } = property.range;
-        const value = min + random() * (max - min);
-        property.value = name === "numberOfWellsProperty" ? Math.round(value) : value;
-        setting.push(`${name}=${property.value.toFixed(3)}`);
-      }
-
-      const boundStates = model.getBoundStates();
-      if (boundStates) {
-        const finite =
-          boundStates.energies.every(Number.isFinite) &&
-          boundStates.wavefunctions.every((psi) => psi.every(Number.isFinite));
-        if (!finite) {
-          failures.push(setting.join(" "));
-        } else if (model instanceof ManyWellsModel) {
-          // Numerically solved states are normalized over their box. (Closed-form states are normalized
-          // over the whole line, so a wide excited state legitimately has < 1 inside the chart window.)
-          const { xGrid } = boundStates;
-          for (const psi of boundStates.wavefunctions) {
-            let norm = 0;
-            for (let i = 0; i < psi.length - 1; i++) {
-              norm += ((psi[i]! ** 2 + psi[i + 1]! ** 2) / 2) * (xGrid[i + 1]! - xGrid[i]!);
-            }
-            if (Math.abs(norm - 1) > 2e-2) {
-              failures.push(`∫|ψ|² = ${norm.toFixed(4)}: ${setting.join(" ")}`);
-              break;
-            }
-          }
-        }
+      const failure = trialFailure(model, potentials, random);
+      if (failure) {
+        failures.push(failure);
       }
     }
 

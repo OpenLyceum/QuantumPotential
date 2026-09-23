@@ -195,6 +195,7 @@ class CustomDotMatrix {
   /**
    * Matrix inverse using Gaussian elimination with partial pivoting.
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: dense Gaussian-elimination inverse
   inverse(): CustomDotMatrix {
     if (this.m !== this.n) {
       throw new Error("Matrix must be square for inverse");
@@ -342,6 +343,7 @@ export function matrixToArray(matrix: CustomDotMatrix): number[][] {
  * @param matrix - Symmetric N×N matrix (can be Matrix or number[][])
  * @returns Object with eigenvalues array and eigenvectors (array of column vectors)
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Jacobi eigen-decomposition is inherently branched
 export function diagonalize(matrix: CustomDotMatrix | number[][]): EigenDecompositionResult {
   // Convert to 2D array for Jacobi algorithm
   const A = Array.isArray(matrix) ? matrix.map((row) => [...row]) : matrixToArray(matrix);

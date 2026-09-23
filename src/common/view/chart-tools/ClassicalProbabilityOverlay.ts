@@ -320,8 +320,8 @@ export class ClassicalProbabilityOverlay extends Node {
       leftShape.moveTo(leftEdgeX, y0);
       leftShape.lineTo(leftEdgeX, leftPoints[0]!.y);
 
-      for (let i = 0; i < leftPoints.length; i++) {
-        leftShape.lineTo(leftPoints[i]!.x, leftPoints[i]!.y);
+      for (const point of leftPoints) {
+        leftShape.lineTo(point.x, point.y);
       }
 
       const lastPoint = leftPoints[leftPoints.length - 1]!;
@@ -346,8 +346,8 @@ export class ClassicalProbabilityOverlay extends Node {
       rightShape.moveTo(firstPoint.x, y0);
       rightShape.lineTo(firstPoint.x, firstPoint.y);
 
-      for (let i = 0; i < rightPoints.length; i++) {
-        rightShape.lineTo(rightPoints[i]!.x, rightPoints[i]!.y);
+      for (const point of rightPoints) {
+        rightShape.lineTo(point.x, point.y);
       }
 
       const lastPoint = rightPoints[rightPoints.length - 1]!;

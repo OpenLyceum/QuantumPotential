@@ -679,8 +679,7 @@ export class OneWellModel extends BaseModel {
     // Legacy implementation for potentials without analytical solver support
     const potential: number[] = [];
 
-    for (let i = 0; i < xGrid.length; i++) {
-      const x = xGrid[i]!;
+    for (const x of xGrid) {
       let V: number;
 
       switch (this.potentialTypeProperty.value) {
@@ -820,6 +819,7 @@ export class OneWellModel extends BaseModel {
    * Updates the superposition coefficients based on the selected superposition type.
    * This method computes the amplitudes and phases for predefined superposition types.
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: one branch per superposition preset
   public updateSuperpositionCoefficients(): void {
     const type = this.superpositionTypeProperty.value;
 

@@ -88,7 +88,7 @@ export class ZerosVisualization extends Node {
     this.zerosPositionsProperty.value = zeros;
 
     // Create circles at each zero position
-    zeros.forEach((zeroX) => {
+    for (const zeroX of zeros) {
       const x = this.options.dataToViewX(zeroX);
       const y = this.options.dataToViewY(0); // Zeros are at y=0
 
@@ -101,7 +101,7 @@ export class ZerosVisualization extends Node {
       });
 
       this.container.addChild(circle);
-    });
+    }
 
     this.container.visible = zeros.length > 0;
   }

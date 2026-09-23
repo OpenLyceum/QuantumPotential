@@ -515,8 +515,8 @@ export class AreaMeasurementTool extends Node {
     shape.lineTo(leftViewX, points[0]!.y);
 
     // Trace along the curve
-    for (let i = 0; i < points.length; i++) {
-      shape.lineTo(points[i]!.x, points[i]!.y);
+    for (const point of points) {
+      shape.lineTo(point.x, point.y);
     }
 
     // Draw line down from last point to baseline

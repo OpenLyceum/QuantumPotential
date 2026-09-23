@@ -523,7 +523,7 @@ function printTestResult(result: TestResult): void {
  * Test all methods against harmonic oscillator
  */
 function testHarmonicOscillator(): void {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("HARMONIC OSCILLATOR TESTS");
   console.log("=".repeat(80));
 
@@ -573,7 +573,7 @@ function testHarmonicOscillator(): void {
  * Test all methods against finite square well
  */
 function testFiniteSquareWell(): void {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("FINITE SQUARE WELL TESTS");
   console.log("=".repeat(80));
 
@@ -626,7 +626,7 @@ function testFiniteSquareWell(): void {
  * Test all methods against Morse potential
  */
 function testMorsePotential(): void {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("MORSE POTENTIAL TESTS");
   console.log("=".repeat(80));
 
@@ -682,7 +682,7 @@ function testMorsePotential(): void {
  * Test all methods against Pöschl-Teller potential
  */
 function testPoschlTellerPotential(): void {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("PÖSCHL-TELLER POTENTIAL TESTS");
   console.log("=".repeat(80));
 
@@ -732,7 +732,7 @@ function testPoschlTellerPotential(): void {
  * Main test runner
  */
 function runAllTests(): void {
-  console.log("\n" + "═".repeat(80));
+  console.log(`\n${"═".repeat(80)}`);
   console.log("COMPREHENSIVE WAVEFUNCTION TEST SUITE");
   console.log("═".repeat(80));
   console.log("Testing ALL solver methods with STRINGENT validation criteria");
@@ -751,7 +751,7 @@ function runAllTests(): void {
   const totalTime = ((endTime - startTime) / 1000).toFixed(2);
 
   // Print summary
-  console.log("\n" + "═".repeat(80));
+  console.log(`\n${"═".repeat(80)}`);
   console.log("TEST SUMMARY");
   console.log("═".repeat(80));
   console.log(`Total tests: ${totalTests}`);

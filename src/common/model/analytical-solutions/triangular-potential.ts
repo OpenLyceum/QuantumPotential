@@ -209,6 +209,7 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
  * @param gridConfig - Grid configuration for wavefunction evaluation
  * @returns Bound state results with energies and wavefunctions
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Airy-function triangular well spans many regimes
 export function solveTriangularPotential(
   height: number,
   width: number,
@@ -638,8 +639,8 @@ export function calculateTriangularPotentialClassicalProbability(
 
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
-  for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]!);
+  for (const x of xGrid) {
+    const ke = energy - potentialFn(x);
     if (ke > maxKE) {
       maxKE = ke;
     }

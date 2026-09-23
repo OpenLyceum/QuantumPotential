@@ -238,8 +238,7 @@ export function calculateCoulomb1DClassicalProbability(
 
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
-  for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i]!;
+  for (const x of xGrid) {
     const absX = Math.abs(x);
 
     if (absX < 1e-15) {

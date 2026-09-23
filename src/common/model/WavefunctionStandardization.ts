@@ -79,16 +79,14 @@ export function standardizeWavefunctionSign(psi: number[], xGrid: number[], pari
       if (psi[rightIndex]! < 0) {
         return psi.map((val) => -val);
       }
-    } else {
+    } else if (centerIndex > 0 && centerIndex < psi.length - 1) {
       // Fallback: check slope at center using finite difference
-      if (centerIndex > 0 && centerIndex < psi.length - 1) {
-        const slope =
-          (psi[centerIndex + 1]! - psi[centerIndex - 1]!) / (xGrid[centerIndex + 1]! - xGrid[centerIndex - 1]!);
+      const slope =
+        (psi[centerIndex + 1]! - psi[centerIndex - 1]!) / (xGrid[centerIndex + 1]! - xGrid[centerIndex - 1]!);
 
-        // We want slope < 0 at center (negative slope)
-        if (slope > 0) {
-          return psi.map((val) => -val);
-        }
+      // We want slope < 0 at center (negative slope)
+      if (slope > 0) {
+        return psi.map((val) => -val);
       }
     }
   }

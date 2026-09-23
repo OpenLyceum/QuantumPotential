@@ -74,11 +74,6 @@ function getEnergyAxisRange(potentialType: PotentialType): {
     case PotentialType.ECKART:
       // The shallow Eckart dip and its higher left plateau fit this smaller window.
       return { min: -5, max: 5 };
-    case PotentialType.FINITE_WELL:
-    case PotentialType.POSCHL_TELLER:
-    case PotentialType.ROSEN_MORSE:
-    case PotentialType.COULOMB_1D:
-    case PotentialType.CUSTOM:
     default:
       // V=0 at infinity (wells with negative energy states)
       return { min: -15, max: 5 };

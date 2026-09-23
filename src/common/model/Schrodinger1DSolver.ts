@@ -28,16 +28,16 @@ import {
 import type { AnalyticalPotential, BasePotential } from "./potentials/index.js";
 import QuantumConstants from "./QuantumConstants.js";
 
+// Re-export NumericalMethod for backward compatibility
+export { NumericalMethod } from "./NumericalMethod.js";
+// Re-export WellParameters for backward compatibility
+export type { WellParameters } from "./PotentialFunction.js";
 // Re-export potential classes for external use
 export {
   AnalyticalPotential,
   BasePotential,
   NumericalPotential,
 } from "./potentials/index.js";
-// Re-export WellParameters for backward compatibility
-export type { WellParameters };
-// Re-export NumericalMethod for backward compatibility
-export { NumericalMethod };
 
 /** Samples per cell for cellAveragedPotential (midpoint rule). */
 const CELL_AVERAGE_SAMPLES = 16;

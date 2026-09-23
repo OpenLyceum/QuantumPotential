@@ -146,8 +146,8 @@ function searchForMissingEigenvalues(
 
   // Detect missing states: if state n has k > n nodes, then (k - n) states are missing
   const searchRegions: Array<{
-    Emin: number;
-    Emax: number;
+    energyMin: number;
+    energyMax: number;
     missingParity: "even" | "odd";
     expectedNodeCount: number;
   }> = [];
@@ -165,8 +165,8 @@ function searchForMissingEigenvalues(
       );
 
       // Determine where to search: between previous state and current state
-      const Emin = i > 0 ? statesWithNodes[i - 1]!.energy : V0 * 1e-6;
-      const Emax = current.energy;
+      const energyMin = i > 0 ? statesWithNodes[i - 1]!.energy : V0 * 1e-6;
+      const energyMax = current.energy;
 
       // Determine expected parity of missing state(s)
       // States alternate: even, odd, even, odd, ...
@@ -175,8 +175,8 @@ function searchForMissingEigenvalues(
         const expectedParity: "even" | "odd" = missingIndex % 2 === 0 ? "even" : "odd";
 
         searchRegions.push({
-          Emin,
-          Emax,
+          energyMin,
+          energyMax,
           missingParity: expectedParity,
           expectedNodeCount: missingIndex,
         });
@@ -188,13 +188,13 @@ function searchForMissingEigenvalues(
   for (const region of searchRegions) {
     Logger.debug(
       `Searching for missing ${region.missingParity} parity state with ${region.expectedNodeCount} nodes\n` +
-        `  Energy range: [${region.Emin.toExponential(4)}, ${region.Emax.toExponential(4)}] J`,
+        `  Energy range: [${region.energyMin.toExponential(4)}, ${region.energyMax.toExponential(4)}] J`,
     );
 
     // Use the appropriate transcendental equation based on parity
     const searchResults = targetedEigenvalueSearch(
-      region.Emin,
-      region.Emax,
+      region.energyMin,
+      region.energyMax,
       region.missingParity,
       Linner,
       Louter,
@@ -269,7 +269,7 @@ function targetedEigenvalueSearch(
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
 
       if (root !== null && isValidBoundState(root, Linner, L, V0, mass, parity)) {
@@ -313,6 +313,7 @@ function targetedEigenvalueSearch(
  * @param gridConfig - Grid configuration for wavefunction evaluation
  * @returns Bound state results with energies and wavefunctions
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: double-well analytical solve spans many regimes
 export function solveDoubleSquareWellAnalytical(
   wellWidth: number,
   wellDepth: number,
@@ -665,7 +666,7 @@ function searchInInterval(
     const f2 = transcendentalEq(E2);
 
     // Check for sign change (root exists)
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEq, E1, E2, 1e-12, 100);
       if (root !== null && validator(root)) {
         // Check if this root is new (not already found)
@@ -694,6 +695,7 @@ function searchInInterval(
  *
  * Where L = L_outer - L_inner = wellWidth
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: even-parity root search has many energy brackets
 function findEvenParityDoubleWell(
   Linner: number,
   Louter: number,
@@ -763,7 +765,7 @@ function findEvenParityDoubleWell(
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
       if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "even")) {
         // Check if this root is new (not already found)
@@ -787,7 +789,7 @@ function findEvenParityDoubleWell(
     const f2 = transcendentalEquation(E2);
 
     // Check for sign change (root exists)
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-12, 100);
       if (root !== null) {
         // Validate this is a true bound state, not a spurious root
@@ -839,6 +841,7 @@ function findEvenParityDoubleWell(
  * - At x = L_inner: A sinh(κL_i) = B, Aκ cosh(κL_i) = -kC
  * - At x = L_outer: B cos(kL) + C sin(kL) = D, -k[B sin(kL) - C cos(kL)] = -αD
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: odd-parity root search has many energy brackets
 function findOddParityDoubleWell(
   Linner: number,
   Louter: number,
@@ -904,7 +907,7 @@ function findOddParityDoubleWell(
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-14, 150);
       if (root !== null && isValidBoundState(root, Linner, L, V0, mass, "odd")) {
         // Check if this root is new (not already found)
@@ -927,7 +930,7 @@ function findOddParityDoubleWell(
     const f1 = transcendentalEquation(E1);
     const f2 = transcendentalEquation(E2);
 
-    if (f1 * f2 < 0 && isFinite(f1) && isFinite(f2)) {
+    if (f1 * f2 < 0 && Number.isFinite(f1) && Number.isFinite(f2)) {
       const root = solveBisection(transcendentalEquation, E1, E2, 1e-12, 100);
       if (root !== null) {
         // Validate this is a true bound state, not a spurious root
@@ -986,6 +989,7 @@ function findOddParityDoubleWell(
  * @param xGrid - Position grid
  * @returns Normalized wavefunction values
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: piecewise double-well ψ construction
 function computeDoubleWellWavefunction(
   E: number,
   parity: "even" | "odd",

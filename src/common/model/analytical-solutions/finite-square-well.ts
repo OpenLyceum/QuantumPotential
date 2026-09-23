@@ -925,17 +925,15 @@ export function solveFiniteSquareWell(
         } else {
           value = normalization * Math.sin(k * x);
         }
-      } else {
+      } else if (parity === "even") {
         // Outside the well (exponentially decaying)
-        if (parity === "even") {
-          const cosVal = Math.cos(k * halfL);
-          const B = normalization * cosVal * Math.exp(kappa * halfL);
-          value = B * Math.exp(-kappa * Math.abs(x));
-        } else {
-          const sinVal = Math.sin(k * halfL);
-          const B = normalization * sinVal * Math.exp(kappa * halfL);
-          value = B * Math.sign(x) * Math.exp(-kappa * Math.abs(x));
-        }
+        const cosVal = Math.cos(k * halfL);
+        const B = normalization * cosVal * Math.exp(kappa * halfL);
+        value = B * Math.exp(-kappa * Math.abs(x));
+      } else {
+        const sinVal = Math.sin(k * halfL);
+        const B = normalization * sinVal * Math.exp(kappa * halfL);
+        value = B * Math.sign(x) * Math.exp(-kappa * Math.abs(x));
       }
 
       wavefunction.push(value);
@@ -1090,7 +1088,7 @@ function solveSecant(
     }
 
     // Check for divergence
-    if (!isFinite(xNew) || Math.abs(xNew) > 1e10) {
+    if (!Number.isFinite(xNew) || Math.abs(xNew) > 1e10) {
       return null;
     }
 

@@ -77,8 +77,8 @@ export function calculateHarmonicOscillatorClassicalProbability(
 
   // Find maximum kinetic energy for epsilon calculation
   let maxKE = 0;
-  for (let i = 0; i < xGrid.length; i++) {
-    const ke = energy - potentialFn(xGrid[i]!);
+  for (const x of xGrid) {
+    const ke = energy - potentialFn(x);
     if (ke > maxKE) {
       maxKE = ke;
     }
