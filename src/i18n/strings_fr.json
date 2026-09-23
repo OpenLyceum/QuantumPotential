@@ -19,6 +19,7 @@
   "nanometers": "nm",
   "electronMass": "m_e",
   "position": "Position",
+  "quantumStateGraph": "Graphique de l’état quantique",
   "waveFunction": "Fonction d'Onde",
   "probabilityDensity": "Densité de Probabilité",
   "classicalProbabilityDensity": "Densité de Probabilité Classique",

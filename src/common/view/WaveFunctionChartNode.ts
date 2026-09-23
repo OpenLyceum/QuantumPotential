@@ -199,6 +199,13 @@ export class WaveFunctionChartNode extends Node {
     });
     this.plotContentNode.addChild(this.zeroLine);
 
+    // Phase is a colored fill behind the magnitude and component curves, as in Quantum Bound States.
+    this.phaseColorVisualization = new PhaseColorVisualization({
+      dataToViewX: this.dataToViewX.bind(this),
+      dataToViewY: this.dataToViewY.bind(this),
+    });
+    this.plotContentNode.addChild(this.phaseColorVisualization);
+
     // Create wave function paths
     this.realPartPath = new Path(null, {
       stroke: QPPWColors.wavefunctionRealProperty,
@@ -263,13 +270,6 @@ export class WaveFunctionChartNode extends Node {
     // Create classical probability overlay
     this.classicalProbabilityOverlay = new ClassicalProbabilityOverlay(model, toolOptions);
     this.plotContentNode.addChild(this.classicalProbabilityOverlay);
-
-    // Create phase color visualization
-    this.phaseColorVisualization = new PhaseColorVisualization({
-      dataToViewX: this.dataToViewX.bind(this),
-      dataToViewY: this.dataToViewY.bind(this),
-    });
-    this.plotContentNode.addChild(this.phaseColorVisualization);
 
     // Create zeros visualization
     this.zerosVisualization = new ZerosVisualization({
@@ -605,6 +605,10 @@ export class WaveFunctionChartNode extends Node {
     });
     this.viewState.showMagnitudeProperty.lazyLink((show: boolean) => {
       this.magnitudePath.visible = show && this.getEffectiveDisplayMode() === "waveFunction";
+      this.update();
+    });
+    this.viewState.showPhaseProperty.lazyLink(() => {
+      this.update();
     });
 
     // Update visibility of classical probability
@@ -1120,9 +1124,14 @@ export class WaveFunctionChartNode extends Node {
       // waveFunction mode - show real, imaginary, and magnitude (in nm units)
       this.plotSuperpositionComponents(xGrid, realPartNm, imagPartNm);
 
-      // Hide probability density and phase color
+      // Phase is an optional color fill beneath the magnitude curve.
       this.probabilityDensityPath.shape = null;
-      this.phaseColorVisualization.hide();
+      if (this.viewState.showMagnitudeProperty.value && this.viewState.showPhaseProperty.value) {
+        this.phaseColorVisualization.show();
+        this.phaseColorVisualization.plotSuperposition(xGrid, realPartNm, imagPartNm);
+      } else {
+        this.phaseColorVisualization.hide();
+      }
 
       // Hide RMS position indicator and labels
       this.avgPositionIndicator.setLine(0, 0, 0, 0);
@@ -1253,9 +1262,17 @@ export class WaveFunctionChartNode extends Node {
       // waveFunction mode - show real part, imaginary part, and magnitude (in nm units)
       this.plotWaveFunctionComponents(xGrid, wavefunctionNm);
 
-      // Hide probability density and phase color
+      // Phase is an optional color fill beneath the magnitude curve.
       this.probabilityDensityPath.shape = null;
-      this.phaseColorVisualization.hide();
+      if (this.viewState.showMagnitudeProperty.value && this.viewState.showPhaseProperty.value) {
+        const energy = boundStates.energies[selectedIndex] ?? 0;
+        const time = this.model.timeProperty.value * 1e-15;
+        const globalPhase = -(energy * time) / QuantumConstants.HBAR;
+        this.phaseColorVisualization.show();
+        this.phaseColorVisualization.plotWavefunction(xGrid, wavefunctionNm, globalPhase);
+      } else {
+        this.phaseColorVisualization.hide();
+      }
 
       // Hide RMS position indicator and labels
       this.avgPositionIndicator.setLine(0, 0, 0, 0);
@@ -1300,7 +1317,7 @@ export class WaveFunctionChartNode extends Node {
 
       realPoints.push({ x, y: this.dataToViewY(realPart[i]!) });
       imagPoints.push({ x, y: this.dataToViewY(imagPart[i]!) });
-      magnitudePoints.push({ x, y: this.dataToViewY(wavefunction[i]!) });
+      magnitudePoints.push({ x, y: this.dataToViewY(Math.abs(wavefunction[i]!)) });
     }
 
     // Plot real part

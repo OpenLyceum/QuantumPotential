@@ -6,6 +6,7 @@
 import { Node, Rectangle } from "scenerystack/scenery";
 import QPPWColors from "../../../QPPWColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
+import { phaseToReversedTwilight } from "./PhaseColormap.js";
 
 export type PhaseColorVisualizationOptions = {
   dataToViewX: (x: number) => number;
@@ -81,14 +82,7 @@ export class PhaseColorVisualization extends Node {
       // Calculate local phase: arg(ψ) = atan2(Im(ψ), Re(ψ))
       const localPhase = Math.atan2(imagPart, realPart);
 
-      // Normalize phase to [0, 1] for hue (0 to 360 degrees)
-      const normalizedPhase = (localPhase + Math.PI) / (2 * Math.PI);
-      const hue = Math.round(normalizedPhase * 360);
-
-      // Create color using HSL: hue varies with phase, saturation and lightness are fixed
-      const saturation = 80; // 80% saturation for vibrant colors
-      const lightness = 60; // 60% lightness for good visibility
-      const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+      const color = phaseToReversedTwilight(localPhase);
 
       // Height of the strip is proportional to magnitude
       const yTop = dataToViewY(magnitude);
@@ -138,14 +132,7 @@ export class PhaseColorVisualization extends Node {
       // Calculate local phase: arg(ψ) = atan2(Im(ψ), Re(ψ))
       const localPhase = Math.atan2(imag, real);
 
-      // Normalize phase to [0, 1] for hue (0 to 360 degrees)
-      const normalizedPhase = (localPhase + Math.PI) / (2 * Math.PI);
-      const hue = Math.round(normalizedPhase * 360);
-
-      // Create color using HSL: hue varies with phase, saturation and lightness are fixed
-      const saturation = 80; // 80% saturation for vibrant colors
-      const lightness = 60; // 60% lightness for good visibility
-      const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+      const color = phaseToReversedTwilight(localPhase);
 
       // Height of the strip is proportional to magnitude
       const yTop = dataToViewY(magnitude);

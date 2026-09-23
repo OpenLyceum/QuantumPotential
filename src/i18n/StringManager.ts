@@ -130,6 +130,10 @@ export class StringManager {
     return this.stringProperties.positionStringProperty;
   }
 
+  get quantumStateGraphStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.quantumStateGraphStringProperty;
+  }
+
   get wavefunctionStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.waveFunctionStringProperty;
   }

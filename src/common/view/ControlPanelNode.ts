@@ -7,10 +7,11 @@
  *  - graphPanel, beside the wave-function chart: what the chart shows.
  */
 
-import type { NumberProperty, TReadOnlyProperty } from "scenerystack/axon";
+import { DerivedProperty, type NumberProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { Dimension2 } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
-import { GridBox, HBox, Node, RichText, Text, VBox } from "scenerystack/scenery";
-import { PhetFont } from "scenerystack/scenery-phet";
+import { Color, HBox, Line, Node, RichText, Text, VBox } from "scenerystack/scenery";
+import { PhetFont, SpectrumNode } from "scenerystack/scenery-phet";
 import { Checkbox, ComboBox, type ComboBoxItem, HSlider, VerticalAquaRadioButtonGroup } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
@@ -35,6 +36,7 @@ import { QPPWPanel } from "../QPPWPanel.js";
 import isDevMode from "../utils/isDevMode.js";
 import type { QPPWParameter } from "./accessibility/QPPWDescriber.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { QPPWNumberControl } from "./QPPWNumberControl.js";
 import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
@@ -115,6 +117,7 @@ export class ControlPanelNode {
       maxWidth: CONTROL_PANEL_WIDTH,
       xMargin: 12,
       yMargin: 10,
+      accessibleHeading: stringManager.quantumStateGraphStringProperty,
     });
   }
 
@@ -677,9 +680,15 @@ export class ControlPanelNode {
   }
 
   /**
-   * Display mode (probability density, wave function, phase colour) and what parts of ψ are drawn.
+   * Quantum State Graph controls, matching the hierarchy used by PhET's Quantum Bound States.
    */
   private createGraphGroup(): Node {
+    const titleText = new Text(stringManager.quantumStateGraphStringProperty, {
+      font: TITLE_FONT,
+      fill: QPPWColors.textFillProperty,
+      maxWidth: CONTENT_WIDTH,
+    });
+
     // Display mode radio buttons
     const displayModeItems = [
       {
@@ -708,20 +717,6 @@ export class ControlPanelNode {
         options: {
           accessibleName: a11y.controls.waveFunctionStringProperty,
           accessibleHelpText: QPPWDescriber.getDisplayModeDescriptionProperty("waveFunction"),
-        },
-      },
-      {
-        value: "phaseColor" as const,
-        createNode: () =>
-          new Text(stringManager.phaseColorStringProperty, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-
-        // PDOM
-        options: {
-          accessibleName: a11y.controls.phaseColorStringProperty,
-          accessibleHelpText: QPPWDescriber.getDisplayModeDescriptionProperty("phaseColor"),
         },
       },
     ];
@@ -767,18 +762,40 @@ export class ControlPanelNode {
     const classicalProbabilityCheckbox = classicalProbabilityCheckboxContent
       ? new Node({
           children: [classicalProbabilityCheckboxContent],
-          x: 20,
+          layoutOptions: { leftMargin: 25 },
         })
       : null;
 
+    const waveFunctionModeProperty = new DerivedProperty(
+      [this.viewState.displayModeProperty],
+      (mode) => mode === "waveFunction",
+    );
+
+    const createComponentContent = (
+      labelProperty: TReadOnlyProperty<string>,
+      strokeProperty: TReadOnlyProperty<Color>,
+    ): Node =>
+      new HBox({
+        spacing: 10,
+        children: [
+          new Text(labelProperty, {
+            font: new PhetFont(12),
+            fill: QPPWColors.textFillProperty,
+            maxWidth: 120,
+          }),
+          new Line(0, 0, 30, 0, {
+            lineWidth: 3,
+            stroke: strokeProperty,
+          }),
+        ],
+      });
+
     const realPartCheckbox = new Checkbox(
       this.viewState.showRealPartProperty,
-      new Text(stringManager.realPartStringProperty, {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
-      }),
+      createComponentContent(stringManager.realPartStringProperty, QPPWColors.wavefunctionRealProperty),
       {
         ...PANEL_CHECKBOX_OPTIONS,
+        enabledProperty: waveFunctionModeProperty,
 
         // PDOM
         labelContent: a11y.controls.showRealPartStringProperty,
@@ -790,12 +807,10 @@ export class ControlPanelNode {
 
     const imaginaryPartCheckbox = new Checkbox(
       this.viewState.showImaginaryPartProperty,
-      new Text(stringManager.imaginaryPartStringProperty, {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
-      }),
+      createComponentContent(stringManager.imaginaryPartStringProperty, QPPWColors.wavefunctionImaginaryProperty),
       {
         ...PANEL_CHECKBOX_OPTIONS,
+        enabledProperty: waveFunctionModeProperty,
 
         // PDOM
         labelContent: a11y.controls.showImaginaryPartStringProperty,
@@ -807,12 +822,10 @@ export class ControlPanelNode {
 
     const magnitudeCheckbox = new Checkbox(
       this.viewState.showMagnitudeProperty,
-      new Text(stringManager.magnitudeStringProperty, {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
-      }),
+      createComponentContent(stringManager.magnitudeStringProperty, QPPWColors.wavefunctionMagnitudeProperty),
       {
         ...PANEL_CHECKBOX_OPTIONS,
+        enabledProperty: waveFunctionModeProperty,
 
         // PDOM
         labelContent: a11y.controls.showMagnitudeStringProperty,
@@ -822,49 +835,67 @@ export class ControlPanelNode {
       },
     );
 
-    const phaseCheckbox = new Checkbox(
-      this.viewState.showPhaseProperty,
-      new Text(stringManager.phaseStringProperty, {
-        font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
-      }),
-      {
-        ...PANEL_CHECKBOX_OPTIONS,
-
-        // PDOM
-        labelContent: a11y.controls.showPhaseStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Toggle visibility of quantum phase angle. Phase rotates continuously during time evolution.",
-      },
+    const phaseEnabledProperty = new DerivedProperty(
+      [this.viewState.displayModeProperty, this.viewState.showMagnitudeProperty],
+      (mode, showMagnitude) => mode === "waveFunction" && showMagnitude,
     );
+    const phaseContent = new HBox({
+      spacing: 8,
+      children: [
+        new Text(stringManager.phaseStringProperty, {
+          font: new PhetFont(12),
+          fill: QPPWColors.textFillProperty,
+          maxWidth: 55,
+        }),
+        new HBox({
+          spacing: 3,
+          children: [
+            new Text("0", { font: new PhetFont(11), fill: QPPWColors.textFillProperty }),
+            new SpectrumNode({
+              minValue: 0,
+              maxValue: 2 * Math.PI,
+              valueToColor: (phase) => new Color(phaseToReversedTwilight(phase)),
+              size: new Dimension2(44, 10),
+            }),
+            new Text("2π", { font: new PhetFont(11), fill: QPPWColors.textFillProperty }),
+          ],
+        }),
+      ],
+    });
+    const phaseCheckbox = new Checkbox(this.viewState.showPhaseProperty, phaseContent, {
+      ...PANEL_CHECKBOX_OPTIONS,
+      enabledProperty: phaseEnabledProperty,
 
-    // Two columns keep the panel no taller than the chart beside it
-    const waveFunctionCheckboxes = new GridBox({
-      xSpacing: 12,
-      ySpacing: 6,
-      xAlign: "left",
-      rows: [
-        [realPartCheckbox, imaginaryPartCheckbox],
-        [magnitudeCheckbox, phaseCheckbox],
+      // PDOM
+      labelContent: a11y.controls.showPhaseStringProperty,
+      // TODO: Add helpText when PhET accessibility is fully configured
+      // helpText:
+      //   "Toggle visibility of quantum phase angle. Phase rotates continuously during time evolution.",
+    });
+
+    const waveFunctionCheckboxes = new VBox({
+      spacing: 8,
+      align: "left",
+      layoutOptions: { leftMargin: 25 },
+      children: [
+        realPartCheckbox,
+        imaginaryPartCheckbox,
+        magnitudeCheckbox,
+        new Node({
+          children: [phaseCheckbox],
+          layoutOptions: { leftMargin: 25 },
+        }),
       ],
     });
 
-    // Enable/disable wave function views based on display mode
+    // Classical probability belongs to the Probability Density graph.
     this.viewState.displayModeProperty.link((mode: string) => {
-      const enabled = mode === "waveFunction";
-      realPartCheckbox.enabled = enabled;
-      imaginaryPartCheckbox.enabled = enabled;
-      magnitudeCheckbox.enabled = enabled;
-      phaseCheckbox.enabled = enabled;
-
-      // Enable classical probability checkbox only in probability density mode
       if (classicalProbabilityCheckboxContent) {
         classicalProbabilityCheckboxContent.enabled = mode === "probabilityDensity";
       }
     });
 
-    const children: Node[] = [displayModeRadioButtonGroup];
+    const children: Node[] = [titleText, displayModeRadioButtonGroup];
     if (classicalProbabilityCheckbox) {
       children.push(classicalProbabilityCheckbox);
     }
