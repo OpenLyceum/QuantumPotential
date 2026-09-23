@@ -1,4 +1,4 @@
-# Quantum Physics: Potential Wells
+# Quantum Potential Simulation
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
