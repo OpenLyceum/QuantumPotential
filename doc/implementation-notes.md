@@ -110,6 +110,8 @@ closed-form coefficients for the harmonic oscillator.
 - **Handles.** Each geometric parameter is a handle declared by its anchor, its (nm, eV) point on the
   curve as a function of the parameter; `PotentialHandleNode.getValueForPoint` inverts the anchor to follow
   the pointer. A new potential only needs anchors (`PotentialHandlesLayer`).
+- **Info dialog.** Every screen has a half-size `InfoButton` beside the reset button (`BaseScreenView`). It
+  opens a dialog, built on first use, from the screen's description, key-concepts and interactions strings.
 - **Accessibility.** `QPPWDescriber` turns model state into localized sentences; `QPPWAlerter` sends live
   announcements. See [ACCESSIBILITY.md](ACCESSIBILITY.md).
 

@@ -6,8 +6,8 @@
 import { DerivedProperty, type TReadOnlyProperty } from "scenerystack/axon";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Node, RichText, Text, VBox } from "scenerystack/scenery";
-import { PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
-import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
+import { InfoButton, PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
+import { Dialog, ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
 import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
@@ -17,7 +17,7 @@ import QPPWColors from "../../QPPWColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import type { BaseModel } from "../model/BaseModel.js";
-import { FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
+import { FLAT_INFO_BUTTON_OPTIONS, FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
 import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { CONTROL_PANEL_WIDTH, ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
@@ -25,8 +25,11 @@ import { EnergyChartNode } from "./EnergyChartNode.js";
 import { SimulationControlBar } from "./SimulationControlBar.js";
 import { WaveFunctionChartNode } from "./WaveFunctionChartNode.js";
 
+/** Width (view units) at which the info dialog's text wraps. */
+const INFO_DIALOG_TEXT_WIDTH = 500;
+
 /**
- * Screen-specific string properties for info dialog and screen summary.
+ * Screen-specific string properties for the info dialog.
  */
 export type ScreenStringProperties = {
   titleStringProperty: TReadOnlyProperty<string>;
@@ -45,6 +48,10 @@ export type ScreenSummaryOptions = {
 
 export abstract class BaseScreenView extends ScreenView {
   protected readonly resetButton: ResetAllButton;
+  protected readonly infoButton: InfoButton;
+
+  // Built on first use: its content comes from the subclass's strings, which are not needed until then
+  private infoDialog: Dialog | null = null;
   protected readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
 
   // Common components (may be undefined for screens that don't use them)
@@ -99,6 +106,37 @@ export abstract class BaseScreenView extends ScreenView {
       // helpText: "Return all parameters to their initial values. Keyboard shortcut: Alt+R.",
     });
     this.addChild(this.resetButton);
+
+    // Info button beside the reset button, at half its default size, opening this screen's info dialog
+    this.infoButton = new InfoButton({
+      ...FLAT_INFO_BUTTON_OPTIONS,
+      scale: 0.5,
+      listener: () => {
+        this.interruptSubtreeInput();
+        this.getInfoDialog().show();
+      },
+      right: this.resetButton.left - 10,
+      centerY: this.resetButton.centerY,
+    });
+    this.addChild(this.infoButton);
+  }
+
+  /** The info dialog, created on first use. A Dialog manages its own layer, so it is not added as a child. */
+  private getInfoDialog(): Dialog {
+    if (!this.infoDialog) {
+      const titleStringProperty = this.getScreenStringProperties().titleStringProperty;
+      this.infoDialog = new Dialog(this.createInfoDialogContent(), {
+        title: new Text(titleStringProperty, {
+          font: new PhetFont({ size: 18, weight: "bold" }),
+          fill: QPPWColors.textFillProperty,
+        }),
+        accessibleName: titleStringProperty,
+        fill: QPPWColors.controlPanelBackgroundColorProperty,
+        stroke: QPPWColors.controlPanelStrokeColorProperty,
+        closeButtonColor: QPPWColors.textFillProperty,
+      });
+    }
+    return this.infoDialog;
   }
 
   /**
@@ -182,7 +220,7 @@ export abstract class BaseScreenView extends ScreenView {
     // Keyboard and screen-reader order follows the layout: each chart, then the panel that controls it
     this.setupPDOMStructure(
       [this.energyChart, this.energyPanel, this.waveFunctionChart, this.graphPanel],
-      [this.simulationControlBar, this.resetButton],
+      [this.simulationControlBar],
     );
   }
 
@@ -205,57 +243,35 @@ export abstract class BaseScreenView extends ScreenView {
   protected abstract getInteractionsTitleStringProperty(): TReadOnlyProperty<string>;
 
   /**
-   * Creates the content for the info dialog.
-   * This is a concrete implementation that uses screen-specific string properties.
+   * Creates the body of the info dialog (description, key concepts, interactions) from the screen-specific
+   * string properties; the title is the dialog's own.
    */
-  public createInfoDialogContent(): Node {
+  private createInfoDialogContent(): Node {
     const strings = this.getScreenStringProperties();
-    const keyConceptsTitle = this.getKeyConceptsTitleStringProperty();
-    const interactionsTitle = this.getInteractionsTitleStringProperty();
 
-    const titleText = new Text(strings.titleStringProperty, {
-      font: new PhetFont({ size: 18, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
-    });
-
-    const descriptionText = new RichText(strings.descriptionStringProperty, {
-      font: new PhetFont(14),
-      fill: QPPWColors.textFillProperty,
-      maxWidth: 500,
-    });
-
-    const keyConceptsTitleText = new Text(keyConceptsTitle, {
-      font: new PhetFont({ size: 14, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
-    });
-
-    const keyConceptsList = new RichText(strings.keyConceptsStringProperty, {
-      font: new PhetFont(13),
-      fill: QPPWColors.textFillProperty,
-      maxWidth: 500,
-    });
-
-    const interactionTitleText = new Text(interactionsTitle, {
-      font: new PhetFont({ size: 14, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
-    });
-
-    const interactionsList = new RichText(strings.interactionsStringProperty, {
-      font: new PhetFont(13),
-      fill: QPPWColors.textFillProperty,
-      maxWidth: 500,
-    });
+    // The locale strings separate lines and bullets with "\n", which RichText only honours as <br>
+    const paragraph = (stringProperty: TReadOnlyProperty<string>, fontSize: number): RichText =>
+      new RichText(new DerivedProperty([stringProperty], (text) => text.replace(/\n/g, "<br>")), {
+        font: new PhetFont(fontSize),
+        fill: QPPWColors.textFillProperty,
+        lineWrap: INFO_DIALOG_TEXT_WIDTH,
+      });
+    const heading = (stringProperty: TReadOnlyProperty<string>): Text =>
+      new Text(stringProperty, {
+        font: new PhetFont({ size: 14, weight: "bold" }),
+        fill: QPPWColors.textFillProperty,
+        maxWidth: INFO_DIALOG_TEXT_WIDTH,
+      });
 
     return new VBox({
       spacing: 12,
       align: "left",
       children: [
-        titleText,
-        descriptionText,
-        keyConceptsTitleText,
-        keyConceptsList,
-        interactionTitleText,
-        interactionsList,
+        paragraph(strings.descriptionStringProperty, 14),
+        heading(this.getKeyConceptsTitleStringProperty()),
+        paragraph(strings.keyConceptsStringProperty, 13),
+        heading(this.getInteractionsTitleStringProperty()),
+        paragraph(strings.interactionsStringProperty, 13),
       ],
     });
   }
@@ -353,8 +369,8 @@ export abstract class BaseScreenView extends ScreenView {
    * @param controlAreaChildren - Nodes to add to the control area (control panels)
    */
   protected setupPDOMStructure(playAreaChildren: Node[], controlAreaChildren: Node[]): void {
-    // Add children to the parent ScreenView's PDOM nodes
+    // Add children to the parent ScreenView's PDOM nodes; every screen's control area ends with info and reset
     this.pdomPlayAreaNode.pdomOrder = playAreaChildren;
-    this.pdomControlAreaNode.pdomOrder = controlAreaChildren;
+    this.pdomControlAreaNode.pdomOrder = [...controlAreaChildren, this.infoButton, this.resetButton];
   }
 }
