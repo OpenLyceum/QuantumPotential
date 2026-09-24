@@ -768,8 +768,9 @@ export class EnergyChartNode extends BaseChartNode {
 
     const shape = new Shape();
 
-    // Draw exactly the potential the model solves, sampled across the chart and clamped to the energy axis
-    // (infinite walls and Coulomb singularities are drawn to the chart edge)
+    // Draw exactly the potential the model solves, sampled across the chart. Values outside the energy axis
+    // run off the plot and are hidden by its clip area rather than drawn flat along the edge; they are only
+    // bounded one axis span beyond it so infinite walls and Coulomb singularities stay finite for the Shape.
     const numPoints = POTENTIAL_CURVE_SAMPLES;
     const xMin = this.xMinProperty.value;
     const xMax = this.xMaxProperty.value;
@@ -780,9 +781,11 @@ export class EnergyChartNode extends BaseChartNode {
     const potentialJ = this.model.getPotentialEnergy(xGridM);
     const yMin = this.yMinProperty.value;
     const yMax = this.yMaxProperty.value;
+    const yLow = yMin - (yMax - yMin);
+    const yHigh = yMax + (yMax - yMin);
     for (let i = 0; i < numPoints; i++) {
       const energyEv = potentialJ[i]! * QuantumConstants.JOULES_TO_EV;
-      const V = Number.isNaN(energyEv) ? yMax : Math.min(yMax, Math.max(yMin, energyEv));
+      const V = Number.isNaN(energyEv) ? yHigh : Math.min(yHigh, Math.max(yLow, energyEv));
       const viewX = this.dataToViewX(xGridM[i]! * QuantumConstants.M_TO_NM);
       const viewY = this.dataToViewY(V);
       if (i === 0) {
