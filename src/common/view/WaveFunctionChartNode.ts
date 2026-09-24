@@ -503,13 +503,14 @@ export class WaveFunctionChartNode extends Node {
     xAxis.y = this.chartMargins.top;
     axesNode.addChild(xAxis);
 
-    // X-axis tick marks
+    // X-axis tick marks and labels sit on the bottom edge of the plot, not on y=0: the wave function
+    // swings negative, so labels on the zero line collide with the curve and the y tick labels.
     const xTickMarkSet = new TickMarkSet(
       this.chartTransform,
       Orientation.HORIZONTAL,
       2, // spacing
       {
-        value: 0,
+        edge: "min",
         extent: 8,
         stroke: QPPWColors.labelFillProperty,
         lineWidth: 1,
@@ -519,13 +520,12 @@ export class WaveFunctionChartNode extends Node {
     xTickMarkSet.y = this.chartMargins.top;
     axesNode.addChild(xTickMarkSet);
 
-    // X-axis tick labels
     const xTickLabelSet = new TickLabelSet(
       this.chartTransform,
       Orientation.HORIZONTAL,
       2, // spacing
       {
-        value: 0,
+        edge: "min",
         createLabel: (value: number) =>
           new Text(value.toString(), {
             font: new PhetFont(14),
