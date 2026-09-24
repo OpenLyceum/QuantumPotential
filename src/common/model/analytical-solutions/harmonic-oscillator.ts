@@ -34,7 +34,7 @@
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { factorial, hermitePolynomial } from "./math-utilities.js";
+import { hermiteFunctions } from "./math-utilities.js";
 
 /**
  * Create the potential function for a harmonic oscillator.
@@ -73,10 +73,8 @@ export function calculateHarmonicOscillatorTurningPoints(
 /**
  * Calculate the first derivative of the wavefunction for a harmonic oscillator.
  *
- * For ψ_n(x) = N_n * exp(-αx²/2) * H_n(ξ) where ξ = αx and α = mω/ℏ:
- * ψ'_n(x) = N_n * α * exp(-αx²/2) * [H'_n(ξ) - ξ * H_n(ξ)]
- *         = N_n * α * exp(-αx²/2) * [2n H_{n-1}(ξ) - ξ * H_n(ξ)]
- * using the Hermite polynomial recursion relation H'_n(ξ) = 2n H_{n-1}(ξ)
+ * For ψ_n(x) = √α φ_n(ξ), where φ_n is the normalized Hermite function, ξ = αx and α = √(mω/ℏ):
+ * ψ'_n(x) = α^(3/2) [√(2n) φ_(n−1)(ξ) − ξ φ_n(ξ)]
  *
  * @param springConstant - Spring constant k in N/m
  * @param mass - Particle mass in kg
@@ -94,26 +92,15 @@ export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
   const n = stateIndex; // Quantum number (0, 1, 2, ...)
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
-  // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
-
   const firstDerivative: number[] = [];
 
   for (const x of xGrid) {
     const xi = alpha * x;
-    const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermiteN = hermitePolynomial(n, xi);
-
-    // Calculate H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermiteDerivative = 0;
-    if (n > 0) {
-      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
-      hermiteDerivative = 2 * n * hermiteNMinus1;
-    }
-
-    // ψ' = N * α * exp(-αx²/2) * [H'_n(ξ) - ξ * H_n(ξ)]
-    const firstDeriv = normalization * alpha * gaussianFactor * (hermiteDerivative - xi * hermiteN);
-    firstDerivative.push(firstDeriv);
+    const phi = hermiteFunctions(n + 1, xi);
+    const current = phi[n]!;
+    const previous = phi[n - 1] ?? 0;
+    // ψ_n(x) = √α φ_n(αx), and φ'_n(ξ) = √(2n) φ_(n−1)(ξ) − ξ φ_n(ξ)
+    firstDerivative.push(alpha ** 1.5 * (Math.sqrt(2 * n) * previous - xi * current));
   }
 
   return firstDerivative;
@@ -122,10 +109,8 @@ export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
 /**
  * Calculate the second derivative of the wavefunction for a harmonic oscillator.
  *
- * For ψ_n(x) = N_n * exp(-αx²/2) * H_n(√α x) where α = mω/ℏ and N_n is normalization:
- * ψ''_n uses the chain rule and Hermite polynomial recursion relations:
- * - H'_n(ξ) = 2n H_{n-1}(ξ)
- * - H''_n(ξ) = 4n(n-1) H_{n-2}(ξ)
+ * For ψ_n(x) = √α φ_n(ξ), where φ_n is the normalized Hermite function, ξ = αx and α = √(mω/ℏ),
+ * the Schrödinger equation gives ψ''_n(x) = α^(5/2) (ξ² − 2n − 1) φ_n(ξ).
  *
  * @param springConstant - Spring constant k in N/m
  * @param mass - Particle mass in kg
@@ -143,40 +128,12 @@ export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
   const n = stateIndex; // Quantum number (0, 1, 2, ...)
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
-  // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
-
   const secondDerivative: number[] = [];
 
   for (const x of xGrid) {
     const xi = alpha * x;
-    const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermiteN = hermitePolynomial(n, xi);
-
-    // Calculate H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermiteDerivative = 0;
-    if (n > 0) {
-      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
-      hermiteDerivative = 2 * n * hermiteNMinus1;
-    }
-
-    // Calculate H''_n(ξ) = 4n(n-1) H_{n-2}(ξ)
-    let hermiteSecondDerivative = 0;
-    if (n > 1) {
-      const hermiteNMinus2 = hermitePolynomial(n - 2, xi);
-      hermiteSecondDerivative = 4 * n * (n - 1) * hermiteNMinus2;
-    }
-
-    // ψ'' = N * exp(-ξ²/2) * α² * [ξ²H_n(ξ) - H_n(ξ) - 2ξH'_n(ξ) + H''_n(ξ)]
-    // where ξ = αx
-    // The α² factor comes from the chain rule: d²/dx² = α² * d²/dξ²
-    const secondDeriv =
-      normalization *
-      gaussianFactor *
-      alpha *
-      alpha *
-      (xi * xi * hermiteN - hermiteN - 2 * xi * hermiteDerivative + hermiteSecondDerivative);
-    secondDerivative.push(secondDeriv);
+    // From the Schrödinger equation: φ''_n(ξ) = (ξ² − 2n − 1) φ_n(ξ), and d²/dx² = α² d²/dξ²
+    secondDerivative.push(alpha ** 2.5 * (xi * xi - 2 * n - 1) * hermiteFunctions(n + 1, xi)[n]!);
   }
 
   return secondDerivative;
@@ -208,9 +165,6 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
   const n = stateIndex; // Quantum number (0, 1, 2, ...)
   const omega = Math.sqrt(springConstant / mass);
   const alpha = Math.sqrt((mass * omega) / HBAR);
-  // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-  const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
-
   let min = Infinity;
   let max = -Infinity;
   const extremaPositions: number[] = [];
@@ -222,19 +176,12 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
     const x = xMin + i * dx;
 
     const xi = alpha * x;
-    const gaussianFactor = Math.exp((-xi * xi) / 2);
-    const hermiteN = hermitePolynomial(n, xi);
-    const psi = normalization * gaussianFactor * hermiteN;
-
-    // Calculate first derivative for extrema detection
-    // ψ'_n(x) = N * α * exp(-αx²/2) * [H'_n(ξ) - ξ * H_n(ξ)]
-    // where H'_n(ξ) = 2n H_{n-1}(ξ)
-    let hermiteDerivative = 0;
-    if (n > 0) {
-      const hermiteNMinus1 = hermitePolynomial(n - 1, xi);
-      hermiteDerivative = 2 * n * hermiteNMinus1;
-    }
-    const derivative = normalization * alpha * gaussianFactor * (hermiteDerivative - xi * hermiteN);
+    const phi = hermiteFunctions(n + 1, xi);
+    const current = phi[n]!;
+    const previous = phi[n - 1] ?? 0;
+    const psi = Math.sqrt(alpha) * current;
+    // The sign of ψ'_n(x) is that of φ'_n(ξ) = √(2n) φ_(n−1)(ξ) − ξ φ_n(ξ)
+    const derivative = alpha ** 1.5 * (Math.sqrt(2 * n) * previous - xi * current);
 
     if (psi < min) {
       min = psi;
@@ -296,35 +243,18 @@ export function calculateHarmonicOscillatorFourierTransform(
     pGrid.push(-pMax + i * dp);
   }
 
-  // Calculate Fourier transform for each state
+  // |φ_n(p)| = φ_n(ξ_p) / √α with ξ_p = p/(αℏ): the same Hermite function as in position space. The transform
+  // also carries a phase (−i)ⁿ, which drops out of the magnitude. One recurrence per p gives every state.
   const momentumWavefunctions: number[][] = [];
-
   for (let n = 0; n < numStates; n++) {
-    const phiP: number[] = [];
-
-    // Normalization in momentum space: (ℏ/(π mω))^(1/4) / √(2^n n!) = (1/(α²π))^(1/4) / √(2^n n!)
-    const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * (1 / (alpha * alpha * Math.PI)) ** 0.25;
-
-    for (const p of pGrid) {
-      // Argument for Hermite polynomial in momentum space
-      const xiP = p / (alpha * HBAR);
-
-      // Gaussian factor in momentum space
-      const gaussianFactor = Math.exp((-xiP * xiP) / 2);
-
-      // Hermite polynomial (same order as position space)
-      const hermite = hermitePolynomial(n, xiP);
-
-      // The Fourier transform includes a phase factor (-i)^n, but since we're
-      // taking the magnitude for real display, this becomes 1
-      // The full result would be: normalization * gaussianFactor * hermite * (-i)^n
-      // But |(-i)^n| = 1, so we just take the absolute value
-      const value = Math.abs(normalization * gaussianFactor * hermite);
-
-      phiP.push(value);
+    momentumWavefunctions.push([]);
+  }
+  const normalization = 1 / Math.sqrt(alpha);
+  for (const p of pGrid) {
+    const phi = hermiteFunctions(numStates, p / (alpha * HBAR));
+    for (let n = 0; n < numStates; n++) {
+      momentumWavefunctions[n]!.push(Math.abs(normalization * phi[n]!));
     }
-
-    momentumWavefunctions.push(phiP);
   }
 
   return { pGrid, momentumWavefunctions };
@@ -451,23 +381,20 @@ export function solveHarmonicOscillator(
     xGrid.push(gridConfig.xMin + i * dx);
   }
 
-  // Calculate wavefunctions using Hermite polynomials
-  // ψ_n(x) = (1/√(2^n n!)) * (mω/πℏ)^(1/4) * exp(-mωx^2/(2ℏ)) * H_n(√(mω/ℏ) x)
+  // Calculate wavefunctions from the normalized Hermite functions
+  // ψ_n(x) = (1/√(2^n n!)) * (mω/πℏ)^(1/4) * exp(-mωx^2/(2ℏ)) * H_n(√(mω/ℏ) x) = √α φ_n(αx)
   const wavefunctions: number[][] = [];
   const alpha = Math.sqrt((mass * omega) / HBAR);
 
   for (let n = 0; n < numStates; n++) {
-    const wavefunction: number[] = [];
-    // Normalization: (mω/(πℏ))^(1/4) / √(2^n n!) = (α²/π)^(1/4) / √(2^n n!)
-    const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * ((alpha * alpha) / Math.PI) ** 0.25;
-
-    for (const x of xGrid) {
-      const xi = alpha * x;
-      const hermite = hermitePolynomial(n, xi);
-      const value = normalization * Math.exp((-xi * xi) / 2) * hermite;
-      wavefunction.push(value);
+    wavefunctions.push([]);
+  }
+  for (const x of xGrid) {
+    // ψ_n(x) = √α φ_n(αx), with φ_n the normalized Hermite function; one recurrence gives every state
+    const phi = hermiteFunctions(numStates, alpha * x);
+    for (let n = 0; n < numStates; n++) {
+      wavefunctions[n]!.push(Math.sqrt(alpha) * phi[n]!);
     }
-    wavefunctions.push(wavefunction);
   }
 
   return {

@@ -34,7 +34,7 @@ import { QPPWPanel } from "../QPPWPanel.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { EnergyLevelControl } from "./EnergyLevelControl.js";
-import { QPPWNumberControl } from "./QPPWNumberControl.js";
+import { PARTICLE_MASS_STEP_OPTIONS, QPPWNumberControl } from "./QPPWNumberControl.js";
 import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
 const a11y = stringManager.getA11yStrings();
@@ -358,8 +358,7 @@ export class ControlPanelNode {
     if (this.options.showParticleMass) {
       controls.push(
         new QPPWNumberControl(stringManager.particleMassStringProperty, this.model.particleMassProperty, {
-          deltaValue: 0.05,
-          decimalPlaces: 2,
+          ...PARTICLE_MASS_STEP_OPTIONS,
           valuePattern: stringManager.valueWithElectronMassStringProperty,
           accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
         }),

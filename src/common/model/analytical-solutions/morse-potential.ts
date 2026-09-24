@@ -39,7 +39,7 @@ import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFun
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
-import { associatedLaguerre } from "./math-utilities.js";
+import { logAssociatedLaguerre, logGamma } from "./math-utilities.js";
 
 /**
  * Class-based implementation of Morse potential analytical solution.
@@ -135,6 +135,22 @@ export class MorsePotentialSolution extends AnalyticalSolution {
 }
 
 /**
+ * The unnormalized Morse wavefunction z^(λ-n-1/2) · exp(-z/2) · L_n^(2λ-2n-1)(z), evaluated in log space and
+ * divided by a z-independent scale (the envelope's peak times L_n^α(0) = C(n+α, n)). λ grows as √m, so for heavy
+ * particles z^(λ-n-1/2) overflows while exp(-z/2) underflows (∞ · 0 = NaN), and L_n^α can overflow too.
+ * The scale is the same on every grid, so callers can normalize on one grid and evaluate on another.
+ */
+function morseShape(n: number, lambda: number, z: number): number {
+  const alpha = 2 * lambda - 2 * n - 1;
+  const exponent = lambda - n - 0.5;
+  // The envelope z^exponent · exp(-z/2) peaks at z = 2·exponent
+  const logEnvelopePeak = exponent > 0 ? exponent * Math.log(2 * exponent) - exponent : 0;
+  const logScale = logEnvelopePeak + logGamma(n + alpha + 1) - logGamma(n + 1) - logGamma(alpha + 1);
+  const { sign, logAbs } = logAssociatedLaguerre(n, alpha, z);
+  return sign * Math.exp(exponent * Math.log(z) - z / 2 + logAbs - logScale);
+}
+
+/**
  * Analytical solution for the Morse potential.
  * V(x) = D_e * (1 - exp(-(x - x_e)/a))^2
  *
@@ -202,16 +218,13 @@ export function solveMorsePotential(
 
   for (let n = 0; n < actualNumStates; n++) {
     const psiRaw: number[] = [];
-    const alpha = 2 * lambda - 2 * n - 1;
 
     // First, calculate unnormalized wavefunction
     for (const x of xGrid) {
       const z = 2 * lambda * Math.exp(-(x - xe) / a);
 
       // Calculate wavefunction without normalization
-      const exponent = lambda - n - 0.5;
-      const laguerre = associatedLaguerre(n, alpha, z);
-      const value = z ** exponent * Math.exp(-z / 2) * laguerre;
+      const value = morseShape(n, lambda, z);
 
       psiRaw.push(value);
     }
@@ -318,16 +331,13 @@ function computeMorseNormalization(
   xMax: number = 20e-9,
   numPoints: number = 1000,
 ): number {
-  const alpha = 2 * lambda - 2 * n - 1;
-  const exponent = lambda - n - 0.5;
   const dx = (xMax - xMin) / (numPoints - 1);
   let normSq = 0;
 
   for (let i = 0; i < numPoints; i++) {
     const x = xMin + i * dx;
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
-    const laguerre = associatedLaguerre(n, alpha, z);
-    const psi = z ** exponent * Math.exp(-z / 2) * laguerre;
+    const psi = morseShape(n, lambda, z);
     normSq += psi * psi * dx;
   }
 
@@ -361,8 +371,6 @@ export function calculateMorsePotentialWavefunctionFirstDerivative(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * De)) / HBAR;
-  const alpha = 2 * lambda - 2 * n - 1;
-  const exponent = lambda - n - 0.5;
 
   // Get numerical normalization constant
   const xMin = xGrid[0];
@@ -380,9 +388,9 @@ export function calculateMorsePotentialWavefunctionFirstDerivative(
     const zMinus = 2 * lambda * Math.exp(-(xMinus - xe) / a);
     const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
-    const psiMinus = normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
+    const psiMinus = normalization * morseShape(n, lambda, zMinus);
 
-    const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
+    const psiPlus = normalization * morseShape(n, lambda, zPlus);
 
     // First derivative using central difference
     const firstDeriv = (psiPlus - psiMinus) / (2 * h);
@@ -419,8 +427,6 @@ export function calculateMorsePotentialWavefunctionSecondDerivative(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * De)) / HBAR;
-  const alpha = 2 * lambda - 2 * n - 1;
-  const exponent = lambda - n - 0.5;
 
   // Get numerical normalization constant
   const xMin = xGrid[0];
@@ -439,11 +445,11 @@ export function calculateMorsePotentialWavefunctionSecondDerivative(
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
     const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
-    const psiMinus = normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
+    const psiMinus = normalization * morseShape(n, lambda, zMinus);
 
-    const psi = normalization * z ** exponent * Math.exp(-z / 2) * associatedLaguerre(n, alpha, z);
+    const psi = normalization * morseShape(n, lambda, z);
 
-    const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
+    const psiPlus = normalization * morseShape(n, lambda, zPlus);
 
     // Second derivative using central difference
     const secondDeriv = (psiPlus - 2 * psi + psiMinus) / (h * h);
@@ -486,8 +492,6 @@ export function calculateMorsePotentialWavefunctionMinMax(
   const n = stateIndex;
 
   const lambda = (a * Math.sqrt(2 * mass * De)) / HBAR;
-  const alpha = 2 * lambda - 2 * n - 1;
-  const exponent = lambda - n - 0.5;
 
   // Get numerical normalization constant
   const normalization = computeMorseNormalization(a, lambda, n, xe, xMin, xMax, numPoints);
@@ -504,8 +508,7 @@ export function calculateMorsePotentialWavefunctionMinMax(
     const x = xMin + i * dx;
 
     const z = 2 * lambda * Math.exp(-(x - xe) / a);
-    const laguerre = associatedLaguerre(n, alpha, z);
-    const psi = normalization * z ** exponent * Math.exp(-z / 2) * laguerre;
+    const psi = normalization * morseShape(n, lambda, z);
 
     // Calculate derivative using central difference for extrema detection
     let derivative = 0;
@@ -516,10 +519,9 @@ export function calculateMorsePotentialWavefunctionMinMax(
       const zMinus = 2 * lambda * Math.exp(-(xMinus - xe) / a);
       const zPlus = 2 * lambda * Math.exp(-(xPlus - xe) / a);
 
-      const psiMinus =
-        normalization * zMinus ** exponent * Math.exp(-zMinus / 2) * associatedLaguerre(n, alpha, zMinus);
+      const psiMinus = normalization * morseShape(n, lambda, zMinus);
 
-      const psiPlus = normalization * zPlus ** exponent * Math.exp(-zPlus / 2) * associatedLaguerre(n, alpha, zPlus);
+      const psiPlus = normalization * morseShape(n, lambda, zPlus);
 
       derivative = (psiPlus - psiMinus) / (2 * h);
     }

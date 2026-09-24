@@ -86,9 +86,9 @@ export abstract class BaseModel {
 
   /**
    * Maximum particle mass in units of electron mass.
-   * Limits to slightly heavier than electron mass.
+   * Allows heavy particles (e.g., 50 m_e).
    */
-  private static readonly PARTICLE_MASS_MAX = 1.1;
+  private static readonly PARTICLE_MASS_MAX = 50;
 
   /**
    * Minimum energy level index (0 = ground state).
@@ -100,7 +100,7 @@ export abstract class BaseModel {
    * Maximum energy level index.
    * Caps the number of accessible quantum states.
    */
-  private static readonly ENERGY_LEVEL_INDEX_MAX = 99;
+  private static readonly ENERGY_LEVEL_INDEX_MAX = 799;
 
   /** Available animation rates, relative to the original normal speed. */
   public static readonly TIME_SPEED_MULTIPLIERS = [0.1, 0.25, 0.5, 1, 2, 4] as const;
@@ -171,7 +171,7 @@ export abstract class BaseModel {
     // Initialize particle mass (1.0 = electron mass)
     this.particleMassProperty = new NumberProperty(1.0, {
       range: new Range(BaseModel.PARTICLE_MASS_MIN, BaseModel.PARTICLE_MASS_MAX),
-    }); // 0.5 to 1.1 times electron mass
+    }); // 0.5 to 50 times electron mass
 
     // Initialize energy level selection (ground state by default)
     this.selectedEnergyLevelIndexProperty = new NumberProperty(0, {

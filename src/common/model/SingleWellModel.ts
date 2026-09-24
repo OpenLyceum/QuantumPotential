@@ -46,8 +46,14 @@ export abstract class SingleWellModel extends BaseModel {
   /** The harmonic oscillator and infinite well are cut off at this energy (eV); they have infinitely many states. */
   private static readonly MAX_ENERGY_EV = 15;
 
-  /** Safety cap on the number of states. */
-  private static readonly MAX_NUM_STATES = 100;
+  /**
+   * Cap for the 1D Coulomb potential: each of its states needs its own Laguerre recurrence at every grid point,
+   * and its high levels crowd against E = 0 and spread far past the chart anyway.
+   */
+  private static readonly MAX_NUM_STATES_COULOMB = 200;
+
+  /** Safety cap on the number of states (a 50 mₑ particle in a deep, wide well binds several hundred). */
+  private static readonly MAX_NUM_STATES = 800;
 
   /** The harmonic oscillator's spring constant is k = SPRING_CONSTANT_MULTIPLIER · V₀ / L². */
   protected static readonly SPRING_CONSTANT_MULTIPLIER = 8;
@@ -125,8 +131,13 @@ export abstract class SingleWellModel extends BaseModel {
     );
   }
 
-  /** How many states to request: every state below MAX_ENERGY_EV when there are infinitely many. */
+  /**
+   * How many states to request: every state below MAX_ENERGY_EV when there are infinitely many.
+   * The fixed counts are for an electron; the number of bound states grows as √m, so they scale with it.
+   */
   private getNumberOfStatesToRequest(mass: number): number {
+    const massScale = Math.sqrt(Math.max(1, mass / QuantumConstants.ELECTRON_MASS));
+    const scaled = (numStates: number) => Math.min(Math.ceil(numStates * massScale), SingleWellModel.MAX_NUM_STATES);
     const wellWidth = this.wellWidthProperty.value * QuantumConstants.NM_TO_M;
     const wellDepth = this.wellDepthProperty.value * QuantumConstants.EV_TO_JOULES;
     const maxEnergy = SingleWellModel.MAX_ENERGY_EV * QuantumConstants.EV_TO_JOULES;
@@ -154,11 +165,13 @@ export abstract class SingleWellModel extends BaseModel {
         return clamp(estimatedMax * 2, SingleWellModel.DEFAULT_NUM_STATES, SingleWellModel.MAX_NUM_STATES);
       }
       case PotentialType.ASYMMETRIC_TRIANGLE:
-        return SingleWellModel.NUM_STATES_ASYMMETRIC_TRIANGLE;
+        return scaled(SingleWellModel.NUM_STATES_ASYMMETRIC_TRIANGLE);
       case PotentialType.TRIANGULAR:
-        return SingleWellModel.NUM_STATES_TRIANGULAR;
+        return scaled(SingleWellModel.NUM_STATES_TRIANGULAR);
+      case PotentialType.COULOMB_1D:
+        return Math.min(scaled(SingleWellModel.NUM_STATES_OTHER), SingleWellModel.MAX_NUM_STATES_COULOMB);
       default:
-        return SingleWellModel.NUM_STATES_OTHER;
+        return scaled(SingleWellModel.NUM_STATES_OTHER);
     }
   }
 

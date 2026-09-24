@@ -11,7 +11,7 @@ import { PANEL_CHECKBOX_OPTIONS } from "../../common/QPPWControlOptions.js";
 import { QPPWPanel } from "../../common/QPPWPanel.js";
 import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
 import { EnergyLevelControl } from "../../common/view/EnergyLevelControl.js";
-import { QPPWNumberControl } from "../../common/view/QPPWNumberControl.js";
+import { PARTICLE_MASS_STEP_OPTIONS, QPPWNumberControl } from "../../common/view/QPPWNumberControl.js";
 import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
@@ -295,8 +295,7 @@ export class IntroControlPanelNode extends Node {
       stringManager.particleMassStringProperty,
       this.model.particleMassProperty,
       {
-        deltaValue: 0.05,
-        decimalPlaces: 2,
+        ...PARTICLE_MASS_STEP_OPTIONS,
         valuePattern: stringManager.valueWithElectronMassStringProperty,
         accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
       },

@@ -44,6 +44,31 @@ export function hermitePolynomial(n: number, x: number): number {
 }
 
 /**
+ * The normalized Hermite functions φ_0(ξ) … φ_(count−1)(ξ), where φ_n(ξ) = H_n(ξ) e^(−ξ²/2) / √(2ⁿ n! √π) and
+ * ∫φ_n² dξ = 1. Uses the recurrence φ_(k+1) = √(2/(k+1)) ξ φ_k − √(k/(k+1)) φ_(k−1), keeping the Gaussian and
+ * any rescaling as a separate logarithm: the direct form overflows (2ⁿ n!, H_n) for n beyond ~150.
+ */
+export function hermiteFunctions(count: number, xi: number): number[] {
+  const RESCALE = 1e150;
+  let logScale = -(xi * xi) / 2 - 0.25 * Math.log(Math.PI);
+  let previous = 0;
+  let current = 1;
+  const values: number[] = [];
+  for (let k = 0; k < count; k++) {
+    values.push(current * Math.exp(logScale));
+    const next = Math.sqrt(2 / (k + 1)) * xi * current - Math.sqrt(k / (k + 1)) * previous;
+    previous = current;
+    current = next;
+    if (Math.abs(current) > RESCALE) {
+      current /= RESCALE;
+      previous /= RESCALE;
+      logScale += Math.log(RESCALE);
+    }
+  }
+  return values;
+}
+
+/**
  * Calculate the associated Laguerre polynomial L_n^α(x) using recurrence relation.
  */
 export function associatedLaguerre(n: number, alpha: number, x: number): number {
@@ -64,6 +89,28 @@ export function associatedLaguerre(n: number, alpha: number, x: number): number 
   }
 
   return LCurr;
+}
+
+/**
+ * log|L_n^α(x)| and its sign, from the same recurrence as associatedLaguerre but rescaled as it goes, so it
+ * stays finite where L_n^α(x) itself would overflow (large n, α or x).
+ */
+export function logAssociatedLaguerre(n: number, alpha: number, x: number): { sign: number; logAbs: number } {
+  const RESCALE = 1e150;
+  let logScale = 0;
+  let previous = 1;
+  let current = n === 0 ? 1 : 1 + alpha - x;
+  for (let k = 1; k < n; k++) {
+    const next = ((2 * k + 1 + alpha - x) * current - (k + alpha) * previous) / (k + 1);
+    previous = current;
+    current = next;
+    if (Math.abs(current) > RESCALE) {
+      current /= RESCALE;
+      previous /= RESCALE;
+      logScale += Math.log(RESCALE);
+    }
+  }
+  return { sign: Math.sign(current), logAbs: Math.log(Math.abs(current)) + logScale };
 }
 
 /**

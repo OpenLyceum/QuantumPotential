@@ -16,6 +16,9 @@ export type QPPWNumberControlOptions = {
   valuePattern?: TReadOnlyProperty<string>; // e.g. "{{value}} mₑ"; defaults to the bare value
   accessibleName: TReadOnlyProperty<string>;
   accessibleHelpText?: TReadOnlyProperty<string>;
+  // Non-uniform steps; both default to ± deltaValue
+  incrementFunction?: (value: number) => number;
+  decrementFunction?: (value: number) => number;
 };
 
 export class QPPWNumberControl extends VBox {
@@ -27,6 +30,8 @@ export class QPPWNumberControl extends VBox {
     const spinner = new NumberSpinner(numberProperty, new Property(numberProperty.range), {
       arrowsPosition: "leftRight",
       deltaValue: options.deltaValue,
+      ...(options.incrementFunction ? { incrementFunction: options.incrementFunction } : {}),
+      ...(options.decrementFunction ? { decrementFunction: options.decrementFunction } : {}),
       xSpacing: 6,
       arrowButtonOptions: {
         baseColor: QPPWColors.controlPanelBackgroundColorProperty,
@@ -57,3 +62,18 @@ export class QPPWNumberControl extends VBox {
     });
   }
 }
+
+/**
+ * Particle-mass spinner steps (in electron masses). The 0.5–50 mₑ range spans two decades, so the step grows
+ * with the mass: 0.1 below 2 mₑ, 0.5 below 5 mₑ, 1 below 10 mₑ, then 5.
+ */
+const particleMassStep = (mass: number): number => (mass < 2 ? 0.1 : mass < 5 ? 0.5 : mass < 10 ? 1 : 5);
+const roundToTenth = (value: number): number => Math.round(value * 10) / 10;
+
+export const PARTICLE_MASS_STEP_OPTIONS = {
+  deltaValue: 0.1,
+  decimalPlaces: 1,
+  incrementFunction: (mass: number): number => roundToTenth(mass + particleMassStep(mass)),
+  // Step by the size of the band below, so increment and decrement retrace the same values
+  decrementFunction: (mass: number): number => roundToTenth(mass - particleMassStep(mass - 1e-9)),
+} satisfies Partial<QPPWNumberControlOptions>;
