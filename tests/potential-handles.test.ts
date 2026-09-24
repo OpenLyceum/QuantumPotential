@@ -67,24 +67,19 @@ describe("potential handles", () => {
     for (const type of types) {
       model.potentialTypeProperty.value = type;
       const visible = handles.filter((handle) => handle.spec.isVisibleFor(type));
-      if (type !== PotentialType.MULTI_COULOMB_1D) {
-        expect(visible.length, `${type} has handles`).toBeGreaterThan(0);
-      }
+      expect(visible.length, `${type} has handles`).toBeGreaterThan(0);
 
       for (const handle of visible) {
         const { property, parameter, orientation, anchor } = handle.spec;
         const label = `${type}/${parameter}`;
 
-        // On the curve: between V just left and just right of the anchor. (The Coulomb chain's separation
-        // handle is the exception: it sits below the outermost centre, whose potential is singular.)
+        // On the curve: between V just left and just right of the anchor
         const point = anchor(property.value);
-        const onSingularity = type === PotentialType.MULTI_COULOMB_1D;
         const left = potentialEv(model, point.x - STEP_PROBE_NM);
         const right = potentialEv(model, point.x + STEP_PROBE_NM);
         if (
-          !onSingularity &&
-          (point.y < Math.min(left, right) - ENERGY_TOLERANCE_EV - 0.05 * Math.abs(left - right) ||
-            point.y > Math.max(left, right) + ENERGY_TOLERANCE_EV + 0.05 * Math.abs(left - right))
+          point.y < Math.min(left, right) - ENERGY_TOLERANCE_EV - 0.05 * Math.abs(left - right) ||
+          point.y > Math.max(left, right) + ENERGY_TOLERANCE_EV + 0.05 * Math.abs(left - right)
         ) {
           failures.push(
             `${label}: anchor (${point.x.toFixed(3)}, ${point.y.toFixed(3)}) not on V ∈ [${left}, ${right}]`,

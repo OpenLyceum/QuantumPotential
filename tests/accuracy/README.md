@@ -11,7 +11,6 @@ non-zero on failure.
 | `npm run test:double-well` | `test-double-well.ts` | The analytical double square well: parity, nodes, edge decay, normalization, derivative continuity, parameter sweeps, grid convergence |
 | `npm run test:coulomb` | `verify-coulomb.ts` | regular 1D Coulomb analytical energies, parity and normalization |
 | `npm run test:multi-square-well` | `test-multi-square-well.ts` | The numerically solved multi-square well (Many Wells screen) |
-| `npm run test:multi-coulomb-1d` | `test-multi-coulomb-1d.ts` | The numerically solved multi-Coulomb chain (no longer offered on any screen) — see the known issue below |
 
 All scripts run under `tsx` with `tsconfig.accuracy.json` and `browser-globals.js` preloaded (SceneryStack
 expects a DOM at import time).
@@ -31,13 +30,3 @@ errors. Keep these in mind when adding cases:
   only between significant samples, and pair grid points with their mirror image (`j ↔ N − 1 − j`)
   for parity.
 
-## Known issue
-
-`test:multi-coulomb-1d` reports an orthogonality failure among the deepest states. A bare `−α/|x|`
-potential in one dimension has no finite ground state (the "1D hydrogen" collapse): the lowest states
-shrink onto a centre until the grid spacing stops them (hundreds of eV deep, about one grid cell wide),
-so their shapes are grid-limited. Numerov returns the very deepest of them without a normalizable wave
-function; `Schrodinger1DSolver` drops those, and the degenerate outer-centre pairs that remain are not
-resolved into orthogonal states. Softening the potential (`−α/√(x² + a²)`) would make the multi-Coulomb
-model well posed. Many Wells now offers smooth Pöschl–Teller wells instead, so this only matters if
-multi-Coulomb returns to a screen.

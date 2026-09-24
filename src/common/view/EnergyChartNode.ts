@@ -62,9 +62,6 @@ function getEnergyAxisRange(potentialType: PotentialType): {
       // Multi-square well (generalization of double square well)
       // Energy reference: V=0 in wells, V=wellDepth in barrier
       return { min: -5, max: 15 };
-    case PotentialType.MULTI_COULOMB_1D:
-      // Multi-Coulomb 1D potential with V=0 at infinity
-      return { min: -15, max: 5 };
     case PotentialType.DOUBLE_POSCHL_TELLER:
     case PotentialType.MULTI_POSCHL_TELLER:
       return { min: -20, max: 5 };

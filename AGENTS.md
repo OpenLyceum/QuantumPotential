@@ -65,9 +65,8 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
   wells converge smoothly with grid size.
 - **Energy tolerances are relative.** Energies are ~1e-19 J, so an absolute tolerance such as `1e-12`
   stops a bisection before it starts. The double well and the old solvers had this bug.
-- **Bare 1D Coulomb collapses.** Multi-Coulomb's deepest states are grid-limited. The facade drops any
-  Numerov state that cannot be normalized. (Multi-Coulomb is no longer offered on any screen; the solver
-  path survives for `npm run test:multi-coulomb-1d`.)
+- **Numerov states that cannot be normalized are dropped** by the facade. A bare 1D −α/|x| centre has no
+  finite ground state, which is why multi-Coulomb chains were removed in favour of smooth Pöschl–Teller wells.
 
 ### Hard-won gotchas
 
@@ -120,9 +119,7 @@ deferred fleet-wide). Full convention:
   (same carve-out as OscillationsAndChaos).
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
   by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
-  `exactOptionalPropertyTypes`. All pass except `test:multi-coulomb-1d`, whose deepest states are
-  grid-limited because a bare 1D Coulomb potential has no finite ground state (see
-  `tests/accuracy/README.md`).
+  `exactOptionalPropertyTypes`. All pass.
 
 ### `package.json` overrides
 

@@ -87,7 +87,6 @@
   "doublePoschlTeller": "Double Pöschl–Teller",
   "multiSquareWell": "Multi-Square Well",
   "multiPoschlTeller": "Multiple Pöschl–Teller Wells",
-  "multiCoulomb1D": "Multi-Coulomb 1D",
   "energyEv": "Energy (eV)",
   "positionNm": "Position (nm)",
   "totalEnergy": "Total Energy",
@@ -137,13 +136,10 @@
   "oneWellKeyConcepts": "• Quantum confinement in a single potential well\n• Discrete energy levels (eigenstates)\n• Wave-particle duality\n• Probability density |ψ|²\n• Heisenberg Uncertainty Principle",
   "interactions": "Interactions:",
   "oneWellInteractions": "• Click energy levels to see eigenstates\n• Adjust potential well parameters\n• Try different potential types\n• Create wavepackets from superpositions\n• Watch time evolution of superposition states",
-  "oneWellEducationalContent": "Screen Overview:\nThis screen demonstrates quantum confinement in a single potential well. Energy levels are quantized and the particle's wave function is described by standing wave patterns (eigenstates).\n\nAvailable Controls:\n• Potential Well Type: Select different quantum potential configurations\n• Energy Levels: Click on energy levels to view corresponding eigenstates\n• Superposition: Create wave packets by combining multiple eigenstates\n\nLearning Objectives:\n• Understand how quantum confinement leads to discrete energy levels\n• Explore the relationship between well parameters and eigenstate properties\n• Observe how uncertainty principle manifests in confined quantum systems",
   "twoWellsKeyConcepts": "• Quantum tunneling through barriers\n• Energy level splitting\n• Symmetric and antisymmetric states\n• Tunneling probability\n• Time-dependent oscillations between wells",
   "twoWellsInteractions": "• Adjust barrier height and width\n• Change well separation distance\n• Select energy levels to see tunneling states\n• Create superpositions to watch tunneling dynamics\n• Observe how barrier parameters affect tunneling probability",
-  "twoWellsEducationalContent": "Screen Overview:\nThis screen demonstrates quantum tunneling in a double potential well. Particles can tunnel through classically forbidden barrier regions, leading to energy level splitting and oscillatory behavior.\n\nAvailable Controls:\n• Barrier Parameters: Adjust height and width to control tunneling probability\n• Well Separation: Change the distance between wells\n• Energy Levels: Click on split energy levels to view symmetric/antisymmetric states\n\nLearning Objectives:\n• Understand quantum tunneling and its dependence on barrier properties\n• Explore energy level splitting due to quantum coupling between wells\n• Observe time-dependent tunneling dynamics in superposition states",
   "manyWellsKeyConcepts": "• Energy band formation\n• Allowed and forbidden energy bands\n• Band gap in periodic potentials\n• Bloch waves and crystal momentum\n• Foundation of solid-state physics\n• Conductors, semiconductors, and insulators",
   "manyWellsInteractions": "• Adjust number of potential wells\n• Change lattice constant (well spacing)\n• Modify well and barrier parameters\n• Select different energy bands\n• Observe band structure formation\n• Watch Bloch wave propagation",
-  "manyWellsEducationalContent": "Screen Overview:\nThis screen demonstrates energy band formation in periodic potentials, the foundation of solid-state physics. As you add more wells, discrete energy levels spread into continuous bands separated by gaps.\n\nAvailable Controls:\n• Number of Wells: Add or remove wells to see band structure emerge\n• Lattice Constant: Adjust the periodic spacing of the potential\n• Band Selection: Select different energy bands to view Bloch states\n\nLearning Objectives:\n• Understand how periodic potentials create energy band structure\n• Explore the relationship between number of wells and band formation\n• Connect quantum mechanics to properties of solids (metals, semiconductors, insulators)",
   "probabilityDensityAxis": "Probability Density",
   "positionNmAxis": "Position (nm)",
   "timeFormat": "{{time}} fs",
@@ -152,7 +148,6 @@
   "introDescription": "Get started with quantum mechanics in a potential well.\nExplore basic quantum concepts with a simplified interface.",
   "introKeyConcepts": "• Quantum confinement basics\n• Energy levels in potential wells\n• Wave function and probability density\n• Exploring different potential types",
   "introInteractions": "• Select different potential well types\n• Adjust well width and depth\n• View energy levels and wave functions\n• Switch between probability density and wave function displays",
-  "introEducationalContent": "Screen Overview:\nThis introductory screen provides a simplified interface to explore quantum mechanics in potential wells. Focus on understanding the basics without the complexity of time evolution or superposition states.\n\nAvailable Controls:\n• Potential Well Type: Select different quantum potential configurations\n• Well Parameters: Adjust width and depth to see how energy levels change\n• Display Mode: Switch between probability density and wave function views\n\nLearning Objectives:\n• Understand quantum confinement in potential wells\n• Explore how well parameters affect energy levels\n• Visualize wave functions and probability densities",
   "classicallyForbiddenLabel": "Classically Forbidden: {{percentage}}%",
   "secondDerivativeLabel": "{{value}} nm⁻⁵ᐟ²",
   "firstDerivativeLabel": "dψ/dx = {{value}} nm⁻³ᐟ²",
@@ -200,7 +195,6 @@
       "doublePoschlTeller": "Double Pöschl–Teller",
       "multiSquareWell": "Multiple Square Wells",
       "multiPoschlTeller": "Multiple Pöschl–Teller Wells",
-      "multiCoulomb1D": "Multiple Coulomb Centers",
       "custom": "Custom Potential"
     },
     "potentialDescriptions": {
@@ -218,7 +212,6 @@
       "doublePoschlTeller": "Two smooth Pöschl–Teller wells. Shows tunneling and energy level splitting.",
       "multiSquareWell": "Multiple square wells forming a periodic structure. Models solid state physics and band structure.",
       "multiPoschlTeller": "A row of smooth Pöschl–Teller wells. Shows coupled bound states and energy bands.",
-      "multiCoulomb1D": "Multiple Coulomb centers in one dimension. Models molecular ion systems.",
       "custom": "Custom quantum potential defined by user parameters."
     },
     "superpositionNames": {

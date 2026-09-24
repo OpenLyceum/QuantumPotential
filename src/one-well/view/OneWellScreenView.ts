@@ -55,7 +55,6 @@ export class OneWellScreenView extends BaseScreenView {
       descriptionStringProperty: stringManager.oneWellDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.oneWellKeyConceptsStringProperty,
       interactionsStringProperty: stringManager.oneWellInteractionsStringProperty,
-      educationalContentStringProperty: stringManager.oneWellEducationalContentStringProperty,
     };
   }
 

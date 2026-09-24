@@ -29,8 +29,6 @@ These potentials have no convenient closed form and are solved numerically:
 - **Double Pöschl–Teller** (Two Wells): two sech² wells
 - **Multi-Square Well** (Many Wells): 1–10 finite square wells (band formation, tunnelling between wells)
 - **Multi-Pöschl–Teller** (Many Wells): a row of 1–10 sech² wells (`multiPoschlTellerPotential.ts`)
-- **Multi-Coulomb 1D**: 1–10 Coulomb centres. The solver still supports it, but no screen offers it
-  any more; only `npm run test:multi-coulomb-1d` exercises it.
 
 The Many Wells potentials can be tilted by a uniform electric field ℰ, which adds V = eℰx.
 
@@ -59,8 +57,8 @@ it; every other potential is analytical.
 - **Clean-up.** Two steps of inverse iteration on the tridiagonal Numerov problem Hψ = EBψ separate
   near-degenerate states and remove the kink at the stitching point. The states are then normalized
   by the trapezoidal rule.
-- **Unnormalizable states are dropped.** This happens only for the grid-limited states that collapse
-  onto a bare 1D Coulomb centre (see `tests/accuracy/README.md`).
+- **Unnormalizable states are dropped.** None of the current potentials produces them; they arise for
+  singular potentials such as a bare 1D Coulomb centre, whose deepest states collapse onto the grid.
 
 **FGH (Fourier Grid Hamiltonian)** is kept as a developer cross-check: `?numericalMethod=fgh`. It builds
 the Hamiltonian on a 256-point periodic grid, with the kinetic energy diagonal in k-space, and
@@ -104,7 +102,7 @@ const result = solver.solveNumerical(
 
 Screen models call `solveAnalyticalIfPossible(wellParams, mass, numStates, gridConfig)`, which uses the
 closed-form solution for the potential type, or the numerical path for `DOUBLE_POSCHL_TELLER`,
-`MULTI_SQUARE_WELL`, `MULTI_POSCHL_TELLER` and `MULTI_COULOMB_1D` (with `wellParams.electricField` in V/m).
+`MULTI_SQUARE_WELL` and `MULTI_POSCHL_TELLER` (with `wellParams.electricField` in V/m).
 
 ## Query parameters
 

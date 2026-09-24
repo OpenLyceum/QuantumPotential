@@ -47,7 +47,6 @@ export class ManyWellsScreenView extends BaseScreenView {
       descriptionStringProperty: stringManager.manyWellsDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.manyWellsKeyConceptsStringProperty,
       interactionsStringProperty: stringManager.manyWellsInteractionsStringProperty,
-      educationalContentStringProperty: stringManager.manyWellsEducationalContentStringProperty,
     };
   }
 

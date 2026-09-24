@@ -11,7 +11,6 @@
 import qppw from "../../QPPWNamespace.js";
 import Logger from "../utils/Logger.js";
 import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
-import { solveMultiCoulomb1D } from "./analytical-solutions/multi-coulomb-1d.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
 import { solveFGH } from "./FGHSolver.js";
 import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.js";
@@ -185,17 +184,6 @@ export class Schrodinger1DSolver {
           wellParams.wellWidth,
           wellParams.wellDepth,
           wellParams.wellSeparation,
-          mass,
-          numStates,
-          gridConfig,
-          this,
-          wellParams.electricField ?? 0,
-        );
-      case PotentialType.MULTI_COULOMB_1D:
-        return solveMultiCoulomb1D(
-          wellParams.numberOfWells,
-          wellParams.wellSeparation,
-          wellParams.coulombStrength,
           mass,
           numStates,
           gridConfig,

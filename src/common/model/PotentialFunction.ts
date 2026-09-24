@@ -21,7 +21,6 @@ export const PotentialType = {
   DOUBLE_POSCHL_TELLER: "doublePoschlTeller",
   MULTI_SQUARE_WELL: "multiSquareWell",
   MULTI_POSCHL_TELLER: "multiPoschlTeller",
-  MULTI_COULOMB_1D: "multiCoulomb1D",
   TRIANGULAR: "triangular",
   CUSTOM: "custom",
 } as const;
@@ -72,13 +71,6 @@ export type MultiWellParameters =
       wellWidth: number;
       wellDepth: number;
       wellSeparation: number;
-      electricField?: number;
-    }
-  | {
-      type: typeof PotentialType.MULTI_COULOMB_1D;
-      numberOfWells: number;
-      wellSeparation: number;
-      coulombStrength: number;
       electricField?: number;
     };
 

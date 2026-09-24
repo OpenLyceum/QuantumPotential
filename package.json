@@ -38,7 +38,6 @@
     "test:double-well": "tsx --tsconfig tsconfig.accuracy.json --import ./tests/accuracy/browser-globals.js tests/accuracy/test-double-well.ts",
     "test:coulomb": "tsx --tsconfig tsconfig.accuracy.json --import ./tests/accuracy/browser-globals.js tests/accuracy/verify-coulomb.ts",
     "test:multi-square-well": "tsx --tsconfig tsconfig.accuracy.json --import ./tests/accuracy/browser-globals.js tests/accuracy/test-multi-square-well.ts",
-    "test:multi-coulomb-1d": "tsx --tsconfig tsconfig.accuracy.json --import ./tests/accuracy/browser-globals.js tests/accuracy/test-multi-coulomb-1d.ts",
     "icons": "tsx scripts/generate-icons.ts",
     "clean": "rm -rf dist",
     "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true"

@@ -78,7 +78,7 @@ in a microtask after all the synchronous notifications of a change.
 
 `Schrodinger1DSolver` is a facade. `solveAnalyticalIfPossible` asks `PotentialFactory` for an
 `AnalyticalSolution` and solves it; if the type has none (double Pöschl–Teller, multi-square,
-multi-Pöschl–Teller, multi-Coulomb), it builds V(x) and calls `solveNumerical`. The double square well
+multi-Pöschl–Teller), it builds V(x) and calls `solveNumerical`. The double square well
 has its own closed-form function. The solver keeps the last `AnalyticalSolution` so models can ask it for
 turning points, derivatives, V(x) and the momentum-space transform (`getAnalyticalSolution()`).
 

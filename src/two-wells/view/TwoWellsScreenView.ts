@@ -44,7 +44,6 @@ export class TwoWellsScreenView extends BaseScreenView {
       descriptionStringProperty: stringManager.twoWellsDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.twoWellsKeyConceptsStringProperty,
       interactionsStringProperty: stringManager.twoWellsInteractionsStringProperty,
-      educationalContentStringProperty: stringManager.twoWellsEducationalContentStringProperty,
     };
   }
 

@@ -13,7 +13,7 @@ Analytical solutions provide exact mathematical expressions for energy eigenvalu
 
 ### Available Potentials
 
-This module provides **11 analytical solutions** plus 2 numerical multi-well potentials:
+This module provides **11 analytical solutions** plus the numerically solved multi-square well:
 
 **Analytical Solutions:**
 
@@ -32,7 +32,6 @@ This module provides **11 analytical solutions** plus 2 numerical multi-well pot
 **Multi-Well Potentials (Numerical):**
 
 12. Multi-Square Well — solved numerically (Numerov)
-13. Multi-Coulomb 1D — solved numerically (no analytical solution exists); no longer offered on any screen
 
 The double and multi Pöschl–Teller wells are also solved numerically; their V(x) is built in
 `../multiPoschlTellerPotential.ts`.
@@ -44,7 +43,7 @@ typed `WellParameters` by `../PotentialFactory.ts`. The screen models evaluate t
 on a fixed ±4 nm grid of about 1000 points, independent of `?numberOfPoints`, which only sizes the
 numerical solver's grid.
 
-**Note on Multi-Well Potentials**: While `multi-square-well.ts` and `multi-coulomb-1d.ts` are located in this directory for organizational convenience, they build potential functions that are **solved numerically** by `Schrodinger1DSolver.solveNumerical` (Numerov shooting; see `doc/SOLVER_DOCUMENTATION.md`), not by analytical formulas.
+**Note on Multi-Well Potentials**: While `multi-square-well.ts` is located in this directory for organizational convenience, it builds a potential function that are **solved numerically** by `Schrodinger1DSolver.solveNumerical` (Numerov shooting; see `doc/SOLVER_DOCUMENTATION.md`), not by analytical formulas.
 
 ---
 
@@ -777,88 +776,6 @@ to a Fourier Grid Hamiltonian cross-check. See `doc/SOLVER_DOCUMENTATION.md`.
 
 ---
 
-## 13. Multi-Coulomb 1D (Numerical)
-
-**File**: `multi-coulomb-1d.ts`
-
-**⚠️ NUMERICAL SOLUTION**: This potential is solved numerically (Numerov shooting). It is no longer offered on any screen; `npm run test:multi-coulomb-1d` still exercises it. No closed-form analytical solution exists for N > 1 Coulomb centers in 1D.
-
-### Description
-
-The multi-Coulomb 1D potential consists of 1-10 Coulomb centers (1/|x-x_i| singularities) arranged periodically along the x-axis. This system models multi-atom quantum systems in one dimension, demonstrating molecular orbital formation and complex interference patterns.
-
-### Potential
-
-For N Coulomb centers at positions x_i with strength α:
-
-```
-V(x) = -α Σ(1/|x - x_i|)
-```
-
-The centers are arranged symmetrically about x = 0.
-
-### Parameters
-
-- `numberOfCenters` (N): Number of Coulomb centers (1-10)
-- `centerSeparation` (d): Separation between adjacent centers in meters
-- `coulombStrength` (α): Coulomb strength parameter in J·m
-- `mass` (m): Particle mass in kg
-- `numStates`: Number of energy levels to calculate
-- `gridConfig`: Grid configuration for wavefunction evaluation
-
-### Energy Eigenvalues
-
-Energy eigenvalues are found **numerically only** (Numerov shooting). The multi-center Coulomb problem has **no general closed-form analytical solution** for N > 1 centers, but exhibits:
-
-- Energy level splitting proportional to coupling strength
-- Formation of molecular-like bonding and antibonding states
-- Complex energy level patterns for N > 2
-- For N = 1, reduces to the single 1D Coulomb potential (analytical)
-
-### Wavefunctions
-
-Wavefunctions exhibit:
-
-- **Odd parity at each Coulomb center**: ψ(x) must behave linearly near each singularity
-- Complex interference patterns between centers
-- Localization or delocalization depending on center separation
-- For wide separation: approximate single-center behavior
-- For close separation: strong hybridization and molecular orbital character
-
-### Important Notes
-
-Each Coulomb center imposes an **odd-parity constraint** similar to the single 1D Coulomb potential:
-
-- Wavefunctions must vanish at each center: ψ(x_i) = 0
-- Linear behavior near each center: ψ(x) ∝ (x - x_i) as x → x_i
-- Overall parity depends on arrangement symmetry
-
-### Numerical Methods
-
-It is solved by Numerov shooting. Special considerations:
-
-- Fine grid required near each singularity to resolve linear behavior
-- Careful handling of 1/|x-x_i| singularities with small cutoff
-- Validation against single-center analytical solution when N=1
-- Grid spacing must be small enough to capture wavefunction zeros at each center
-- A bare −α/|x| centre has no finite ground state in 1D, so the deepest states are grid-limited (see
-  `tests/accuracy/README.md`)
-
-### Physical Significance
-
-- Models 1D molecular systems with multiple atoms
-- Demonstrates:
-  - Molecular orbital formation
-  - Bonding and antibonding states
-  - LCAO (Linear Combination of Atomic Orbitals) approximation
-  - Quantum interference in multi-center systems
-- Related to:
-  - Quantum wires with multiple impurities
-  - 1D molecular chains
-  - Theoretical studies of dimensional effects in chemistry
-
----
-
 ## Mathematical Utilities
 
 **File**: `math-utilities.ts`
@@ -891,7 +808,6 @@ All polynomials are computed using stable recurrence relations to avoid numerica
 
 ```typescript
 import { solveCoulomb1DPotential, solveHarmonicOscillator, solveInfiniteWell } from "./index.js";
-import { solveMultiCoulomb1D } from "./multi-coulomb-1d.js";
 import { solveMultiSquareWell } from "./multi-square-well.js";
 import Schrodinger1DSolver from "../Schrodinger1DSolver.js";
 
@@ -931,17 +847,6 @@ const multiWellResult = solveMultiSquareWell(
   { xMin: -5e-9, xMax: 5e-9, numPoints: 1001 },
   solver,
   0, // electric field (V/m)
-);
-
-// Multi-Coulomb 1D
-const multiCoulombResult = solveMultiCoulomb1D(
-  3, // 3 Coulomb centers
-  1e-9, // 1 nm separation between centers
-  2.307e-28, // Coulomb strength
-  9.109e-31, // electron mass
-  5, // first 5 states
-  { xMin: -5e-9, xMax: 5e-9, numPoints: 1001 },
-  solver,
 );
 ```
 

@@ -87,7 +87,6 @@
   "doublePoschlTeller": "Pöschl–Teller doble",
   "multiSquareWell": "Pozo cuadrado múltiple",
   "multiPoschlTeller": "Pozos múltiples de Pöschl–Teller",
-  "multiCoulomb1D": "Coulomb múltiple 1D",
   "energyEv": "Energía (eV)",
   "positionNm": "Posición (nm)",
   "totalEnergy": "Energía total",
@@ -137,13 +136,10 @@
   "oneWellKeyConcepts": "• Confinamiento cuántico en un único pozo de potencial\n• Niveles de energía discretos (estados propios)\n• Dualidad onda-partícula\n• Densidad de probabilidad |ψ|²\n• Principio de incertidumbre de Heisenberg",
   "interactions": "Interacciones:",
   "oneWellInteractions": "• Haga clic en los niveles de energía para ver los estados propios\n• Ajuste los parámetros del pozo de potencial\n• Pruebe distintos tipos de potencial\n• Cree paquetes de ondas a partir de superposiciones\n• Observe la evolución temporal de los estados de superposición",
-  "oneWellEducationalContent": "Descripción de la pantalla:\nEsta pantalla muestra el confinamiento cuántico en un único pozo de potencial. Los niveles de energía están cuantizados y la función de onda de la partícula se describe mediante patrones de ondas estacionarias (estados propios).\n\nControles disponibles:\n• Tipo de pozo de potencial: seleccione distintas configuraciones de potencial cuántico\n• Niveles de energía: haga clic en los niveles de energía para ver los estados propios correspondientes\n• Superposición: cree paquetes de ondas combinando varios estados propios\n\nObjetivos de aprendizaje:\n• Comprender cómo el confinamiento cuántico produce niveles de energía discretos\n• Explorar la relación entre los parámetros del pozo y las propiedades de los estados propios\n• Observar cómo se manifiesta el principio de incertidumbre en sistemas cuánticos confinados",
   "twoWellsKeyConcepts": "• Efecto túnel cuántico a través de barreras\n• Desdoblamiento de los niveles de energía\n• Estados simétricos y antisimétricos\n• Probabilidad de efecto túnel\n• Oscilaciones temporales entre los pozos",
   "twoWellsInteractions": "• Ajuste la altura y el ancho de la barrera\n• Cambie la distancia entre los pozos\n• Seleccione niveles de energía para ver los estados de efecto túnel\n• Cree superposiciones para observar la dinámica del efecto túnel\n• Observe cómo los parámetros de la barrera afectan la probabilidad de efecto túnel",
-  "twoWellsEducationalContent": "Descripción de la pantalla:\nEsta pantalla muestra el efecto túnel cuántico en un doble pozo de potencial. Las partículas pueden atravesar regiones de barrera clásicamente prohibidas, lo que produce el desdoblamiento de los niveles de energía y un comportamiento oscilatorio.\n\nControles disponibles:\n• Parámetros de la barrera: ajuste la altura y el ancho para controlar la probabilidad de efecto túnel\n• Separación entre pozos: cambie la distancia entre los pozos\n• Niveles de energía: haga clic en los niveles desdoblados para ver los estados simétricos y antisimétricos\n\nObjetivos de aprendizaje:\n• Comprender el efecto túnel cuántico y su dependencia de las propiedades de la barrera\n• Explorar el desdoblamiento de los niveles de energía debido al acoplamiento cuántico entre pozos\n• Observar la dinámica temporal del efecto túnel en estados de superposición",
   "manyWellsKeyConcepts": "• Formación de bandas de energía\n• Bandas de energía permitidas y prohibidas\n• Banda prohibida en potenciales periódicos\n• Ondas de Bloch y momento cristalino\n• Fundamento de la física del estado sólido\n• Conductores, semiconductores y aislantes",
   "manyWellsInteractions": "• Ajuste el número de pozos de potencial\n• Cambie la constante de red (separación entre pozos)\n• Modifique los parámetros de los pozos y las barreras\n• Seleccione distintas bandas de energía\n• Observe la formación de la estructura de bandas\n• Observe la propagación de las ondas de Bloch",
-  "manyWellsEducationalContent": "Descripción de la pantalla:\nEsta pantalla muestra la formación de bandas de energía en potenciales periódicos, el fundamento de la física del estado sólido. Al agregar más pozos, los niveles de energía discretos se extienden en bandas continuas separadas por brechas.\n\nControles disponibles:\n• Número de pozos: agregue o quite pozos para ver surgir la estructura de bandas\n• Constante de red: ajuste la separación periódica del potencial\n• Selección de banda: seleccione distintas bandas de energía para ver los estados de Bloch\n\nObjetivos de aprendizaje:\n• Comprender cómo los potenciales periódicos crean la estructura de bandas de energía\n• Explorar la relación entre el número de pozos y la formación de bandas\n• Relacionar la mecánica cuántica con las propiedades de los sólidos (metales, semiconductores, aislantes)",
   "probabilityDensityAxis": "Densidad de probabilidad",
   "positionNmAxis": "Posición (nm)",
   "timeFormat": "{{time}} fs",
@@ -152,7 +148,6 @@
   "introDescription": "Comience con la mecánica cuántica en un pozo de potencial.\nExplore conceptos cuánticos básicos con una interfaz simplificada.",
   "introKeyConcepts": "• Fundamentos del confinamiento cuántico\n• Niveles de energía en pozos de potencial\n• Función de onda y densidad de probabilidad\n• Exploración de distintos tipos de potencial",
   "introInteractions": "• Seleccione distintos tipos de pozo de potencial\n• Ajuste el ancho y la profundidad del pozo\n• Vea los niveles de energía y las funciones de onda\n• Alterne entre la densidad de probabilidad y la función de onda",
-  "introEducationalContent": "Descripción de la pantalla:\nEsta pantalla introductoria ofrece una interfaz simplificada para explorar la mecánica cuántica en pozos de potencial. Concéntrese en comprender los fundamentos sin la complejidad de la evolución temporal ni de los estados de superposición.\n\nControles disponibles:\n• Tipo de pozo de potencial: seleccione distintas configuraciones de potencial cuántico\n• Parámetros del pozo: ajuste el ancho y la profundidad para ver cómo cambian los niveles de energía\n• Modo de visualización: alterne entre la densidad de probabilidad y la función de onda\n\nObjetivos de aprendizaje:\n• Comprender el confinamiento cuántico en pozos de potencial\n• Explorar cómo los parámetros del pozo afectan los niveles de energía\n• Visualizar funciones de onda y densidades de probabilidad",
   "classicallyForbiddenLabel": "Clásicamente prohibido: {{percentage}}%",
   "secondDerivativeLabel": "{{value}} nm⁻⁵ᐟ²",
   "firstDerivativeLabel": "dψ/dx = {{value}} nm⁻³ᐟ²",
@@ -200,7 +195,6 @@
       "doublePoschlTeller": "Pöschl–Teller doble",
       "multiSquareWell": "Pozos cuadrados múltiples",
       "multiPoschlTeller": "Pozos múltiples de Pöschl–Teller",
-      "multiCoulomb1D": "Centros de Coulomb múltiples",
       "custom": "Potencial personalizado"
     },
     "potentialDescriptions": {
@@ -218,7 +212,6 @@
       "doublePoschlTeller": "Dos pozos suaves de Pöschl–Teller. Muestra el efecto túnel y el desdoblamiento de niveles.",
       "multiSquareWell": "Varios pozos cuadrados que forman una estructura periódica. Modela la física del estado sólido y la estructura de bandas.",
       "multiPoschlTeller": "Una fila de pozos suaves de Pöschl–Teller. Muestra estados ligados acoplados y bandas de energía.",
-      "multiCoulomb1D": "Varios centros de Coulomb en una dimensión. Modela iones moleculares.",
       "custom": "Potencial cuántico personalizado definido por los parámetros del usuario."
     },
     "superpositionNames": {

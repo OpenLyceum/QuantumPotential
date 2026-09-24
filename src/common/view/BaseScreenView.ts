@@ -33,7 +33,6 @@ export type ScreenStringProperties = {
   descriptionStringProperty: TReadOnlyProperty<string>;
   keyConceptsStringProperty: TReadOnlyProperty<string>;
   interactionsStringProperty: TReadOnlyProperty<string>;
-  educationalContentStringProperty: TReadOnlyProperty<string>;
 };
 
 /**
@@ -66,7 +65,7 @@ export abstract class BaseScreenView extends ScreenView {
     options?: ScreenViewOptions,
   ) {
     // Create screen summary content before calling super()
-    const screenSummaryContent = BaseScreenView.createScreenSummaryContent(model, screenSummaryOptions);
+    const screenSummaryContent = BaseScreenView.createAccessibleScreenSummary(model, screenSummaryOptions);
 
     super({
       ...options,
@@ -262,26 +261,6 @@ export abstract class BaseScreenView extends ScreenView {
   }
 
   /**
-   * Creates the screen summary content for accessibility.
-   * This is a concrete implementation that uses screen-specific string properties.
-   */
-  public createScreenSummaryContent(): Node {
-    const strings = this.getScreenStringProperties();
-
-    const summaryText = new RichText(strings.educationalContentStringProperty, {
-      font: new PhetFont(13),
-      fill: QPPWColors.textFillProperty,
-      maxWidth: 600,
-    });
-
-    return new VBox({
-      spacing: 10,
-      align: "left",
-      children: [summaryText],
-    });
-  }
-
-  /**
    * Resets the screen view to its initial state.
    * Subclasses should override this method to add screen-specific reset logic.
    */
@@ -310,10 +289,10 @@ export abstract class BaseScreenView extends ScreenView {
   // ==================== ACCESSIBILITY PDOM METHODS ====================
 
   /**
-   * Creates screen summary content for accessibility.
-   * This provides dynamic descriptions that update when model properties change.
+   * Builds the PDOM screen summary that ScreenView reads first: the screen's purpose, the controls, and a live
+   * description of the current state that updates with the model and the locale.
    */
-  private static createScreenSummaryContent(
+  private static createAccessibleScreenSummary(
     model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
     options: ScreenSummaryOptions,
   ): ScreenSummaryContent {

@@ -122,10 +122,6 @@ export class StringManager {
     return this.stringProperties.introInteractionsStringProperty;
   }
 
-  get introEducationalContentStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.introEducationalContentStringProperty;
-  }
-
   get energyStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.energyStringProperty;
   }
@@ -320,10 +316,6 @@ export class StringManager {
 
   get multiPoschlTellerStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.multiPoschlTellerStringProperty;
-  }
-
-  get multiCoulomb1DStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.multiCoulomb1DStringProperty;
   }
 
   get probabilityDensityStringProperty(): ReadOnlyProperty<string> {
@@ -578,10 +570,6 @@ export class StringManager {
     return this.stringProperties.oneWellInteractionsStringProperty;
   }
 
-  get oneWellEducationalContentStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.oneWellEducationalContentStringProperty;
-  }
-
   get twoWellsKeyConceptsStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.twoWellsKeyConceptsStringProperty;
   }
@@ -590,20 +578,12 @@ export class StringManager {
     return this.stringProperties.twoWellsInteractionsStringProperty;
   }
 
-  get twoWellsEducationalContentStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.twoWellsEducationalContentStringProperty;
-  }
-
   get manyWellsKeyConceptsStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.manyWellsKeyConceptsStringProperty;
   }
 
   get manyWellsInteractionsStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.manyWellsInteractionsStringProperty;
-  }
-
-  get manyWellsEducationalContentStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.manyWellsEducationalContentStringProperty;
   }
 
   get probabilityDensityAxisStringProperty(): ReadOnlyProperty<string> {

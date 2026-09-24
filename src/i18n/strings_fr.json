@@ -87,7 +87,6 @@
   "doublePoschlTeller": "Double Pöschl–Teller",
   "multiSquareWell": "Multi-Puits Carré",
   "multiPoschlTeller": "Puits de Pöschl–Teller multiples",
-  "multiCoulomb1D": "Multi-Coulomb 1D",
   "energyEv": "Énergie (eV)",
   "positionNm": "Position (nm)",
   "totalEnergy": "Énergie Totale",
@@ -137,13 +136,10 @@
   "oneWellKeyConcepts": "• Confinement quantique dans un puits de potentiel unique\n• Niveaux d'énergie discrets (états propres)\n• Dualité onde-particule\n• Densité de probabilité |ψ|²\n• Principe d'incertitude de Heisenberg",
   "interactions": "Interactions:",
   "oneWellInteractions": "• Cliquez sur les niveaux d'énergie pour voir les états propres\n• Ajustez les paramètres du puits de potentiel\n• Essayez différents types de potentiels\n• Créez des paquets d'onde à partir de superpositions\n• Observez l'évolution temporelle des états de superposition",
-  "oneWellEducationalContent": "Aperçu de l'Écran:\nCet écran démontre le confinement quantique dans un puits de potentiel unique. Les niveaux d'énergie sont quantifiés et la fonction d'onde de la particule est décrite par des motifs d'onde stationnaire (états propres).\n\nCommandes Disponibles:\n• Type de Puits de Potentiel: Sélectionnez différentes configurations de potentiel quantique\n• Niveaux d'Énergie: Cliquez sur les niveaux d'énergie pour visualiser les états propres correspondants\n• Superposition: Créez des paquets d'onde en combinant plusieurs états propres\n\nObjectifs d'Apprentissage:\n• Comprendre comment le confinement quantique conduit à des niveaux d'énergie discrets\n• Explorer la relation entre les paramètres du puits et les propriétés des états propres\n• Observer comment le principe d'incertitude se manifeste dans les systèmes quantiques confinés",
   "twoWellsKeyConcepts": "• Effet tunnel quantique à travers les barrières\n• Séparation des niveaux d'énergie\n• États symétriques et antisymétriques\n• Probabilité de tunneling\n• Oscillations temporelles entre les puits",
   "twoWellsInteractions": "• Ajustez la hauteur et la largeur de la barrière\n• Changez la distance de séparation des puits\n• Sélectionnez les niveaux d'énergie pour voir les états de tunneling\n• Créez des superpositions pour observer la dynamique de tunneling\n• Observez comment les paramètres de la barrière affectent la probabilité de tunneling",
-  "twoWellsEducationalContent": "Aperçu de l'Écran:\nCet écran démontre l'effet tunnel quantique dans un double puits de potentiel. Les particules peuvent traverser par effet tunnel des régions de barrière classiquement interdites, conduisant à une séparation des niveaux d'énergie et à un comportement oscillatoire.\n\nCommandes Disponibles:\n• Paramètres de Barrière: Ajustez la hauteur et la largeur pour contrôler la probabilité de tunneling\n• Séparation des Puits: Changez la distance entre les puits\n• Niveaux d'Énergie: Cliquez sur les niveaux d'énergie séparés pour visualiser les états symétriques/antisymétriques\n\nObjectifs d'Apprentissage:\n• Comprendre l'effet tunnel quantique et sa dépendance aux propriétés de la barrière\n• Explorer la séparation des niveaux d'énergie due au couplage quantique entre les puits\n• Observer la dynamique de tunneling temporelle dans les états de superposition",
   "manyWellsKeyConcepts": "• Formation de bandes d'énergie\n• Bandes d'énergie permises et interdites\n• Bande interdite dans les potentiels périodiques\n• Ondes de Bloch et moment cristallin\n• Fondement de la physique des solides\n• Conducteurs, semi-conducteurs et isolants",
   "manyWellsInteractions": "• Ajustez le nombre de puits de potentiel\n• Changez la constante de réseau (espacement des puits)\n• Modifiez les paramètres des puits et des barrières\n• Sélectionnez différentes bandes d'énergie\n• Observez la formation de la structure de bande\n• Regardez la propagation des ondes de Bloch",
-  "manyWellsEducationalContent": "Aperçu de l'Écran:\nCet écran démontre la formation de bandes d'énergie dans des potentiels périodiques, le fondement de la physique des solides. En ajoutant plus de puits, les niveaux d'énergie discrets s'élargissent en bandes continues séparées par des lacunes.\n\nCommandes Disponibles:\n• Nombre de Puits: Ajoutez ou retirez des puits pour voir la structure de bande émerger\n• Constante de Réseau: Ajustez l'espacement périodique du potentiel\n• Sélection de Bande: Sélectionnez différentes bandes d'énergie pour visualiser les états de Bloch\n\nObjectifs d'Apprentissage:\n• Comprendre comment les potentiels périodiques créent une structure de bande d'énergie\n• Explorer la relation entre le nombre de puits et la formation de bandes\n• Relier la mécanique quantique aux propriétés des solides (métaux, semi-conducteurs, isolants)",
   "probabilityDensityAxis": "Densité de Probabilité",
   "positionNmAxis": "Position (nm)",
   "timeFormat": "{{time}} fs",
@@ -152,7 +148,6 @@
   "introDescription": "Commencez avec la mécanique quantique dans un puits de potentiel.\nExplorez les concepts quantiques de base avec une interface simplifiée.",
   "introKeyConcepts": "• Bases du confinement quantique\n• Niveaux d'énergie dans les puits de potentiel\n• Fonction d'onde et densité de probabilité\n• Exploration de différents types de potentiels",
   "introInteractions": "• Sélectionnez différents types de puits de potentiel\n• Ajustez la largeur et la profondeur du puits\n• Visualisez les niveaux d'énergie et les fonctions d'onde\n• Basculez entre la densité de probabilité et les affichages de fonction d'onde",
-  "introEducationalContent": "Aperçu de l'écran:\nCet écran d'introduction fournit une interface simplifiée pour explorer la mécanique quantique dans les puits de potentiel. Concentrez-vous sur la compréhension des bases sans la complexité de l'évolution temporelle ou des états de superposition.\n\nContrôles disponibles:\n• Type de puits de potentiel: Sélectionnez différentes configurations de potentiel quantique\n• Paramètres du puits: Ajustez la largeur et la profondeur pour voir comment les niveaux d'énergie changent\n• Mode d'affichage: Basculez entre les vues de densité de probabilité et de fonction d'onde\n\nObjectifs d'apprentissage:\n• Comprendre le confinement quantique dans les puits de potentiel\n• Explorer comment les paramètres du puits affectent les niveaux d'énergie\n• Visualiser les fonctions d'onde et les densités de probabilité",
   "classicallyForbiddenLabel": "Classiquement Interdit: {{percentage}}%",
   "secondDerivativeLabel": "{{value}} nm⁻⁵ᐟ²",
   "firstDerivativeLabel": "dψ/dx = {{value}} nm⁻³ᐟ²",
@@ -200,7 +195,6 @@
       "doublePoschlTeller": "Double Pöschl–Teller",
       "multiSquareWell": "Puits carrés multiples",
       "multiPoschlTeller": "Puits de Pöschl–Teller multiples",
-      "multiCoulomb1D": "Centres coulombiens multiples",
       "custom": "Potentiel personnalisé"
     },
     "potentialDescriptions": {
@@ -218,7 +212,6 @@
       "doublePoschlTeller": "Deux puits lisses de Pöschl–Teller. Illustre l’effet tunnel et le dédoublement des niveaux.",
       "multiSquareWell": "Plusieurs puits carrés formant une structure périodique. Modélise la physique du solide et la structure de bandes.",
       "multiPoschlTeller": "Une rangée de puits lisses de Pöschl–Teller. Illustre les états liés couplés et les bandes d’énergie.",
-      "multiCoulomb1D": "Plusieurs centres coulombiens à une dimension. Modélise des ions moléculaires.",
       "custom": "Potentiel quantique personnalisé défini par les paramètres de l'utilisateur."
     },
     "superpositionNames": {

@@ -16,7 +16,6 @@ import { solveFiniteSquareWell } from "./finite-square-well.js";
 import { solveHarmonicOscillator } from "./harmonic-oscillator.js";
 import { solveInfiniteWell } from "./infinite-square-well.js";
 import { solveMorsePotential } from "./morse-potential.js";
-import { solveMultiCoulomb1D } from "./multi-coulomb-1d.js";
 import { solveMultiSquareWell } from "./multi-square-well.js";
 import { solvePoschlTellerPotential } from "./poschl-teller-potential.js";
 import { solveRosenMorsePotential } from "./rosen-morse-potential.js";
@@ -34,7 +33,6 @@ export { FiniteSquareWellSolution, solveFiniteSquareWell } from "./finite-square
 export { HarmonicOscillatorSolution, solveHarmonicOscillator } from "./harmonic-oscillator.js";
 export { InfiniteSquareWellSolution, solveInfiniteWell } from "./infinite-square-well.js";
 export { MorsePotentialSolution, solveMorsePotential } from "./morse-potential.js";
-export { solveMultiCoulomb1D } from "./multi-coulomb-1d.js";
 export { solveMultiSquareWell } from "./multi-square-well.js";
 export { PoschlTellerPotentialSolution, solvePoschlTellerPotential } from "./poschl-teller-potential.js";
 export { RosenMorsePotentialSolution, solveRosenMorsePotential } from "./rosen-morse-potential.js";
@@ -54,5 +52,4 @@ qppw.register("AnalyticalSolutions", {
   solveTriangularPotential,
   solveDoubleSquareWellAnalytical,
   solveMultiSquareWell,
-  solveMultiCoulomb1D,
 });

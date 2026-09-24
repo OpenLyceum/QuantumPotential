@@ -134,7 +134,6 @@ export class IntroScreenView extends BaseScreenView {
       descriptionStringProperty: stringManager.introDescriptionStringProperty,
       keyConceptsStringProperty: stringManager.introKeyConceptsStringProperty,
       interactionsStringProperty: stringManager.introInteractionsStringProperty,
-      educationalContentStringProperty: stringManager.introEducationalContentStringProperty,
     };
   }
 
