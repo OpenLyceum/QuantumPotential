@@ -181,6 +181,7 @@ export abstract class BaseScreenView extends ScreenView {
     this.waveFunctionChart = new WaveFunctionChartNode(model, viewState, {
       width: chartsWidth,
       height: waveFunctionChartHeight,
+      showRMSIndicatorCheckbox: true,
     });
     const waveFunctionChartTop = chartsTop + energyChartHeight;
     const chartsBottom = waveFunctionChartTop + waveFunctionChartHeight;

@@ -313,12 +313,10 @@ export class WavenumberChartNode extends Node {
     this.model.potentialRevisionProperty.lazyLink(() => potentialUpdate.schedule());
     this.model.selectedEnergyLevelIndexProperty.lazyLink(() => this.update());
 
-    // Update visibility of RMS indicators if the property exists (IntroViewState only)
-    if (this.viewState && "showRMSIndicatorProperty" in this.viewState) {
-      this.viewState.showRMSIndicatorProperty.lazyLink(() => {
-        this.update();
-      });
-    }
+    // Update visibility of RMS indicators
+    this.viewState?.showRMSIndicatorProperty.lazyLink(() => {
+      this.update();
+    });
 
     // Perform initial update asynchronously (after construction completes)
     // This prevents blocking the page load with expensive calculations
@@ -329,13 +327,10 @@ export class WavenumberChartNode extends Node {
 
   /**
    * Checks if RMS indicators should be shown based on viewState property.
-   * Returns true if the property doesn't exist (for backwards compatibility with other screens).
+   * Returns true when the chart has no view state.
    */
   private shouldShowRMSIndicators(): boolean {
-    if (this.viewState && "showRMSIndicatorProperty" in this.viewState) {
-      return this.viewState.showRMSIndicatorProperty.value;
-    }
-    return true; // Show by default if property doesn't exist
+    return this.viewState?.showRMSIndicatorProperty.value ?? true;
   }
 
   /**

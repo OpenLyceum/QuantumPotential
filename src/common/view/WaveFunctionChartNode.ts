@@ -132,6 +132,7 @@ export class WaveFunctionChartNode extends Node {
       height?: number;
       fixedDisplayMode?: "probabilityDensity" | "waveFunction" | "phaseColor";
       showToolCheckboxes?: boolean; // Whether to show curvature/derivative checkboxes (intro screen only)
+      showRMSIndicatorCheckbox?: boolean; // Whether to show the average & RMS checkbox in the upper right corner
     },
   ) {
     super({
@@ -379,6 +380,28 @@ export class WaveFunctionChartNode extends Node {
       this.viewState.displayModeProperty.link((displayMode) => {
         const effectiveMode = this.fixedDisplayMode !== undefined ? this.fixedDisplayMode : displayMode;
         toolCheckboxes.visible = effectiveMode === "waveFunction";
+      });
+    }
+
+    // Average & RMS checkbox in the upper right corner, shown with the probability density only
+    if (options?.showRMSIndicatorCheckbox) {
+      const rmsIndicatorCheckbox = new Checkbox(
+        this.viewState.showRMSIndicatorProperty,
+        new Text(a11y.visible.showAverageAndRmsStringProperty, {
+          font: new PhetFont(12),
+          fill: QPPWColors.textFillProperty,
+        }),
+        { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
+      );
+      rmsIndicatorCheckbox.localBoundsProperty.link(() => {
+        rmsIndicatorCheckbox.right = this.chartWidth - this.chartMargins.right - 5;
+        rmsIndicatorCheckbox.top = this.chartMargins.top + 5;
+      });
+      this.addChild(rmsIndicatorCheckbox);
+
+      this.viewState.displayModeProperty.link((displayMode) => {
+        const effectiveMode = this.fixedDisplayMode !== undefined ? this.fixedDisplayMode : displayMode;
+        rmsIndicatorCheckbox.visible = effectiveMode === "probabilityDensity";
       });
     }
 
@@ -631,12 +654,10 @@ export class WaveFunctionChartNode extends Node {
       this.update();
     });
 
-    // Update visibility of RMS indicators if the property exists (IntroViewState only)
-    if ("showRMSIndicatorProperty" in this.viewState) {
-      this.viewState.showRMSIndicatorProperty.lazyLink(() => {
-        this.update();
-      });
-    }
+    // Update visibility of RMS indicators
+    this.viewState.showRMSIndicatorProperty.lazyLink(() => {
+      this.update();
+    });
 
     // Link tool updates to model changes
     const updateTools = () => {
@@ -691,17 +712,6 @@ export class WaveFunctionChartNode extends Node {
    */
   private getEffectiveDisplayMode(): string {
     return this.fixedDisplayMode || this.viewState.displayModeProperty.value;
-  }
-
-  /**
-   * Checks if RMS indicators should be shown based on viewState property.
-   * Returns true if the property doesn't exist (for backwards compatibility with other screens).
-   */
-  private shouldShowRMSIndicators(): boolean {
-    if ("showRMSIndicatorProperty" in this.viewState) {
-      return this.viewState.showRMSIndicatorProperty.value;
-    }
-    return true; // Show by default if property doesn't exist
   }
 
   /**
@@ -1033,7 +1043,7 @@ export class WaveFunctionChartNode extends Node {
       const stats = this.model.getPositionStatisticsForDensity(probabilityDensityNm);
 
       // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
-      if (stats && this.shouldShowRMSIndicators()) {
+      if (stats && this.viewState.showRMSIndicatorProperty.value) {
         const { avg, rms } = stats;
         this.avgPositionLabel.string = stringManager.averagePositionLabelStringProperty.value.replace(
           "{{value}}",
@@ -1164,7 +1174,7 @@ export class WaveFunctionChartNode extends Node {
       const stats = this.model.getPositionStatisticsForDensity(probabilityDensityNm);
 
       // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
-      if (stats && this.shouldShowRMSIndicators()) {
+      if (stats && this.viewState.showRMSIndicatorProperty.value) {
         const { avg, rms } = stats;
         this.avgPositionLabel.string = stringManager.averagePositionLabelStringProperty.value.replace(
           "{{value}}",

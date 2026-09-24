@@ -21,6 +21,9 @@ export abstract class BaseViewState {
   public readonly showPotentialEnergyProperty: Property<boolean>;
   public readonly showEnergyValuesProperty: Property<boolean>;
 
+  // Average-position line and RMS-width arrow on the probability density (and wavenumber) charts
+  public readonly showRMSIndicatorProperty: Property<boolean>;
+
   // Display mode (common to all screens)
   public abstract readonly displayModeProperty: Property<DisplayMode | "probabilityDensity" | "waveFunction">;
 
@@ -36,6 +39,7 @@ export abstract class BaseViewState {
     // Initialize chart visibility
     this.showPotentialEnergyProperty = new Property<boolean>(true);
     this.showEnergyValuesProperty = new Property<boolean>(false);
+    this.showRMSIndicatorProperty = new Property<boolean>(false);
   }
 
   /**
@@ -51,5 +55,6 @@ export abstract class BaseViewState {
     this.showZerosProperty.reset();
     this.showPotentialEnergyProperty.reset();
     this.showEnergyValuesProperty.reset();
+    this.showRMSIndicatorProperty.reset();
   }
 }

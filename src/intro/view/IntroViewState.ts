@@ -13,15 +13,11 @@ export class IntroViewState extends BaseViewState {
   // Note: Uses DisplayMode type for compatibility with base class, but only "probabilityDensity" and "waveFunction" are used
   public readonly displayModeProperty: Property<DisplayMode>;
 
-  // Controls the visibility of RMS and average indicators on probability density and wavenumber charts
-  public readonly showRMSIndicatorProperty: Property<boolean>;
-
   public constructor() {
     super();
 
     // Initialize intro-specific display settings
     this.displayModeProperty = new Property<DisplayMode>("probabilityDensity");
-    this.showRMSIndicatorProperty = new Property<boolean>(false); // Hide indicators by default
   }
 
   /**
@@ -30,6 +26,5 @@ export class IntroViewState extends BaseViewState {
   public override reset(): void {
     super.reset();
     this.displayModeProperty.reset();
-    this.showRMSIndicatorProperty.reset();
   }
 }
