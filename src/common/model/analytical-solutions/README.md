@@ -31,16 +31,20 @@ This module provides **11 analytical solutions** plus 2 numerical multi-well pot
 
 **Multi-Well Potentials (Numerical):**
 
-13. Multi-Square Well - solved numerically using DVR/FGH/Matrix Numerov
-14. Multi-Coulomb 1D - solved numerically (no analytical solution exists)
+12. Multi-Square Well — solved numerically (Numerov)
+13. Multi-Coulomb 1D — solved numerically (no analytical solution exists); no longer offered on any screen
+
+The double and multi Pöschl–Teller wells are also solved numerically; their V(x) is built in
+`../multiPoschlTellerPotential.ts`.
 
 ### Implementation Details
 
-All analytical solutions are evaluated at **1000 grid points** for high-resolution visualization, independent of the user's grid preference setting. This ensures smooth, accurate wavefunction displays while numerical methods can use user-configurable grid sizes.
+Each closed-form potential is an `AnalyticalSolution` subclass (see `AnalyticalSolution.ts`), built from
+typed `WellParameters` by `../PotentialFactory.ts`. The screen models evaluate the analytical wave functions
+on a fixed ±4 nm grid of about 1000 points, independent of `?numberOfPoints`, which only sizes the
+numerical solver's grid.
 
-**Note on Multi-Well Potentials**: While `multi-square-well.ts` and `multi-coulomb-1d.ts` are located in this directory for organizational convenience, they create potential functions that are **solved using numerical methods** (DVR, FGH, or Matrix Numerov), not analytical formulas. They are included here because they provide convenient interfaces for creating multi-well potentials, but the actual bound state solutions require numerical eigensolvers.
-
-**Note**: Rosen-Morse and Eckart potentials have been temporarily removed from the UI but remain available in the codebase for future use.
+**Note on Multi-Well Potentials**: While `multi-square-well.ts` and `multi-coulomb-1d.ts` are located in this directory for organizational convenience, they build potential functions that are **solved numerically** by `Schrodinger1DSolver.solveNumerical` (Numerov shooting; see `doc/SOLVER_DOCUMENTATION.md`), not by analytical formulas.
 
 ---
 
@@ -603,7 +607,7 @@ In the barrier regions (x < 0 or x > width), the wavefunction decays exponential
 
 ---
 
-## 11. Coulomb 1D Potential
+## 10. Coulomb 1D Potential
 
 **File**: `coulomb-1d-potential.ts`
 
@@ -619,7 +623,7 @@ E_N = -mα²/(2ℏ²N²)
 
 ---
 
-## 12. Double Square Well
+## 11. Double Square Well
 
 **File**: `double-square-well.ts`
 
@@ -702,11 +706,11 @@ Eigenvalues are found using the **bisection method** applied to the transcendent
 
 ---
 
-## 13. Multi-Square Well (Numerical)
+## 12. Multi-Square Well (Numerical)
 
 **File**: `multi-square-well.ts`
 
-**⚠️ NUMERICAL SOLUTION**: This potential is solved using numerical methods (DVR, FGH, or Matrix Numerov), not analytical formulas. The transcendental equations for N > 2 wells become intractable.
+**⚠️ NUMERICAL SOLUTION**: This potential is solved numerically (Numerov shooting), not by analytical formulas. The transcendental equations for N > 2 wells become intractable.
 
 ### Description
 
@@ -735,7 +739,7 @@ The wells are arranged symmetrically about x = 0.
 
 ### Energy Eigenvalues
 
-Energy eigenvalues are found using **numerical methods** (DVR, FGH, or Matrix Numerov). The transcendental equations that arise from matching boundary conditions become extremely complex for N > 2 wells and have no practical closed-form solution.
+Energy eigenvalues are found **numerically** (Numerov shooting). The transcendental equations that arise from matching boundary conditions become extremely complex for N > 2 wells and have no practical closed-form solution.
 
 As N increases:
 
@@ -756,13 +760,9 @@ For symmetric arrangements, wavefunctions have definite parity.
 
 ### Numerical Methods
 
-This potential requires full numerical eigensolvers:
-
-- **DVR (Discrete Variable Representation)**: Recommended for general use
-- **FGH (Fourier Grid Hamiltonian)**: Efficient for smooth potentials
-- **Matrix Numerov**: Alternative finite-difference approach
-
-The solver constructs the full Hamiltonian matrix and diagonalizes it to find eigenvalues and eigenvectors.
+The Numerov solver brackets each state by its node count, which resolves the closely spaced levels of a
+band, and matches log-derivatives when an electric field tilts the wells. `?numericalMethod=fgh` switches
+to a Fourier Grid Hamiltonian cross-check. See `doc/SOLVER_DOCUMENTATION.md`.
 
 ### Physical Significance
 
@@ -777,11 +777,11 @@ The solver constructs the full Hamiltonian matrix and diagonalizes it to find ei
 
 ---
 
-## 14. Multi-Coulomb 1D (Numerical)
+## 13. Multi-Coulomb 1D (Numerical)
 
 **File**: `multi-coulomb-1d.ts`
 
-**⚠️ NUMERICAL SOLUTION**: This potential is solved using numerical methods (DVR, FGH, or Matrix Numerov). No closed-form analytical solution exists for N > 1 Coulomb centers in 1D.
+**⚠️ NUMERICAL SOLUTION**: This potential is solved numerically (Numerov shooting). It is no longer offered on any screen; `npm run test:multi-coulomb-1d` still exercises it. No closed-form analytical solution exists for N > 1 Coulomb centers in 1D.
 
 ### Description
 
@@ -808,7 +808,7 @@ The centers are arranged symmetrically about x = 0.
 
 ### Energy Eigenvalues
 
-Energy eigenvalues are found using **numerical methods only** (DVR, FGH, or Matrix Numerov). The multi-center Coulomb problem has **no general closed-form analytical solution** for N > 1 centers, but exhibits:
+Energy eigenvalues are found **numerically only** (Numerov shooting). The multi-center Coulomb problem has **no general closed-form analytical solution** for N > 1 centers, but exhibits:
 
 - Energy level splitting proportional to coupling strength
 - Formation of molecular-like bonding and antibonding states
@@ -835,18 +835,14 @@ Each Coulomb center imposes an **odd-parity constraint** similar to the single 1
 
 ### Numerical Methods
 
-This potential requires full numerical eigensolvers:
-
-- **DVR (Discrete Variable Representation)**: Recommended, handles singularities well
-- **FGH (Fourier Grid Hamiltonian)**: May have issues near singularities
-- **Matrix Numerov**: Alternative approach
-
-Special considerations:
+It is solved by Numerov shooting. Special considerations:
 
 - Fine grid required near each singularity to resolve linear behavior
 - Careful handling of 1/|x-x_i| singularities with small cutoff
 - Validation against single-center analytical solution when N=1
 - Grid spacing must be small enough to capture wavefunction zeros at each center
+- A bare −α/|x| centre has no finite ground state in 1D, so the deepest states are grid-limited (see
+  `tests/accuracy/README.md`)
 
 ### Physical Significance
 
@@ -894,13 +890,10 @@ All polynomials are computed using stable recurrence relations to avoid numerica
 ## Usage Example
 
 ```typescript
-import {
-  solveInfiniteWell,
-  solveHarmonicOscillator,
-  solveCoulomb1DPotential,
-  solveMultiSquareWell,
-  solveMultiCoulomb1D,
-} from "./analytical-solutions";
+import { solveCoulomb1DPotential, solveHarmonicOscillator, solveInfiniteWell } from "./index.js";
+import { solveMultiCoulomb1D } from "./multi-coulomb-1d.js";
+import { solveMultiSquareWell } from "./multi-square-well.js";
+import Schrodinger1DSolver from "../Schrodinger1DSolver.js";
 
 // Infinite square well
 const infiniteWellResult = solveInfiniteWell(
@@ -926,7 +919,8 @@ const coulombResult = solveCoulomb1DPotential(
   { xMin: -8e-9, xMax: 8e-9, numPoints: 1001 },
 );
 
-// Multi-square well (NEW)
+// Multi-square well (solved numerically, so it takes the solver)
+const solver = new Schrodinger1DSolver();
 const multiWellResult = solveMultiSquareWell(
   5, // 5 wells
   0.5e-9, // 0.5 nm well width
@@ -934,17 +928,20 @@ const multiWellResult = solveMultiSquareWell(
   0.3e-9, // 0.3 nm separation between wells
   9.109e-31, // electron mass
   10, // first 10 states
-  { xMin: -5e-9, xMax: 5e-9, numPoints: 1000 },
+  { xMin: -5e-9, xMax: 5e-9, numPoints: 1001 },
+  solver,
+  0, // electric field (V/m)
 );
 
-// Multi-Coulomb 1D (NEW)
+// Multi-Coulomb 1D
 const multiCoulombResult = solveMultiCoulomb1D(
   3, // 3 Coulomb centers
   1e-9, // 1 nm separation between centers
   2.307e-28, // Coulomb strength
   9.109e-31, // electron mass
   5, // first 5 states
-  { xMin: -5e-9, xMax: 5e-9, numPoints: 1000 },
+  { xMin: -5e-9, xMax: 5e-9, numPoints: 1001 },
+  solver,
 );
 ```
 
@@ -976,4 +973,4 @@ const multiCoulombResult = solveMultiCoulomb1D(
 
 ## License
 
-This code is part of the QPPW (Quantum Potential Probability Wavefunction) project.
+GNU Affero General Public License v3.0 or later, as for the rest of Quantum Potential.

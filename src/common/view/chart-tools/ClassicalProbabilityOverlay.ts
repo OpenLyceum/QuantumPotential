@@ -8,7 +8,7 @@ import { Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../../i18n/StringManager.js";
 import QPPWColors from "../../../QPPWColors.js";
-import { hasClassicallyForbiddenProbability, hasClassicalTurningPoints } from "../../model/ModelTypeGuards.js";
+import { isSingleWellModel } from "../../model/ModelTypeGuards.js";
 import type { BoundStateResult } from "../../model/PotentialFunction.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
@@ -110,7 +110,7 @@ export class ClassicalProbabilityOverlay extends Node {
     // Add hover listeners to forbidden regions to show probability percentage
     const showForbiddenProbability = () => {
       const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-      if (hasClassicallyForbiddenProbability(this.model) && selectedIndex >= 0) {
+      if (isSingleWellModel(this.model) && selectedIndex >= 0) {
         const percentage = this.model.getClassicallyForbiddenProbability(selectedIndex);
         this.forbiddenProbabilityLabel.string = stringManager.classicallyForbiddenLabelStringProperty.value.replace(
           "{{percentage}}",
@@ -173,7 +173,7 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Early return if conditions aren't met
     if (
-      !(showClassicalProbability && hasClassicalTurningPoints(this.model)) ||
+      !(showClassicalProbability && isSingleWellModel(this.model)) ||
       selectedIndex < 0 ||
       selectedIndex >= boundStates.energies.length
     ) {

@@ -74,27 +74,6 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     return createMorsePotential(this.dissociationEnergy, this.wellWidth, this.equilibriumPosition);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculateMorsePotentialClassicalProbability(
-      this.dissociationEnergy,
-      this.wellWidth,
-      this.equilibriumPosition,
-      energy,
-      mass,
-      xGrid,
-    );
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateMorsePotentialWavefunctionZeros(
-      this.dissociationEnergy,
-      this.wellWidth,
-      this.equilibriumPosition,
-      this.mass,
-      stateIndex,
-    );
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateMorsePotentialTurningPoints(
       this.dissociationEnergy,
@@ -145,27 +124,6 @@ export class MorsePotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateMorsePotentialSuperpositionMinMax(
-      this.dissociationEnergy,
-      this.wellWidth,
-      this.equilibriumPosition,
-      this.mass,
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
   calculateFourierTransform(
     boundStateResult: BoundStateResult,
     mass: number,
@@ -302,72 +260,6 @@ export function createMorsePotential(
 }
 
 /**
- * Calculate classical probability density for a Morse potential.
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m]
- *
- * @param dissociationEnergy - Dissociation energy D_e in Joules
- * @param wellWidth - Width parameter a in meters
- * @param equilibriumPosition - Equilibrium position x_e in meters
- * @param energy - Energy of the particle in Joules
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
- */
-export function calculateMorsePotentialClassicalProbability(
-  dissociationEnergy: number,
-  wellWidth: number,
-  equilibriumPosition: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const potentialFn = createMorsePotential(dissociationEnergy, wellWidth, equilibriumPosition);
-
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Find maximum kinetic energy for epsilon calculation
-  let maxKE = 0;
-  for (const x of xGrid) {
-    const ke = energy - potentialFn(x);
-    if (ke > maxKE) {
-      maxKE = ke;
-    }
-  }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
-  const epsilon = 0.01 * maxKE;
-
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]!);
-
-    if (kineticEnergy <= 0) {
-      classicalProbability.push(0);
-    } else {
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
-  }
-
-  // Normalize
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
-}
-
-/**
  * Calculate the classical turning points for a Morse potential.
  * Solve E = D_e * (1 - exp(-(x - x_e)/a))^2 - D_e for x
  *
@@ -440,90 +332,6 @@ function computeMorseNormalization(
   }
 
   return 1 / Math.sqrt(normSq);
-}
-
-/**
- * Calculate wavefunction zeros for Morse potential (numerical approach).
- * Finds zeros by detecting sign changes in the wavefunction.
- *
- * @param dissociationEnergy - Dissociation energy D_e in Joules
- * @param wellWidth - Width parameter a in meters
- * @param equilibriumPosition - Equilibrium position x_e in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param searchRange - Range to search for zeros (in meters from equilibrium)
- * @returns Array of x positions (in meters) where wavefunction is zero
- */
-export function calculateMorsePotentialWavefunctionZeros(
-  dissociationEnergy: number,
-  wellWidth: number,
-  equilibriumPosition: number,
-  mass: number,
-  stateIndex: number,
-  searchRange: number = 10e-9,
-): number[] {
-  const { HBAR } = QuantumConstants;
-  const De = dissociationEnergy;
-  const a = wellWidth;
-  const xe = equilibriumPosition;
-  const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * De)) / HBAR;
-  const alpha = 2 * lambda - 2 * n - 1;
-  const exponent = lambda - n - 0.5;
-
-  // Ground state has no zeros
-  if (n === 0) {
-    return [];
-  }
-
-  const zeros: number[] = [];
-  const numSamples = 1000;
-  const xMin = xe - searchRange;
-  const xMax = xe + searchRange;
-  const dx = (xMax - xMin) / numSamples;
-
-  let prevX = xMin;
-  const prevZ = 2 * lambda * Math.exp(-(prevX - xe) / a);
-  let prevVal = prevZ ** exponent * Math.exp(-prevZ / 2) * associatedLaguerre(n, alpha, prevZ);
-
-  for (let i = 1; i <= numSamples; i++) {
-    const x = xMin + i * dx;
-    const z = 2 * lambda * Math.exp(-(x - xe) / a);
-    const val = z ** exponent * Math.exp(-z / 2) * associatedLaguerre(n, alpha, z);
-
-    // Sign change detected
-    if (prevVal * val < 0) {
-      // Use bisection to refine
-      let left = prevX;
-      let right = x;
-      for (let iter = 0; iter < 20; iter++) {
-        const mid = (left + right) / 2;
-        const zMid = 2 * lambda * Math.exp(-(mid - xe) / a);
-        const valMid = zMid ** exponent * Math.exp(-zMid / 2) * associatedLaguerre(n, alpha, zMid);
-
-        if (Math.abs(valMid) < 1e-12) {
-          zeros.push(mid);
-          break;
-        }
-
-        if (valMid * prevVal < 0) {
-          right = mid;
-        } else {
-          left = mid;
-        }
-
-        if (iter === 19) {
-          zeros.push((left + right) / 2);
-        }
-      }
-    }
-
-    prevX = x;
-    prevVal = val;
-  }
-
-  return zeros;
 }
 
 /**
@@ -737,90 +545,4 @@ export function calculateMorsePotentialWavefunctionMinMax(
   }
 
   return { min, max, extremaPositions };
-}
-
-/**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a Morse potential.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param dissociationEnergy - Dissociation energy D_e in Joules
- * @param wellWidth - Width parameter a in meters
- * @param equilibriumPosition - Equilibrium position x_e in meters
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateMorsePotentialSuperpositionMinMax(
-  dissociationEnergy: number,
-  wellWidth: number,
-  equilibriumPosition: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const De = dissociationEnergy;
-  const a = wellWidth;
-  const xe = equilibriumPosition;
-
-  const lambda = (a * Math.sqrt(2 * mass * De)) / HBAR;
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-
-    // Calculate superposition at this position
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      // Calculate wavefunction value
-      const alpha = 2 * lambda - 2 * n - 1;
-      const exponent = lambda - n - 0.5;
-
-      // Get numerical normalization constant
-      const normalization = computeMorseNormalization(a, lambda, n, xe, xMin, xMax, numPoints);
-
-      const z = 2 * lambda * Math.exp(-(x - xe) / a);
-      const laguerre = associatedLaguerre(n, alpha, z);
-      const psi = normalization * z ** exponent * Math.exp(-z / 2) * laguerre;
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
-      // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
 }

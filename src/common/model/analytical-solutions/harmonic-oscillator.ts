@@ -50,155 +50,6 @@ export function createHarmonicOscillatorPotential(springConstant: number): Poten
 }
 
 /**
- * Calculate classical probability density for a harmonic oscillator.
- * For a classical harmonic oscillator, the probability density is:
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m]
- *
- * While the analytical formula P(x) = 1 / (π * √(A² - x²)) is exact,
- * it goes to infinity at the turning points x = ±A. To prevent display
- * issues when plotted alongside quantum probability, we use a minimum
- * kinetic energy threshold (similar to other potentials).
- *
- * @param springConstant - Spring constant k in N/m
- * @param energy - Energy of the particle in Joules
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
- */
-export function calculateHarmonicOscillatorClassicalProbability(
-  springConstant: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const potentialFn = createHarmonicOscillatorPotential(springConstant);
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Find maximum kinetic energy for epsilon calculation
-  let maxKE = 0;
-  for (const x of xGrid) {
-    const ke = energy - potentialFn(x);
-    if (ke > maxKE) {
-      maxKE = ke;
-    }
-  }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
-  const epsilon = 0.01 * maxKE;
-
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]!);
-
-    if (kineticEnergy <= 0) {
-      classicalProbability.push(0);
-    } else {
-      // Use epsilon to prevent singularities at turning points
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
-  }
-
-  // Normalize so that ∫P(x)dx = 1
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
-}
-
-/**
- * Calculate the positions of wavefunction zeros (nodes) for a harmonic oscillator.
- * The zeros are the roots of the Hermite polynomial H_n(ξ) where ξ = √(mω/ℏ) * x
- *
- * Uses numerical root finding to locate all n zeros of the nth Hermite polynomial.
- *
- * @param springConstant - Spring constant k in N/m
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, 1 for first excited, etc.)
- * @returns Array of x positions (in meters) where the wavefunction is zero
- */
-export function calculateHarmonicOscillatorWavefunctionZeros(
-  springConstant: number,
-  mass: number,
-  stateIndex: number,
-): number[] {
-  const { HBAR } = QuantumConstants;
-  const n = stateIndex; // Quantum number (0, 1, 2, ...)
-  const omega = Math.sqrt(springConstant / mass);
-  const alpha = Math.sqrt((mass * omega) / HBAR);
-
-  // Ground state has no zeros
-  if (n === 0) {
-    return [];
-  }
-
-  const zeros: number[] = [];
-
-  // Hermite polynomials H_n have n real, distinct zeros
-  // They are symmetric about the origin, and for n odd, 0 is a zero
-  // Use bisection to find zeros in intervals where H_n changes sign
-
-  // For H_n, all zeros lie in the interval [-√(2n+1), √(2n+1)]
-  const searchRange = Math.sqrt(2 * n + 1);
-  const numIntervals = 100 * n; // Use many intervals for accuracy
-  const dxi = (2 * searchRange) / numIntervals;
-
-  // Search for sign changes
-  let prevXi = -searchRange;
-  let prevVal = hermitePolynomial(n, prevXi);
-
-  for (let i = 1; i <= numIntervals; i++) {
-    const xi = -searchRange + i * dxi;
-    const val = hermitePolynomial(n, xi);
-
-    // Sign change detected - use bisection to find zero
-    if (prevVal * val < 0) {
-      let left = prevXi;
-      let right = xi;
-
-      // Bisection method
-      for (let iter = 0; iter < 50; iter++) {
-        const mid = (left + right) / 2;
-        const midVal = hermitePolynomial(n, mid);
-
-        if (Math.abs(midVal) < 1e-12) {
-          // Found zero
-          zeros.push(mid / alpha); // Convert from ξ to x
-          break;
-        }
-
-        if (midVal * hermitePolynomial(n, left) < 0) {
-          right = mid;
-        } else {
-          left = mid;
-        }
-
-        if (iter === 49) {
-          // Use midpoint as approximation
-          zeros.push((left + right) / (2 * alpha));
-        }
-      }
-    }
-
-    prevXi = xi;
-    prevVal = val;
-  }
-
-  return zeros;
-}
-
-/**
  * Calculate the classical turning points for a harmonic oscillator.
  * Turning points occur where E = V(x) = (1/2)kx², so x = ±√(2E/k)
  *
@@ -409,81 +260,6 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
 }
 
 /**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a harmonic oscillator.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param springConstant - Spring constant k in N/m
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateHarmonicOscillatorSuperpositionMinMax(
-  springConstant: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const omega = Math.sqrt(springConstant / mass);
-  const alpha = Math.sqrt((mass * omega) / HBAR);
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-
-    // Calculate superposition at this position
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      // Calculate wavefunction value
-      const normalization = (1 / Math.sqrt(2 ** n * factorial(n))) * (alpha / Math.PI) ** 0.25;
-      const xi = alpha * x;
-      const gaussianFactor = Math.exp((-xi * xi) / 2);
-      const hermite = hermitePolynomial(n, xi);
-      const psi = normalization * gaussianFactor * hermite;
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
-      // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
-}
-
-/**
  * Calculate the analytical Fourier transform of harmonic oscillator wavefunctions.
  *
  * The harmonic oscillator has a remarkable property: its wavefunctions are
@@ -576,14 +352,6 @@ export class HarmonicOscillatorSolution extends AnalyticalSolution {
     return createHarmonicOscillatorPotential(this.springConstant);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculateHarmonicOscillatorClassicalProbability(this.springConstant, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateHarmonicOscillatorWavefunctionZeros(this.springConstant, this.mass, stateIndex);
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateHarmonicOscillatorTurningPoints(this.springConstant, energy);
     return [points]; // Return as array with single element for simple single-well potential
@@ -607,26 +375,6 @@ export class HarmonicOscillatorSolution extends AnalyticalSolution {
       this.springConstant,
       this.mass,
       stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
-
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateHarmonicOscillatorSuperpositionMinMax(
-      this.springConstant,
-      this.mass,
-      coefficients,
-      energies,
-      time,
       xMin,
       xMax,
       numPoints,

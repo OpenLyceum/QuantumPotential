@@ -10,8 +10,6 @@ import qppw from "../../QPPWNamespace.js";
 export const SuperpositionType = {
   PSI_I_PSI_J: "psiIPsiJ",
   SINGLE: "eigenfunction",
-  LOCALIZED_NARROW: "localizedNarrow",
-  LOCALIZED_WIDE: "localizedWide",
   LOCALIZED: "localized",
   MOVING_LOCALIZED: "movingLocalized",
   TWO_LOBED: "twoLobed",

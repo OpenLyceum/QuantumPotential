@@ -5,7 +5,7 @@
  * across different potential types. Each concrete implementation must provide methods for:
  * - Solving the Schrödinger equation to get energies and wavefunctions
  * - Creating the potential function
- * - Calculating classical probability density
+ * - Calculating classical probability density (a shared default built on createPotential)
  * - Finding wavefunction zeros (nodes)
  * - Determining classical turning points
  * - Computing wavefunction second derivatives
@@ -13,6 +13,7 @@
  * @abstract
  */
 
+import { calculateClassicalProbabilityDensity } from "../ClassicalProbability.js";
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 
 export abstract class AnalyticalSolution {
@@ -40,26 +41,23 @@ export abstract class AnalyticalSolution {
    * the probability density is proportional to 1/v(x), where v(x) is the velocity:
    * P(x) ∝ 1/√(2m(E - V(x)))
    *
-   * The result is normalized so that ∫P(x)dx = 1 over the classically allowed region.
+   * The result is normalized so that ∫P(x)dx = 1 over the classically allowed region. The default samples
+   * createPotential(); override it only where a closed form is better (the square wells' uniform density).
    *
    * @param energy - Energy of the particle in Joules
    * @param mass - Particle mass in kg
    * @param xGrid - Array of x positions in meters
    * @returns Array of normalized classical probability density values (in 1/meters)
    */
-  abstract calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[];
-
-  /**
-   * Calculate the positions of wavefunction zeros (nodes).
-   *
-   * For the nth eigenstate, there are typically n-1 interior nodes (zeros).
-   * The exact positions depend on the specific potential.
-   *
-   * @param stateIndex - Index of the eigenstate (0 for ground state, 1 for first excited, etc.)
-   * @param energy - Energy of the eigenstate in Joules (may be needed for some potentials)
-   * @returns Array of x positions (in meters) where the wavefunction is zero
-   */
-  abstract calculateWavefunctionZeros(stateIndex: number, energy: number): number[];
+  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+    const potential = this.createPotential();
+    return calculateClassicalProbabilityDensity(
+      xGrid.map((x) => potential(x)),
+      energy,
+      mass,
+      xGrid,
+    );
+  }
 
   /**
    * Calculate the classical turning points.
@@ -129,32 +127,6 @@ export abstract class AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] };
-
-  /**
-   * Calculate the minimum and maximum values of a superposition of wavefunctions.
-   *
-   * A quantum superposition is a linear combination of eigenstates:
-   * Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
-   *
-   * This method evaluates the superposition at a given time within the specified
-   * region and returns the minimum and maximum values encountered.
-   *
-   * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
-   * @param energies - Energy eigenvalues in Joules
-   * @param time - Time in seconds
-   * @param xMin - Left boundary of the region in meters
-   * @param xMax - Right boundary of the region in meters
-   * @param numPoints - Number of points to sample (default: 1000)
-   * @returns Object containing min and max values of the superposition
-   */
-  abstract calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number };
 
   /**
    * Calculate the Fourier transform of the wavefunctions to obtain momentum-space representation.

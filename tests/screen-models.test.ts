@@ -7,10 +7,10 @@
 import { describe, expect, it } from "vitest";
 import { BaseModel } from "../src/common/model/BaseModel.js";
 import {
-  hasBarrierHeight,
   isIntroModel,
   isManyWellsModel,
   isOneWellModel,
+  isSingleWellModel,
   isTwoWellsModel,
 } from "../src/common/model/ModelTypeGuards.js";
 import { PotentialType } from "../src/common/model/PotentialFunction.js";
@@ -36,7 +36,7 @@ it("identifies screens from their explicit kind", () => {
   expect(isOneWellModel(one)).toBe(true);
   expect(isTwoWellsModel(two)).toBe(true);
   expect(isManyWellsModel(many)).toBe(true);
-  expect(hasBarrierHeight(two)).toBe(true);
+  expect([intro, one, two, many].map(isSingleWellModel)).toEqual([true, true, false, false]);
   for (const model of [intro, one, two, many]) {
     model.dispose();
   }

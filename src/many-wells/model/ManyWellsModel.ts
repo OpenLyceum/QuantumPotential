@@ -9,9 +9,9 @@ import { Range } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
 import { createMultiPoschlTellerPotential } from "../../common/model/multiPoschlTellerPotential.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
+import type { WellParameters } from "../../common/model/PotentialFunction.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
-import type { WellParameters } from "../../common/model/Schrodinger1DSolver.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
@@ -94,11 +94,6 @@ export class ManyWellsModel extends BaseModel {
    * Larger value needed due to energy level splitting.
    */
   private static readonly NUM_STATES = 80;
-
-  /**
-   * Chart display range in nanometers (extends from -RANGE to +RANGE).
-   */
-  private static readonly CHART_DISPLAY_RANGE_NM = 4;
 
   /**
    * Extra room (nm) on each side of the well array in the solver domain, for the evanescent tails.
@@ -209,15 +204,13 @@ export class ManyWellsModel extends BaseModel {
     // narrower than the chart. A wide array extends past the chart edges (which clip it) rather than being
     // truncated by the box walls. The point count scales with the domain to keep the spacing fixed.
     const halfSpanNm = Math.max(
-      ManyWellsModel.CHART_DISPLAY_RANGE_NM,
+      BaseModel.CHART_HALF_RANGE_NM,
       this.getStructureWidthNm() / ManyWellsModel.HALF_DIVISOR +
         (this.potentialTypeProperty.value === PotentialType.MULTI_POSCHL_TELLER
           ? Math.max(ManyWellsModel.DOMAIN_MARGIN_NM, (5 * this.wellWidthProperty.value) / 2)
           : ManyWellsModel.DOMAIN_MARGIN_NM),
     );
-    const scaledPoints = Math.round(
-      (qppwQueryParameters.numberOfPoints * halfSpanNm) / ManyWellsModel.CHART_DISPLAY_RANGE_NM,
-    );
+    const scaledPoints = Math.round((qppwQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM);
     const gridConfig = {
       xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
       xMax: halfSpanNm * QuantumConstants.NM_TO_M,

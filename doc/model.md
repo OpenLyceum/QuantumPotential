@@ -181,16 +181,17 @@ Stationary states don't change shape (only phase), while superposition states ev
 
 **Instructions**:
 
-1. Select the double square well potential
+1. On the Two Wells screen, select the double square well potential
 2. Examine the ground state:
    - Observe symmetric wave function
    - Note penetration through the central barrier
 3. Examine the first excited state:
    - Observe antisymmetric wave function
    - Compare energy to ground state (very close)
-4. Vary barrier height:
-   - Higher barrier → smaller energy splitting
-   - Lower barrier → larger energy splitting
+4. Drag the separation and depth handles on the potential:
+   - Wider or taller barrier → smaller energy splitting
+   - Narrower or lower barrier → larger energy splitting
+5. Repeat with the smooth double Pöschl–Teller wells and compare
 
 **Discussion Questions**:
 
@@ -204,10 +205,11 @@ Stationary states don't change shape (only phase), while superposition states ev
 
 **Instructions**:
 
-1. Use the "Many Wells" screen with multi-square wells
+1. Use the "Many Wells" screen with square wells (or the smooth Pöschl–Teller wells)
 2. Start with 2 wells, then increase to 3, 4, 5...
 3. Observe how energy levels split into bands
 4. Notice how more wells create more closely spaced levels
+5. Turn on the electric field and watch the bands tilt and the states localize
 
 **Discussion Questions**:
 

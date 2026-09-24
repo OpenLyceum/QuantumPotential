@@ -7,11 +7,13 @@ import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
 import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
+import { calculateClassicalProbabilityDensity } from "./ClassicalProbability.js";
 import { calculateRMSStatistics } from "./DistributionStatistics.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
+import type { NumericalMethod } from "./NumericalMethod.js";
 import { type BoundStateResult, PotentialType, type WavenumberTransformResult } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
-import Schrodinger1DSolver, { type NumericalMethod } from "./Schrodinger1DSolver.js";
+import Schrodinger1DSolver from "./Schrodinger1DSolver.js";
 import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType.js";
 
 /**
@@ -36,6 +38,9 @@ export abstract class BaseModel {
    * Corresponds to approximately 1 frame at 60 FPS.
    */
   public static readonly MANUAL_STEP_SIZE = 0.016;
+
+  /** The charts show −CHART_HALF_RANGE_NM ≤ x ≤ CHART_HALF_RANGE_NM (nm); the default solution grid spans it. */
+  public static readonly CHART_HALF_RANGE_NM = 4;
 
   /**
    * Minimum value for well width in nanometers.
@@ -97,21 +102,8 @@ export abstract class BaseModel {
    */
   private static readonly ENERGY_LEVEL_INDEX_MAX = 99;
 
-  /**
-   * Minimum kinetic energy threshold as fraction of maximum kinetic energy.
-   * Used in classical probability calculations to prevent singularities at turning points.
-   * Value of 0.01 (1%) prevents infinities while preserving probability distribution shape.
-   */
-  private static readonly MIN_KINETIC_ENERGY_FRACTION = 0.01;
-
   /** Available animation rates, relative to the original normal speed. */
   public static readonly TIME_SPEED_MULTIPLIERS = [0.1, 0.25, 0.5, 1, 2, 4] as const;
-
-  /**
-   * Divisor for trapezoidal integration (averaging adjacent values).
-   * Used in numerical integration: (f(x_i) + f(x_{i+1})) / 2.
-   */
-  private static readonly TRAPEZOIDAL_DIVISOR = 2;
 
   // ==================== PROPERTIES ====================
 
@@ -293,24 +285,8 @@ export abstract class BaseModel {
   }
 
   /**
-   * Calculate classical probability density from potential energy and energy level.
-   * This is a common calculation used by all model classes to compute the classical
-   * probability density for display alongside quantum probability.
-   *
-   * The classical probability density is P(x) ∝ 1/v(x) where v(x) is the classical velocity.
-   * For a particle with total energy E in potential V(x):
-   *   v(x) = √[2(E - V(x))/m]
-   *   P(x) = 1/v(x) = √[m/(2(E - V(x)))] = 1/√[2(E - V(x))/m]
-   *
-   * To prevent singularities at turning points (where E ≈ V(x) and v → 0), we use a
-   * minimum kinetic energy threshold (5% of total energy). This prevents display issues
-   * when classical probability is plotted with quantum probability on the same scale.
-   *
-   * @param potential - Array of potential energy values at each grid point (in Joules)
-   * @param energy - Total energy of the particle (in Joules)
-   * @param mass - Particle mass (in kg)
-   * @param xGrid - Array of x positions (in meters)
-   * @returns Normalized classical probability density array (in 1/meters)
+   * Classical probability density (m⁻¹) for energy E (J) in the sampled potential V (J) on xGrid (m), for
+   * potentials without a closed-form solution class. See ClassicalProbability.ts.
    */
   protected calculateClassicalProbabilityDensity(
     potential: number[],
@@ -318,50 +294,7 @@ export abstract class BaseModel {
     mass: number,
     xGrid: number[],
   ): number[] {
-    const classicalProbability: number[] = [];
-    let integralSum = 0;
-
-    // First pass: find maximum kinetic energy to set appropriate threshold
-    let maxKE = 0;
-    for (let i = 0; i < xGrid.length; i++) {
-      const ke = energy - potential[i]!;
-      if (ke > maxKE) {
-        maxKE = ke;
-      }
-    }
-
-    // Use minimum kinetic energy threshold to prevent singularities
-    // This preserves the shape while avoiding infinities at turning points
-    const minKE = BaseModel.MIN_KINETIC_ENERGY_FRACTION * maxKE;
-
-    // Second pass: calculate probability with threshold
-    for (let i = 0; i < xGrid.length; i++) {
-      const kineticEnergy = energy - potential[i]!;
-
-      let probability = 0;
-      if (kineticEnergy > 0) {
-        // Use minimum kinetic energy to prevent singularities at turning points
-        // This prevents display issues when classical probability is plotted with quantum probability
-        const safeKE = Math.max(kineticEnergy, minKE);
-        probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      }
-      classicalProbability.push(probability);
-
-      // Trapezoidal integration for normalization
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / BaseModel.TRAPEZOIDAL_DIVISOR;
-      }
-    }
-
-    // Normalize so that ∫P(x)dx = 1
-    if (integralSum > 0) {
-      for (let i = 0; i < classicalProbability.length; i++) {
-        classicalProbability[i]! /= integralSum;
-      }
-    }
-
-    return classicalProbability;
+    return calculateClassicalProbabilityDensity(potential, energy, mass, xGrid);
   }
 
   /**
@@ -547,7 +480,7 @@ export abstract class BaseModel {
     // Return energy for quantum number n (1-indexed)
     if (this.boundStateResult && n > 0 && n <= this.boundStateResult.energies.length) {
       const energyJoules = this.boundStateResult.energies[n - 1]!;
-      return Schrodinger1DSolver.joulesToEV(energyJoules);
+      return energyJoules * QuantumConstants.JOULES_TO_EV;
     }
 
     return null;
@@ -568,7 +501,7 @@ export abstract class BaseModel {
     }
 
     // Convert all energies from Joules to eV
-    return this.boundStateResult.energies.map((energyJoules) => Schrodinger1DSolver.joulesToEV(energyJoules));
+    return this.boundStateResult.energies.map((energyJoules) => energyJoules * QuantumConstants.JOULES_TO_EV);
   }
 
   /**
@@ -623,23 +556,6 @@ export abstract class BaseModel {
       wavefunction,
       probabilityDensity,
     };
-  }
-
-  /**
-   * Get the spatial grid points for wavefunctions.
-   * @returns Array of x positions in nanometers
-   */
-  public getXGrid(): number[] | null {
-    if (this.boundStateResult === undefined) {
-      this.calculateBoundStates();
-    }
-
-    if (this.boundStateResult) {
-      // Convert from meters to nanometers
-      return this.boundStateResult.xGrid.map((x) => x * QuantumConstants.M_TO_NM);
-    }
-
-    return null;
   }
 
   /**
@@ -746,52 +662,6 @@ export abstract class BaseModel {
         max: result.max,
         extremaPositions: extremaPositionsNm,
       };
-    }
-
-    return null;
-  }
-
-  /**
-   * Calculate the minimum and maximum values of a time-evolved superposition.
-   *
-   * A quantum superposition is a linear combination of energy eigenstates:
-   * Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
-   *
-   * This method evaluates the superposition at the given time within the specified
-   * spatial region and returns the minimum and maximum values of the real part.
-   *
-   * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
-   * @param timeFs - Time in femtoseconds
-   * @param xMinNm - Left boundary of the region in nanometers
-   * @param xMaxNm - Right boundary of the region in nanometers
-   * @param numPoints - Number of points to sample (default: 1000)
-   * @returns Object containing min and max values, or null if unavailable
-   */
-  public getSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    timeFs: number,
-    xMinNm: number,
-    xMaxNm: number,
-    numPoints?: number,
-  ): { min: number; max: number } | null {
-    if (this.boundStateResult === undefined) {
-      this.calculateBoundStates();
-    }
-
-    // Get analytical solution from solver
-    const analyticalSolution = this.solver.getAnalyticalSolution();
-
-    if (analyticalSolution && this.boundStateResult) {
-      // Convert from nanometers to meters and femtoseconds to seconds
-      const xMinM = xMinNm * QuantumConstants.NM_TO_M;
-      const xMaxM = xMaxNm * QuantumConstants.NM_TO_M;
-      const timeS = timeFs * 1e-15; // Convert femtoseconds to seconds
-
-      // Use energies from bound state results
-      const energies = this.boundStateResult.energies;
-
-      // Calculate using analytical solution
-      return analyticalSolution.calculateSuperpositionMinMax(coefficients, energies, timeS, xMinM, xMaxM, numPoints);
     }
 
     return null;

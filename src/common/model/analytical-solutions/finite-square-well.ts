@@ -101,70 +101,6 @@ export function calculateFiniteWellClassicalProbability(
 }
 
 /**
- * Calculate the positions of wavefunction zeros (nodes) for a finite square well.
- * The zeros depend on the parity and quantum numbers of the state.
- *
- * For even parity states: ψ(x) = A cos(kx) inside, zeros at x = ±(2m+1)π/(2k) for m = 0,1,2,...
- * For odd parity states: ψ(x) = A sin(kx) inside, zeros at x = ±mπ/k for m = 1,2,3,...
- * Plus x = 0 for odd parity states.
- *
- * @param wellWidth - Width of the well (L) in meters
- * @param wellDepth - Depth of the well (V₀) in Joules (positive value)
- * @param mass - Particle mass in kg
- * @param energy - Energy of the eigenstate in Joules
- * @param parity - Parity of the state ("even" or "odd")
- * @returns Array of x positions (in meters) where the wavefunction is zero inside the well
- */
-export function calculateFiniteWellWavefunctionZeros(
-  wellWidth: number,
-  wellDepth: number,
-  mass: number,
-  energy: number,
-  parity: "even" | "odd",
-): number[] {
-  const { HBAR } = QuantumConstants;
-  const halfWidth = wellWidth / 2;
-  const k = Math.sqrt(2 * mass * (energy + wellDepth)) / HBAR; // Wave number inside well
-
-  const zeros: number[] = [];
-
-  if (parity === "even") {
-    // Even parity: cos(kx), zeros at x where kx = (2m+1)π/2
-    let m = 0;
-    while (true) {
-      const x = ((2 * m + 1) * Math.PI) / (2 * k);
-      if (x >= halfWidth) {
-        break; // Outside well
-      }
-      if (x > 0) {
-        zeros.push(-x); // Symmetric about origin
-        zeros.push(x);
-      }
-      m++;
-    }
-  } else {
-    // Odd parity: sin(kx), has zero at origin and at x where kx = mπ
-    zeros.push(0); // Always a zero at origin for odd parity
-
-    let m = 1;
-    while (true) {
-      const x = (m * Math.PI) / k;
-      if (x >= halfWidth) {
-        break; // Outside well
-      }
-      zeros.push(-x); // Symmetric about origin
-      zeros.push(x);
-      m++;
-    }
-  }
-
-  // Sort zeros in ascending order
-  zeros.sort((a, b) => a - b);
-
-  return zeros;
-}
-
-/**
  * Calculate the classical turning points for a finite square well.
  * For bound states with E < 0, the turning points are at the well boundaries x = ±L/2
  *
@@ -486,112 +422,6 @@ export function calculateFiniteWellWavefunctionMinMax(
 }
 
 /**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a finite square well.
- *
- * @param wellWidth - Width of the well (L) in meters
- * @param wellDepth - Depth of the well (V₀) in Joules (positive value)
- * @param mass - Particle mass in kg
- * @param energies - Energy eigenvalues in Joules
- * @param parities - Parities for each eigenstate
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateFiniteWellSuperpositionMinMax(
-  wellWidth: number,
-  wellDepth: number,
-  mass: number,
-  energies: number[],
-  parities: ("even" | "odd")[],
-  coefficients: Array<[number, number]>,
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const halfWidth = wellWidth / 2;
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-      const parity = parities[n];
-
-      const k = Math.sqrt(2 * mass * (energy + wellDepth)) / HBAR;
-      const kappa = Math.sqrt(-2 * mass * energy) / HBAR;
-
-      // Determine normalization
-      let normalization: number;
-      if (parity === "even") {
-        const cosVal = Math.cos(k * halfWidth);
-        const B = cosVal * Math.exp(kappa * halfWidth);
-        const integral = 2 * (halfWidth + Math.sin(2 * k * halfWidth) / (4 * k)) + (2 * B * B) / (2 * kappa);
-        normalization = 1 / Math.sqrt(integral);
-      } else {
-        const sinVal = Math.sin(k * halfWidth);
-        const B = sinVal * Math.exp(kappa * halfWidth);
-        const integral = 2 * (halfWidth - Math.sin(2 * k * halfWidth) / (4 * k)) + (2 * B * B) / (2 * kappa);
-        normalization = 1 / Math.sqrt(integral);
-      }
-
-      // Calculate wavefunction value
-      let psi: number;
-      if (Math.abs(x) <= halfWidth) {
-        if (parity === "even") {
-          psi = normalization * Math.cos(k * x);
-        } else {
-          psi = normalization * Math.sin(k * x);
-        }
-      } else {
-        const absX = Math.abs(x);
-        const signX = x >= 0 ? 1 : -1;
-
-        if (parity === "even") {
-          const cosVal = Math.cos(k * halfWidth);
-          const B = normalization * cosVal * Math.exp(kappa * halfWidth);
-          psi = B * Math.exp(-kappa * absX);
-        } else {
-          const sinVal = Math.sin(k * halfWidth);
-          const B = normalization * sinVal * Math.exp(kappa * halfWidth);
-          psi = B * signX * Math.exp(-kappa * absX);
-        }
-      }
-
-      // Time evolution
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: real part
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
-}
-
-/**
  * Class-based implementation of finite square well analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
@@ -624,13 +454,8 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
     return createFiniteWellPotential(this.wellWidth, this.wellDepth);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+  override calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return calculateFiniteWellClassicalProbability(this.wellWidth, this.wellDepth, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, energy: number): number[] {
-    const parity = this.parities[stateIndex] || (stateIndex % 2 === 0 ? "even" : "odd");
-    return calculateFiniteWellWavefunctionZeros(this.wellWidth, this.wellDepth, this.mass, energy, parity);
   }
 
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
@@ -741,28 +566,6 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
       this.mass,
       energy,
       parity,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
-
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateFiniteWellSuperpositionMinMax(
-      this.wellWidth,
-      this.wellDepth,
-      this.mass,
-      energies,
-      this.parities,
-      coefficients,
-      time,
       xMin,
       xMax,
       numPoints,

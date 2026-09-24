@@ -22,19 +22,23 @@ For well-known potentials, the solver provides exact analytical solutions for **
 - **1D Coulomb**: $E_N = -\frac{m\alpha^2}{2\hbar^2 N^2}$, $N=1,2,\ldots$ (regular odd-parity states)
 - **Double Square Well**: Symmetric double well with parity-separated states
 
-### Multi-Well Potentials (Numerical Solutions)
+### Smooth and Multi-Well Potentials (Numerical Solutions)
 
-The Many Wells screen's potentials have no convenient closed form and are solved numerically:
+These potentials have no convenient closed form and are solved numerically:
 
-- **Multi-Square Well**: 1–10 finite square wells (band formation, tunnelling between wells)
-- **Multi-Coulomb 1D**: 1–10 Coulomb centres
+- **Double Pöschl–Teller** (Two Wells): two sech² wells
+- **Multi-Square Well** (Many Wells): 1–10 finite square wells (band formation, tunnelling between wells)
+- **Multi-Pöschl–Teller** (Many Wells): a row of 1–10 sech² wells (`multiPoschlTellerPotential.ts`)
+- **Multi-Coulomb 1D**: 1–10 Coulomb centres. The solver still supports it, but no screen offers it
+  any more; only `npm run test:multi-coulomb-1d` exercises it.
 
-Both can be tilted by a uniform electric field ℰ, which adds V = eℰx.
+The Many Wells potentials can be tilted by a uniform electric field ℰ, which adds V = eℰx.
 
 ## Numerical solver
 
 `Schrodinger1DSolver.solveNumerical` uses **Numerov shooting**, ported from PhET's *Quantum Bound States*
-(`src/common/model/numerov/`). Only the Many Wells screen reaches it; every other potential is analytical.
+(`src/common/model/numerov/`). Only the double Pöschl–Teller (Two Wells) and the Many Wells potentials reach
+it; every other potential is analytical.
 
 - **Units.** The solver works internally in nm, eV and electron masses, which are the units its tolerances
   were tuned for. The facade converts at its boundary: SI in, SI out. Wave functions are converted by
@@ -81,6 +85,7 @@ src/common/model/
 ├── FGHSolver.ts                    # Cross-check
 ├── LinearAlgebraUtils.ts           # Matrix diagonalization + FFT (FGH, momentum space)
 ├── PotentialFactory.ts             # Builds analytical solutions
+├── multiPoschlTellerPotential.ts   # V(x) for the double and multi Pöschl–Teller wells
 └── analytical-solutions/           # One file per closed-form potential, plus the multi-well wrappers
 ```
 
@@ -98,8 +103,8 @@ const result = solver.solveNumerical(
 ```
 
 Screen models call `solveAnalyticalIfPossible(wellParams, mass, numStates, gridConfig)`, which uses the
-closed-form solution for the potential type, or the numerical path for `MULTI_SQUARE_WELL` and
-`MULTI_COULOMB_1D` (with `wellParams.electricField` in V/m).
+closed-form solution for the potential type, or the numerical path for `DOUBLE_POSCHL_TELLER`,
+`MULTI_SQUARE_WELL`, `MULTI_POSCHL_TELLER` and `MULTI_COULOMB_1D` (with `wellParams.electricField` in V/m).
 
 ## Query parameters
 

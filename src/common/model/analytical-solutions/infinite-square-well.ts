@@ -83,35 +83,6 @@ export function calculateInfiniteWellClassicalProbability(
 }
 
 /**
- * Calculate the positions of wavefunction zeros (nodes) for an infinite square well.
- * For the nth eigenstate, there are n-1 nodes evenly spaced inside the well.
- *
- * The zeros occur at x = -L/2 + (k*L)/n for k = 1, 2, ..., n-1
- *
- * @param wellWidth - Width of the well (L) in meters
- * @param stateIndex - Index of the eigenstate (0 for ground state, 1 for first excited, etc.)
- * @returns Array of x positions (in meters) where the wavefunction is zero
- */
-export function calculateInfiniteWellWavefunctionZeros(wellWidth: number, stateIndex: number): number[] {
-  const n = stateIndex + 1; // Quantum number (1, 2, 3, ...)
-  const zeros: number[] = [];
-
-  // Ground state (n=1) has no interior nodes
-  if (n === 1) {
-    return zeros;
-  }
-
-  // For nth state, there are n-1 interior nodes
-  // They occur at x = -L/2 + (k*L)/n for k = 1, 2, ..., n-1
-  for (let k = 1; k < n; k++) {
-    const x = -wellWidth / 2 + (k * wellWidth) / n;
-    zeros.push(x);
-  }
-
-  return zeros;
-}
-
-/**
  * Calculate the classical turning points for an infinite square well.
  * For an infinite well, the turning points are always at the walls: x = ±L/2
  *
@@ -290,83 +261,6 @@ export function calculateInfiniteWellWavefunctionMinMax(
 }
 
 /**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for an infinite square well.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param wellWidth - Width of the well (L) in meters
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateInfiniteWellSuperpositionMinMax(
-  wellWidth: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const L = wellWidth;
-  const halfWidth = L / 2;
-  const normalization = Math.sqrt(2 / L);
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-
-    // Calculate superposition at this position
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      // Calculate wavefunction value
-      let psi: number;
-      if (x >= -halfWidth && x <= halfWidth) {
-        const xShifted = x + halfWidth;
-        const waveFactor = ((n + 1) * Math.PI) / L;
-        psi = normalization * Math.sin(waveFactor * xShifted);
-      } else {
-        psi = 0;
-      }
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
-      // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
-}
-
-/**
  * Calculate the analytical Fourier transform of infinite square well wavefunctions.
  *
  * For ψ_n(x) = √(2/L) sin(nπ(x + L/2)/L) on [-L/2, L/2]:
@@ -520,12 +414,8 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     return createInfiniteWellPotential(this.wellWidth);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+  override calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return calculateInfiniteWellClassicalProbability(this.wellWidth, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateInfiniteWellWavefunctionZeros(this.wellWidth, stateIndex);
   }
 
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
@@ -548,25 +438,6 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return calculateInfiniteWellWavefunctionMinMax(this.wellWidth, stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateInfiniteWellSuperpositionMinMax(
-      this.wellWidth,
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
   }
 
   calculateFourierTransform(

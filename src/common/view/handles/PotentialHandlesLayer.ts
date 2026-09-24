@@ -11,11 +11,10 @@ import type { NumberProperty, TReadOnlyProperty } from "scenerystack/axon";
 import { Node } from "scenerystack/scenery";
 import stringManager from "../../../i18n/StringManager.js";
 import {
-  hasBarrierHeight,
   hasElectricField,
-  hasPotentialOffset,
   hasWellSeparation,
   isManyWellsModel,
+  isSingleWellModel,
 } from "../../model/ModelTypeGuards.js";
 import { createMultiPoschlTellerPotential } from "../../model/multiPoschlTellerPotential.js";
 import { PotentialType } from "../../model/PotentialFunction.js";
@@ -182,7 +181,7 @@ export class PotentialHandlesLayer extends Node {
     ];
 
     // Rosen–Morse (−D sech² + B tanh) and Eckart (D z² − B z, z = 1/(1 + e^(x/a))) have a barrier parameter
-    if (hasBarrierHeight(model)) {
+    if (isSingleWellModel(model)) {
       const barrier = model.barrierHeightProperty;
       specs.push(
         spec(depth, "wellDepth", "vertical", [PotentialType.ROSEN_MORSE], (d) => ({ x: 0, y: -d })),
@@ -210,7 +209,7 @@ export class PotentialHandlesLayer extends Node {
     }
 
     // Triangular: V₀ = D + O outside [0, w], a ramp from O up to D + O inside
-    if (hasPotentialOffset(model)) {
+    if (isSingleWellModel(model)) {
       const offset = model.potentialOffsetProperty;
       const triangular = [PotentialType.TRIANGULAR];
       specs.push(

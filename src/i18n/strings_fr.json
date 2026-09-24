@@ -119,8 +119,6 @@
   "superpositionEquation": "ψ(x,t) = ∑<sub>n</sub> a<sub>n</sub>e<sup>iφ<sub>n</sub></sup>ψ<sub>n</sub>(x)e<sup>−iE<sub>n</sub>t/ℏ</sup>",
   "superpositionEquationHelp": "L’amplitude aₙ fixe le poids de chaque état (probabilité aₙ²) ; la phase φₙ fixe son angle relatif. ∑aₙ² = 1.",
   "psiK": "Un état (choisir sur le graphe)",
-  "localizedNarrow": "Localisé étroit",
-  "localizedWide": "Localisé large",
   "localizedState": "Paquet localisé",
   "movingPacket": "Paquet en mouvement",
   "twoLobedPacket": "Paquet à deux lobes",
@@ -226,8 +224,6 @@
     "superpositionNames": {
       "single": "État d'énergie choisi",
       "psiIPsiJ": "Deux états d'énergie sélectionnés",
-      "localizedNarrow": "Paquet d'ondes gaussien étroit",
-      "localizedWide": "Paquet d'ondes gaussien large",
       "localized": "Paquet d'ondes localisé",
       "movingLocalized": "Paquet d'ondes localisé en mouvement",
       "twoLobed": "Paquet d'interférence à deux lobes",
@@ -237,8 +233,6 @@
     "superpositionDescriptions": {
       "single": "Affiche le niveau d'énergie choisi sur le graphique. Sa densité de probabilité reste constante au fil du temps.",
       "psiIPsiJ": "Combinaison à parts égales de deux états d'énergie sélectionnés. Sa densité de probabilité change au fil du temps.",
-      "localizedNarrow": "Paquet d'ondes gaussien étroit. Particule localisée avec une grande incertitude sur la quantité de mouvement.",
-      "localizedWide": "Paquet d'ondes gaussien large. Particule étalée avec une faible incertitude sur la quantité de mouvement.",
       "localized": "Paquet gaussien centré sur la position et la largeur choisies, projeté sur les états liés disponibles.",
       "movingLocalized": "Paquet localisé avec une quantité de mouvement choisie. Ses phases complexes le déplacent dans le potentiel.",
       "twoLobed": "Deux paquets d'ondes séparés avec une phase relative choisie. Leur recouvrement crée des interférences.",

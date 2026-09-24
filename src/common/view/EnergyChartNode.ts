@@ -15,7 +15,7 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
-import { hasClassicalTurningPoints } from "../model/ModelTypeGuards.js";
+import { isSingleWellModel } from "../model/ModelTypeGuards.js";
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
@@ -338,7 +338,7 @@ export class EnergyChartNode extends BaseChartNode {
           energy: selectedEnergy.toFixed(3),
         }),
       ];
-      if (hasClassicalTurningPoints(this.model)) {
+      if (isSingleWellModel(this.model)) {
         const turningPoints = this.model.getClassicalTurningPoints(selectedIndex);
         if (turningPoints) {
           selected.push(
@@ -706,7 +706,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Early return if conditions aren't met
     if (
-      !(this.viewState.showClassicalProbabilityProperty.value && hasClassicalTurningPoints(this.model)) ||
+      !(this.viewState.showClassicalProbabilityProperty.value && isSingleWellModel(this.model)) ||
       selectedIndex < 0 ||
       selectedIndex >= boundStates.energies.length
     ) {

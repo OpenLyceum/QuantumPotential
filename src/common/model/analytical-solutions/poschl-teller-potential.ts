@@ -73,14 +73,6 @@ export class PoschlTellerPotentialSolution extends AnalyticalSolution {
     return createPoschlTellerPotential(this.potentialDepth, this.wellWidth);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculatePoschlTellerClassicalProbability(this.potentialDepth, this.wellWidth, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculatePoschlTellerWavefunctionZeros(this.potentialDepth, this.wellWidth, this.mass, stateIndex);
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculatePoschlTellerTurningPoints(this.potentialDepth, this.wellWidth, energy);
     return [points]; // Return as array with single element for simple single-well potential
@@ -123,26 +115,6 @@ export class PoschlTellerPotentialSolution extends AnalyticalSolution {
     );
   }
 
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculatePoschlTellerSuperpositionMinMax(
-      this.potentialDepth,
-      this.wellWidth,
-      this.mass,
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
   calculateFourierTransform(
     boundStateResult: BoundStateResult,
     mass: number,
@@ -266,70 +238,6 @@ export function createPoschlTellerPotential(potentialDepth: number, wellWidth: n
 }
 
 /**
- * Calculate classical probability density for a Pöschl-Teller potential.
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m]
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param wellWidth - Width parameter a in meters
- * @param energy - Energy of the particle in Joules
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
- */
-export function calculatePoschlTellerClassicalProbability(
-  potentialDepth: number,
-  wellWidth: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const potentialFn = createPoschlTellerPotential(potentialDepth, wellWidth);
-
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Find maximum kinetic energy for epsilon calculation
-  let maxKE = 0;
-  for (const x of xGrid) {
-    const ke = energy - potentialFn(x);
-    if (ke > maxKE) {
-      maxKE = ke;
-    }
-  }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
-  const epsilon = 0.01 * maxKE;
-
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const kineticEnergy = energy - potentialFn(xGrid[i]!);
-
-    if (kineticEnergy <= 0) {
-      classicalProbability.push(0);
-    } else {
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
-  }
-
-  // Normalize
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
-}
-
-/**
  * Calculate the classical turning points for a Pöschl-Teller potential.
  * Solve E = -V_0 / cosh²(x/a) for x
  *
@@ -359,91 +267,6 @@ export function calculatePoschlTellerTurningPoints(
     left: -turning,
     right: turning,
   };
-}
-
-/**
- * Calculate wavefunction zeros for Pöschl-Teller potential (numerical approach).
- * Finds zeros by detecting sign changes in the wavefunction.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param searchRange - Range to search for zeros (in meters)
- * @returns Array of x positions (in meters) where wavefunction is zero
- */
-export function calculatePoschlTellerWavefunctionZeros(
-  potentialDepth: number,
-  wellWidth: number,
-  mass: number,
-  stateIndex: number,
-  searchRange: number = 20e-9,
-): number[] {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const a = wellWidth;
-  const n = stateIndex;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-  const alpha = poschlTellerS(lambda) - n;
-  const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
-
-  // Ground state has no zeros
-  if (n === 0) {
-    return [];
-  }
-
-  const zeros: number[] = [];
-  const numSamples = 1000;
-  const dx = (2 * searchRange) / numSamples;
-
-  let prevX = -searchRange;
-  const prevTanh = Math.tanh(prevX / a);
-  const prevSech = 1.0 / Math.cosh(prevX / a);
-  const prevJacobi = jacobiPolynomial(n, alpha, alpha, prevTanh);
-  let prevVal = normalization * prevSech ** alpha * prevJacobi;
-
-  for (let i = 1; i <= numSamples; i++) {
-    const x = -searchRange + i * dx;
-    const tanhVal = Math.tanh(x / a);
-    const sechVal = 1.0 / Math.cosh(x / a);
-    const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-    const val = normalization * sechVal ** alpha * jacobiPoly;
-
-    // Sign change detected
-    if (prevVal * val < 0) {
-      // Use bisection to refine
-      let left = prevX;
-      let right = x;
-      for (let iter = 0; iter < 20; iter++) {
-        const mid = (left + right) / 2;
-        const midTanh = Math.tanh(mid / a);
-        const midSech = 1.0 / Math.cosh(mid / a);
-        const midJacobi = jacobiPolynomial(n, alpha, alpha, midTanh);
-        const valMid = normalization * midSech ** alpha * midJacobi;
-
-        if (Math.abs(valMid) < 1e-12) {
-          zeros.push(mid);
-          break;
-        }
-
-        if (valMid * prevVal < 0) {
-          right = mid;
-        } else {
-          left = mid;
-        }
-
-        if (iter === 19) {
-          zeros.push((left + right) / 2);
-        }
-      }
-    }
-
-    prevX = x;
-    prevVal = val;
-  }
-
-  return zeros;
 }
 
 /**
@@ -706,84 +529,4 @@ export function calculatePoschlTellerWavefunctionMinMax(
   }
 
   return { min, max, extremaPositions };
-}
-
-/**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a Pöschl-Teller potential.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param potentialDepth - Potential depth V_0 in Joules (positive value)
- * @param wellWidth - Width parameter a in meters
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculatePoschlTellerSuperpositionMinMax(
-  potentialDepth: number,
-  wellWidth: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const V0 = potentialDepth;
-  const a = wellWidth;
-
-  const lambda = (a * Math.sqrt(2 * mass * V0)) / HBAR;
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-
-    // Calculate superposition at this position
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      // Calculate wavefunction value
-      const alpha = poschlTellerS(lambda) - n;
-      const normalization = Math.sqrt(((1 / a) * (2 * alpha)) / factorial(n)) * Math.sqrt(factorial(n));
-      const tanhVal = Math.tanh(x / a);
-      const sechVal = 1.0 / Math.cosh(x / a);
-      const jacobiPoly = jacobiPolynomial(n, alpha, alpha, tanhVal);
-      const psi = normalization * sechVal ** alpha * jacobiPoly;
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: (cReal + i*cImag) * psi * (cosPhase - i*sinPhase)
-      // Real part: cReal * psi * cosPhase + cImag * psi * sinPhase
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
 }

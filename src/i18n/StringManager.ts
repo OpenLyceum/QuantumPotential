@@ -458,14 +458,6 @@ export class StringManager {
     return this.stringProperties.psiKStringProperty;
   }
 
-  get localizedNarrowStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.localizedNarrowStringProperty;
-  }
-
-  get localizedWideStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.localizedWideStringProperty;
-  }
-
   get localizedStateStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.localizedStateStringProperty;
   }

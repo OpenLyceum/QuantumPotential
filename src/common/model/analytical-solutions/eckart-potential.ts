@@ -84,12 +84,8 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     return createEckartPotential(this.potentialDepth, this.barrierHeight, this.wellWidth);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
+  override calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
     return this.rosenMorse.calculateClassicalProbability(energy - this.shift, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, energy: number): number[] {
-    return this.rosenMorse.calculateWavefunctionZeros(stateIndex, energy - this.shift);
   }
 
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
@@ -111,18 +107,6 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return this.rosenMorse.calculateWavefunctionMinMax(stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    // `energies` are the Eckart energies, so the time evolution phases are already correct
-    return this.rosenMorse.calculateSuperpositionMinMax(coefficients, energies, time, xMin, xMax, numPoints);
   }
 
   calculateFourierTransform(
@@ -182,24 +166,6 @@ export function createEckartPotential(
 }
 
 /**
- * Classical probability density for energy E (normalized over xGrid).
- */
-export function calculateEckartPotentialClassicalProbability(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  return new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, mass).calculateClassicalProbability(
-    energy,
-    mass,
-    xGrid,
-  );
-}
-
-/**
  * Classical turning points for energy E. (The mass does not enter; any positive value will do.)
  */
 export function calculateEckartPotentialTurningPoints(
@@ -210,22 +176,6 @@ export function calculateEckartPotentialTurningPoints(
 ): { left: number; right: number } {
   const solution = new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, 1);
   return solution.calculateTurningPoints(energy)[0]!;
-}
-
-/**
- * Positions (m) of the nodes of ψ_n.
- */
-export function calculateEckartPotentialWavefunctionZeros(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  mass: number,
-  stateIndex: number,
-): number[] {
-  return new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, mass).calculateWavefunctionZeros(
-    stateIndex,
-    0,
-  );
 }
 
 /**

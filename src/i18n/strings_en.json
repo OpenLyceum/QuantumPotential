@@ -119,8 +119,6 @@
   "superpositionEquation": "ψ(x,t) = ∑<sub>n</sub> a<sub>n</sub>e<sup>iφ<sub>n</sub></sup>ψ<sub>n</sub>(x)e<sup>−iE<sub>n</sub>t/ℏ</sup>",
   "superpositionEquationHelp": "Amplitude aₙ sets each state's weight (probability aₙ²); phase φₙ sets its relative angle. ∑aₙ² = 1.",
   "psiK": "One state (select on chart)",
-  "localizedNarrow": "Localized narrow",
-  "localizedWide": "Localized wide",
   "localizedState": "Localized packet",
   "movingPacket": "Moving packet",
   "twoLobedPacket": "Two-lobed packet",
@@ -226,8 +224,6 @@
     "superpositionNames": {
       "single": "Selected energy state",
       "psiIPsiJ": "Two selected energy states",
-      "localizedNarrow": "Narrow Gaussian wavepacket",
-      "localizedWide": "Wide Gaussian wavepacket",
       "localized": "Localized wave packet",
       "movingLocalized": "Moving localized wave packet",
       "twoLobed": "Two-lobed interference packet",
@@ -237,8 +233,6 @@
     "superpositionDescriptions": {
       "single": "Shows the energy level selected on the chart. Its probability density stays the same over time.",
       "psiIPsiJ": "Equal combination of two selected energy states. Its probability density changes over time.",
-      "localizedNarrow": "Narrow Gaussian wavepacket. Localized particle with large momentum uncertainty.",
-      "localizedWide": "Wide Gaussian wavepacket. Spread out particle with small momentum uncertainty.",
       "localized": "Gaussian wave packet centered at the chosen position and width, projected onto the available bound states.",
       "movingLocalized": "Localized wave packet with a chosen momentum. Its complex phases make it move across the potential.",
       "twoLobed": "Two separated wave packets with a chosen relative phase. Their overlap creates interference.",

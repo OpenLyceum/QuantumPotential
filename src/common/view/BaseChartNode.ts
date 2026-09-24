@@ -9,6 +9,7 @@ import { Range } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { Line, Node } from "scenerystack/scenery";
 import QPPWColors from "../../QPPWColors.js";
+import { BaseModel } from "../model/BaseModel.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
 
@@ -72,7 +73,7 @@ export abstract class BaseChartNode extends Node {
     this.plotHeight = this.chartHeight - this.chartMargins.top - this.chartMargins.bottom;
 
     // Initialize view range properties
-    const xRange = options.xRange ?? { min: -4, max: 4 };
+    const xRange = options.xRange ?? { min: -BaseModel.CHART_HALF_RANGE_NM, max: BaseModel.CHART_HALF_RANGE_NM };
     const yRange = options.yRange ?? { min: -1, max: 1 };
 
     this.xMinProperty = new NumberProperty(xRange.min);

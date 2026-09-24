@@ -162,27 +162,6 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
     return createRosenMorsePotential(this.potentialDepth, this.barrierHeight, this.wellWidth);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculateRosenMorsePotentialClassicalProbability(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-      energy,
-      mass,
-      xGrid,
-    );
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateRosenMorsePotentialWavefunctionZeros(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-      this.mass,
-      stateIndex,
-    );
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     return [calculateRosenMorsePotentialTurningPoints(this.potentialDepth, this.barrierHeight, this.wellWidth, energy)];
   }
@@ -221,28 +200,6 @@ export class RosenMorsePotentialSolution extends AnalyticalSolution {
       this.wellWidth,
       this.mass,
       stateIndex,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
-
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateRosenMorsePotentialSuperpositionMinMax(
-      this.potentialDepth,
-      this.barrierHeight,
-      this.wellWidth,
-      this.mass,
-      coefficients,
-      energies,
-      time,
       xMin,
       xMax,
       numPoints,
@@ -322,38 +279,6 @@ export function createRosenMorsePotential(
 }
 
 /**
- * Classical probability density P(x) ∝ 1/v(x) = 1/√[2(E − V(x))/m], normalized over xGrid.
- * Turning-point singularities are regularized with a relative epsilon (1 % of the maximum kinetic energy).
- */
-export function calculateRosenMorsePotentialClassicalProbability(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const potentialFn = createRosenMorsePotential(potentialDepth, barrierHeight, wellWidth);
-
-  let maxKE = 0;
-  for (const x of xGrid) {
-    maxKE = Math.max(maxKE, energy - potentialFn(x));
-  }
-  const epsilon = 0.01 * maxKE;
-
-  const classicalProbability = xGrid.map((x) => {
-    const kineticEnergy = energy - potentialFn(x);
-    return kineticEnergy <= 0 ? 0 : 1 / Math.sqrt((2 * Math.max(kineticEnergy, epsilon)) / mass);
-  });
-
-  let integral = 0;
-  for (let i = 1; i < xGrid.length; i++) {
-    integral += ((classicalProbability[i]! + classicalProbability[i - 1]!) * (xGrid[i]! - xGrid[i - 1]!)) / 2;
-  }
-  return integral > 0 ? classicalProbability.map((p) => p / integral) : classicalProbability;
-}
-
-/**
  * Classical turning points: the two solutions of V(x) = E around the minimum of the potential.
  * On a side where E lies above the asymptote the particle is not reflected; that side's point is
  * reported at the edge of the search range (±40a).
@@ -401,54 +326,6 @@ export function calculateRosenMorsePotentialTurningPoints(
   };
 
   return { left: crossing(xMin, -range), right: crossing(xMin, range) };
-}
-
-/**
- * Positions (m) of the n nodes of ψ_n, found as sign changes on a fine grid and refined by bisection.
- */
-export function calculateRosenMorsePotentialWavefunctionZeros(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  mass: number,
-  stateIndex: number,
-): number[] {
-  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
-  const n = stateIndex;
-  requireBoundState(spectrum, n);
-  if (n === 0) {
-    return [];
-  }
-  const state = rosenMorseState(spectrum, n);
-  const psi = (x: number): number => wavefunctionAt(spectrum, state, n, x);
-
-  // Nodes lie within the classically allowed region, well inside the decay length
-  const halfWidth = integrationHalfWidth(state.alpha, state.beta) * wellWidth;
-  const samples = 4000;
-  const dx = (2 * halfWidth) / samples;
-  const zeros: number[] = [];
-  let prevX = -halfWidth;
-  let prevPsi = psi(prevX);
-  for (let i = 1; i <= samples && zeros.length < n; i++) {
-    const x = -halfWidth + i * dx;
-    const value = psi(x);
-    if (prevPsi !== 0 && value !== 0 && Math.sign(value) !== Math.sign(prevPsi)) {
-      let left = prevX;
-      let right = x;
-      for (let iter = 0; iter < 60; iter++) {
-        const mid = (left + right) / 2;
-        if (Math.sign(psi(mid)) === Math.sign(psi(left))) {
-          left = mid;
-        } else {
-          right = mid;
-        }
-      }
-      zeros.push((left + right) / 2);
-    }
-    prevX = x;
-    prevPsi = value;
-  }
-  return zeros;
 }
 
 /** Central-difference step for derivatives: small against a, large against round-off. */
@@ -535,46 +412,4 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
   }
 
   return { min: Math.min(...values), max: Math.max(...values), extremaPositions };
-}
-
-/**
- * Minimum and maximum of Re Ψ(x, t) on [xMin, xMax] for Ψ = Σ cₙ ψₙ(x) exp(−iEₙt/ℏ).
- */
-export function calculateRosenMorsePotentialSuperpositionMinMax(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const spectrum = rosenMorseSpectrum(potentialDepth, barrierHeight, wellWidth, mass);
-  const count = Math.min(coefficients.length, energies.length, spectrum.numBound);
-  const states: RosenMorseState[] = [];
-  for (let n = 0; n < count; n++) {
-    states.push(rosenMorseState(spectrum, n));
-  }
-
-  let min = Infinity;
-  let max = -Infinity;
-  const dx = (xMax - xMin) / (numPoints - 1);
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-    let realPart = 0;
-    for (let n = 0; n < count; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const psi = wavefunctionAt(spectrum, states[n]!, n, x);
-      // Re[(c_r + i c_i) ψ (cos φ + i sin φ)] with φ = −E t/ℏ
-      const phase = (-energies[n]! * time) / QuantumConstants.HBAR;
-      realPart += psi * (cReal * Math.cos(phase) - cImag * Math.sin(phase));
-    }
-    min = Math.min(min, realPart);
-    max = Math.max(max, realPart);
-  }
-
-  return { min, max };
 }

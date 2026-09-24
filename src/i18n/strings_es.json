@@ -119,8 +119,6 @@
   "superpositionEquation": "ψ(x,t) = ∑<sub>n</sub> a<sub>n</sub>e<sup>iφ<sub>n</sub></sup>ψ<sub>n</sub>(x)e<sup>−iE<sub>n</sub>t/ℏ</sup>",
   "superpositionEquationHelp": "La amplitud aₙ determina el peso de cada estado (probabilidad aₙ²); la fase φₙ determina su ángulo relativo. ∑aₙ² = 1.",
   "psiK": "Un estado (elige en la gráfica)",
-  "localizedNarrow": "Localizado estrecho",
-  "localizedWide": "Localizado ancho",
   "localizedState": "Paquete localizado",
   "movingPacket": "Paquete en movimiento",
   "twoLobedPacket": "Paquete de dos lóbulos",
@@ -226,8 +224,6 @@
     "superpositionNames": {
       "single": "Estado de energía elegido",
       "psiIPsiJ": "Dos estados de energía seleccionados",
-      "localizedNarrow": "Paquete de ondas gaussiano estrecho",
-      "localizedWide": "Paquete de ondas gaussiano ancho",
       "localized": "Paquete de ondas localizado",
       "movingLocalized": "Paquete de ondas localizado en movimiento",
       "twoLobed": "Paquete de interferencia de dos lóbulos",
@@ -237,8 +233,6 @@
     "superpositionDescriptions": {
       "single": "Muestra el nivel de energía elegido en la gráfica. Su densidad de probabilidad permanece constante con el tiempo.",
       "psiIPsiJ": "Combinación a partes iguales de dos estados de energía seleccionados. Su densidad de probabilidad cambia con el tiempo.",
-      "localizedNarrow": "Paquete de ondas gaussiano estrecho. Partícula localizada con gran incertidumbre en el momento.",
-      "localizedWide": "Paquete de ondas gaussiano ancho. Partícula extendida con poca incertidumbre en el momento.",
       "localized": "Paquete gaussiano centrado en la posición y anchura elegidas, proyectado sobre los estados ligados disponibles.",
       "movingLocalized": "Paquete localizado con el momento elegido. Sus fases complejas lo hacen moverse por el potencial.",
       "twoLobed": "Dos paquetes de ondas separados con una fase relativa elegida. Su superposición crea interferencia.",

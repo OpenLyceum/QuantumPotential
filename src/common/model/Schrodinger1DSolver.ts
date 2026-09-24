@@ -4,7 +4,8 @@
  *
  * Usage:
  *   const solver = new Schrodinger1DSolver();
- *   const result = solver.solve(potential, mass, numStates, gridConfig);
+ *   const result = solver.solveAnalyticalIfPossible(wellParams, mass, numStates, gridConfig);
+ *   const numeric = solver.solveNumerical(potential, mass, numStates, gridConfig);
  */
 
 import qppw from "../../QPPWNamespace.js";
@@ -25,19 +26,7 @@ import {
   PotentialType,
   type WellParameters,
 } from "./PotentialFunction.js";
-import type { AnalyticalPotential, BasePotential } from "./potentials/index.js";
 import QuantumConstants from "./QuantumConstants.js";
-
-// Re-export NumericalMethod for backward compatibility
-export { NumericalMethod } from "./NumericalMethod.js";
-// Re-export WellParameters for backward compatibility
-export type { WellParameters } from "./PotentialFunction.js";
-// Re-export potential classes for external use
-export {
-  AnalyticalPotential,
-  BasePotential,
-  NumericalPotential,
-} from "./potentials/index.js";
 
 /** Samples per cell for cellAveragedPotential (midpoint rule). */
 const CELL_AVERAGE_SAMPLES = 16;
@@ -87,16 +76,8 @@ export class Schrodinger1DSolver {
   }
 
   /**
-   * Get the current numerical method setting.
-   */
-  public getNumericalMethod(): NumericalMethod {
-    return this.numericalMethod;
-  }
-
-  /**
-   * Get the current analytical solution instance (if one has been created).
-   * This provides access to additional methods like calculateTurningPoints,
-   * calculateWavefunctionZeros, etc.
+   * The closed-form solution used by the last solveAnalyticalIfPossible call, or null when that call took a
+   * numerical path. Models use it for turning points, derivatives, V(x) and the momentum-space transform.
    */
   public getAnalyticalSolution(): AnalyticalSolution | null {
     return this.analyticalSolution;
@@ -341,91 +322,6 @@ export class Schrodinger1DSolver {
       }
     }
     return true;
-  }
-
-  /**
-   * Create a potential class instance from well parameters.
-   * This is the new class-based approach that separates analytical and numerical potentials.
-   *
-   * @param wellParams - Parameters defining the potential well
-   * @param mass - Particle mass in kg
-   * @returns BasePotential instance (AnalyticalPotential or NumericalPotential)
-   */
-  public createPotential(wellParams: WellParameters, mass: number): BasePotential | null {
-    return PotentialFactory.createPotential(wellParams, mass);
-  }
-
-  /**
-   * Solve the Schrödinger equation using a potential class instance.
-   * This method automatically uses analytical or numerical methods based on
-   * the potential type.
-   *
-   * @param potential - Potential class instance (AnalyticalPotential or NumericalPotential)
-   * @param numStates - Number of bound states to calculate
-   * @param gridConfig - Grid configuration for spatial discretization
-   * @returns Bound state results with energies and wavefunctions
-   */
-  public solvePotential(potential: BasePotential, numStates: number, gridConfig: GridConfig): BoundStateResult {
-    if (potential.hasAnalyticalSolution()) {
-      // Use analytical solution
-      const analyticalPotential = potential as AnalyticalPotential;
-      return analyticalPotential.solve(numStates, gridConfig);
-    } else {
-      // Use numerical solution
-      const potentialFunction = potential.createPotential();
-      return this.solveNumerical(potentialFunction, potential.getMass(), numStates, gridConfig);
-    }
-  }
-
-  /**
-   * Create a potential function for an infinite square well.
-   * Centered at x=0, extending from -wellWidth/2 to +wellWidth/2.
-   * @param wellWidth - Width of the well in meters
-   * @param wellDepth - Depth of the well in Joules (0 inside, depth outside)
-   * @returns Potential function V(x)
-   */
-  public static createInfiniteWellPotential(wellWidth: number, wellDepth = 1e100): PotentialFunction {
-    const halfWidth = wellWidth / 2;
-    return (x: number) => {
-      if (x >= -halfWidth && x <= halfWidth) {
-        return 0;
-      } else {
-        return wellDepth; // Very large value to approximate infinity
-      }
-    };
-  }
-
-  /**
-   * Create a potential function for a finite square well.
-   * @param wellWidth - Width of the well in meters
-   * @param wellDepth - Depth of the well in Joules (V=0 outside, V=-depth inside)
-   * @param center - Center position of well in meters (default 0)
-   * @returns Potential function V(x)
-   */
-  public static createFiniteWellPotential(wellWidth: number, wellDepth: number, center = 0): PotentialFunction {
-    const halfWidth = wellWidth / 2;
-    return (x: number) => {
-      const xShifted = x - center;
-      if (Math.abs(xShifted) <= halfWidth) {
-        return -wellDepth;
-      } else {
-        return 0;
-      }
-    };
-  }
-
-  /**
-   * Convert energy from eV to Joules.
-   */
-  public static eVToJoules(eV: number): number {
-    return eV * QuantumConstants.EV_TO_JOULES;
-  }
-
-  /**
-   * Convert energy from Joules to eV.
-   */
-  public static joulesToEV(joules: number): number {
-    return joules * QuantumConstants.JOULES_TO_EV;
   }
 }
 

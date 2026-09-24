@@ -1,5 +1,5 @@
 /**
- * Screen identity guards use the explicit kind; capability guards check optional controls.
+ * Screen identity guards use the explicit kind; capability guards name the screens that have a control.
  */
 
 import type { IntroModel } from "../../intro/model/IntroModel.js";
@@ -7,6 +7,7 @@ import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { ScreenModel } from "./ScreenModels.js";
+import { SingleWellModel } from "./SingleWellModel.js";
 
 /**
  * Type guard to check if a model is IntroModel.
@@ -41,19 +42,11 @@ export function isManyWellsModel(model: ScreenModel): model is ManyWellsModel {
 }
 
 /**
- * Type guard to check if a model has barrier height property.
- * This is used by One Well and Intro potentials and by the Two Wells barrier controls.
+ * Type guard for the single-well screens (Intro and One Well): barrier height, potential offset, turning points and
+ * the classically forbidden probability.
  */
-export function hasBarrierHeight(model: ScreenModel): model is OneWellModel | IntroModel | TwoWellsModel {
-  return "barrierHeightProperty" in model;
-}
-
-/**
- * Type guard to check if a model has potential offset property.
- * This is specific to certain potentials in OneWellModel and IntroModel.
- */
-export function hasPotentialOffset(model: ScreenModel): model is OneWellModel | IntroModel {
-  return "potentialOffsetProperty" in model;
+export function isSingleWellModel(model: ScreenModel): model is OneWellModel | IntroModel {
+  return model instanceof SingleWellModel;
 }
 
 /**
@@ -61,33 +54,13 @@ export function hasPotentialOffset(model: ScreenModel): model is OneWellModel | 
  * This applies to both TwoWellsModel and ManyWellsModel.
  */
 export function hasWellSeparation(model: ScreenModel): model is TwoWellsModel | ManyWellsModel {
-  return "wellSeparationProperty" in model;
+  return isTwoWellsModel(model) || isManyWellsModel(model);
 }
 
-/**
- * Type guard to check if a model has superposition configuration.
- * This applies to OneWellModel, TwoWellsModel, and ManyWellsModel.
- */
 /**
  * Type guard to check if a model has electric field property.
  * This is specific to ManyWellsModel.
  */
 export function hasElectricField(model: ScreenModel): model is ManyWellsModel {
-  return "electricFieldProperty" in model;
-}
-
-/**
- * Type guard to check if a model has the getClassicalTurningPoints method.
- * This applies to OneWellModel and IntroModel.
- */
-export function hasClassicalTurningPoints(model: ScreenModel): model is OneWellModel | IntroModel {
-  return "getClassicalTurningPoints" in model;
-}
-
-/**
- * Type guard to check if a model has the getClassicallyForbiddenProbability method.
- * This applies to OneWellModel and IntroModel.
- */
-export function hasClassicallyForbiddenProbability(model: ScreenModel): model is OneWellModel | IntroModel {
-  return "getClassicallyForbiddenProbability" in model;
+  return isManyWellsModel(model);
 }

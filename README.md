@@ -12,13 +12,13 @@ PhET *Quantum Bound States* simulation.
 - **Four screens.** *Intro* (a simplified single well), *One Well* (time evolution and
   superpositions), *Two Wells* (tunnelling and energy-level splitting) and *Many Wells* (energy
   bands forming in a periodic potential).
-- **Many potentials.** Twelve closed-form solutions — infinite and finite square wells, harmonic
-  oscillator, Morse, Pöschl–Teller, Rosen–Morse, Eckart, triangular, asymmetric triangle, 1D and
-  3D Coulomb, and the double square well — plus numerically solved multi-square and
-  multi-Coulomb wells with 1–10 wells.
-- **A robust numerical solver** for the multi-well potentials: Numerov shooting with node-count
-  bracketing (ported from PhET's *Quantum Bound States*), which resolves dense energy bands and
-  electric-field-tilted wells.
+- **Many potentials.** Eleven closed-form solutions — infinite and finite square wells, harmonic
+  oscillator, Morse, Pöschl–Teller, Rosen–Morse, Eckart, triangular, asymmetric triangle, 1D
+  Coulomb, and the double square well — plus numerically solved double Pöschl–Teller wells and
+  rows of 1–10 square or Pöschl–Teller wells.
+- **A robust numerical solver** for the smooth and multi-well potentials: Numerov shooting with
+  node-count bracketing (ported from PhET's *Quantum Bound States*), which resolves dense energy
+  bands and electric-field-tilted wells.
 - **Direct manipulation.** Reshape the well by dragging handles on the potential itself (width, depth,
   barrier, offset, separation), then hover or click energy levels to read and select them. The layout
   follows PhET's *Quantum Bound States*: the energy diagram sits above the wave-function graph on a
@@ -26,8 +26,9 @@ PhET *Quantum Bound States* simulation.
 - **Rich views of ψ.** Real and imaginary parts, magnitude, probability density, phase-coloured
   display, node positions, the classically forbidden region, ⟨x⟩ and Δx, and a momentum-space
   (wavenumber) chart.
-- **Superpositions.** Single eigenstates, two-state superpositions, narrow and wide localized
-  wavepackets, coherent states, and custom amplitudes, each evolving with the correct phases.
+- **Superpositions.** Single eigenstates, two-state superpositions, localized, moving and
+  two-lobed wave packets, coherent states, and custom amplitudes, each evolving with the correct
+  phases.
 - **Measurement tools** for area under |ψ|², first derivative and curvature, all draggable with
   mouse, touch or keyboard.
 - **Accessible.** Keyboard navigation of energy levels, a screen summary, and a keyboard-help

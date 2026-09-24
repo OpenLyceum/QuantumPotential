@@ -54,30 +54,9 @@ export class EnergyLevelControl extends HBox {
       );
       spinner.enabled = count > 0;
     };
+    // Any parameter change that alters the spectrum bumps potentialRevisionProperty
     model.selectedEnergyLevelIndexProperty.lazyLink(updateRange);
-    model.potentialTypeProperty.lazyLink(updateRange);
-    model.wellWidthProperty.lazyLink(updateRange);
-    model.wellDepthProperty.lazyLink(updateRange);
-    model.wellOffsetProperty.lazyLink(updateRange);
-    model.particleMassProperty.lazyLink(updateRange);
-    if ("barrierHeightProperty" in model) {
-      model.barrierHeightProperty.lazyLink(updateRange);
-    }
-    if ("barrierWidthProperty" in model) {
-      model.barrierWidthProperty.lazyLink(updateRange);
-    }
-    if ("potentialOffsetProperty" in model) {
-      model.potentialOffsetProperty.lazyLink(updateRange);
-    }
-    if ("wellSeparationProperty" in model) {
-      model.wellSeparationProperty.lazyLink(updateRange);
-    }
-    if ("numberOfWellsProperty" in model) {
-      model.numberOfWellsProperty.lazyLink(updateRange);
-    }
-    if ("electricFieldProperty" in model) {
-      model.electricFieldProperty.lazyLink(updateRange);
-    }
+    model.potentialRevisionProperty.lazyLink(updateRange);
     updateRange();
   }
 }

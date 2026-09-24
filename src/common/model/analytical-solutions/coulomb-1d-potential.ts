@@ -44,14 +44,6 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
     return createCoulomb1DPotential(this.coulombStrength);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculateCoulomb1DClassicalProbability(this.coulombStrength, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    return calculateCoulomb1DWavefunctionZeros(this.coulombStrength, this.mass, stateIndex);
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateCoulomb1DTurningPoints(this.coulombStrength, energy);
     return [points]; // Return as array with single element for simple single-well potential
@@ -74,25 +66,6 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
     return calculateCoulomb1DWavefunctionMinMax(this.coulombStrength, this.mass, stateIndex, xMin, xMax, numPoints);
   }
 
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateCoulomb1DSuperpositionMinMax(
-      this.coulombStrength,
-      this.mass,
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
   calculateFourierTransform(
     boundStateResult: BoundStateResult,
     mass: number,
@@ -217,84 +190,6 @@ export function createCoulomb1DPotential(coulombStrength: number): (x: number) =
 }
 
 /**
- * Calculate classical probability density for a 1D Coulomb potential.
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m] = 1/√[2(E + α/|x|)/m]
- *
- * @param coulombStrength - Coulomb strength parameter α in J·m
- * @param energy - Energy of the particle in Joules (negative for bound states)
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
- */
-export function calculateCoulomb1DClassicalProbability(
-  coulombStrength: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const alpha = coulombStrength;
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Find maximum kinetic energy for epsilon calculation
-  let maxKE = 0;
-  for (const x of xGrid) {
-    const absX = Math.abs(x);
-
-    if (absX < 1e-15) {
-      continue; // Skip singularity
-    }
-
-    const potential = -alpha / absX;
-    const ke = energy - potential;
-    if (ke > maxKE) {
-      maxKE = ke;
-    }
-  }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
-  const epsilon = 0.01 * maxKE;
-
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i]!;
-    const absX = Math.abs(x);
-
-    if (absX < 1e-15) {
-      // Near singularity at origin
-      classicalProbability.push(0);
-      continue;
-    }
-
-    const potential = -alpha / absX;
-    const kineticEnergy = energy - potential;
-
-    if (kineticEnergy <= 0) {
-      classicalProbability.push(0);
-    } else {
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0 && classicalProbability[i - 1]! > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
-  }
-
-  // Normalize
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
-}
-
-/**
  * Calculate the classical turning points for a 1D Coulomb potential.
  * Solve E = -α/|x| for x: |x| = -α/E => x = ±α/|E|
  *
@@ -315,88 +210,6 @@ export function calculateCoulomb1DTurningPoints(
     left: -turningRadius,
     right: turningRadius,
   };
-}
-
-/**
- * Calculate wavefunction zeros for 1D Coulomb potential (numerical approach).
- * The wavefunction is ψ_n(x) = sign(x) * ρ * exp(-ρ/2) * L_n^1(ρ)
- * where ρ = 2|x|/a_n. Zeros occur where L_n^1(ρ) = 0 (excluding ρ=0).
- *
- * @param coulombStrength - Coulomb strength parameter α in J·m
- * @param mass - Particle mass in kg
- * @param stateIndex - Index of the eigenstate (0 for ground state, etc.)
- * @param searchRange - Range to search for zeros (in meters)
- * @returns Array of x positions (in meters) where wavefunction is zero
- */
-export function calculateCoulomb1DWavefunctionZeros(
-  coulombStrength: number,
-  mass: number,
-  stateIndex: number,
-  searchRange: number = 20e-9,
-): number[] {
-  const { HBAR } = QuantumConstants;
-  const alpha = coulombStrength;
-  const n = stateIndex;
-  const principal = n + 1;
-  const a0 = (HBAR * HBAR) / (mass * alpha);
-  const aN = principal * a0;
-
-  // The ground state has no interior zeros; its only zero is at the origin.
-
-  const zeros: number[] = [];
-  const numSamples = 1000;
-  const dx = (2 * searchRange) / numSamples;
-
-  // Search in positive x only (use symmetry for negative x)
-  let prevX = 1e-15; // Start just above zero to avoid singularity
-  const prevRho = (2 * prevX) / aN;
-  let prevVal = prevRho * Math.exp(-prevRho / 2) * associatedLaguerre(n, 1, prevRho);
-
-  for (let i = 1; i <= numSamples / 2; i++) {
-    const x = prevX + i * dx;
-    const rho = (2 * x) / aN;
-    const laguerre = associatedLaguerre(n, 1, rho);
-    const val = rho * Math.exp(-rho / 2) * laguerre;
-
-    // Sign change detected
-    if (prevVal * val < 0 && x > 1e-14) {
-      // Use bisection to refine
-      let left = prevX;
-      let right = x;
-      for (let iter = 0; iter < 20; iter++) {
-        const mid = (left + right) / 2;
-        const midRho = (2 * mid) / aN;
-        const midLaguerre = associatedLaguerre(n, 1, midRho);
-        const valMid = midRho * Math.exp(-midRho / 2) * midLaguerre;
-
-        if (Math.abs(valMid) < 1e-12) {
-          // Found zero on positive side, add both ±x
-          zeros.push(-mid); // Negative side
-          zeros.push(mid); // Positive side
-          break;
-        }
-
-        if (valMid * prevVal < 0) {
-          right = mid;
-        } else {
-          left = mid;
-        }
-
-        if (iter === 19) {
-          const midFinal = (left + right) / 2;
-          zeros.push(-midFinal);
-          zeros.push(midFinal);
-        }
-      }
-    }
-
-    prevX = x;
-    prevVal = val;
-  }
-
-  // Sort zeros
-  zeros.sort((a, b) => a - b);
-  return zeros;
 }
 
 /**
@@ -598,80 +411,4 @@ export function calculateCoulomb1DWavefunctionMinMax(
   }
 
   return { min, max, extremaPositions };
-}
-
-/**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for a 1D Coulomb potential.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param coulombStrength - Coulomb strength parameter α in J·m
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateCoulomb1DSuperpositionMinMax(
-  coulombStrength: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const alpha = coulombStrength;
-  const a0 = (HBAR * HBAR) / (mass * alpha);
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      const principal = n + 1;
-      const aN = principal * a0;
-      const normalization = Math.sqrt(1.0 / (2 * aN * (n + 1) * (n + 1)));
-
-      // Calculate wavefunction value
-      const absX = Math.abs(x);
-      const rho = (2 * absX) / aN;
-      const laguerre = associatedLaguerre(n, 1, rho);
-      const radialPart = normalization * rho * Math.exp(-rho / 2) * laguerre;
-      const psi = Math.sign(x) * radialPart;
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: real part
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
 }

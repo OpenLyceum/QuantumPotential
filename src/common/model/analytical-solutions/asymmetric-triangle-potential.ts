@@ -41,7 +41,6 @@
  */
 
 import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
   calculateAiryAlpha,
@@ -77,18 +76,6 @@ export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
     return createAsymmetricTrianglePotential(this.slope);
   }
 
-  calculateClassicalProbability(energy: number, mass: number, xGrid: number[]): number[] {
-    return calculateAsymmetricTriangleClassicalProbability(this.slope, energy, mass, xGrid);
-  }
-
-  calculateWavefunctionZeros(stateIndex: number, _energy: number): number[] {
-    // Get energy from Airy zero
-    const zN = getAiryZero(stateIndex);
-    const energy = calculateTriangularWellEnergy(zN, this.mass, this.slope);
-
-    return calculateAsymmetricTriangleWavefunctionZeros(this.slope, this.mass, energy);
-  }
-
   calculateTurningPoints(energy: number): Array<{ left: number; right: number }> {
     const points = calculateAsymmetricTriangleTurningPoints(this.slope, energy);
     return [points]; // Return as array with single element for simple single-well potential
@@ -119,25 +106,6 @@ export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
     return calculateAsymmetricTriangleWavefunctionMinMax(this.slope, this.mass, stateIndex, xMin, xMax, numPoints);
   }
 
-  calculateSuperpositionMinMax(
-    coefficients: Array<[number, number]>,
-    energies: number[],
-    time: number,
-    xMin: number,
-    xMax: number,
-    numPoints?: number,
-  ): { min: number; max: number } {
-    return calculateAsymmetricTriangleSuperpositionMinMax(
-      this.slope,
-      this.mass,
-      coefficients,
-      energies,
-      time,
-      xMin,
-      xMax,
-      numPoints,
-    );
-  }
   calculateFourierTransform(
     boundStateResult: BoundStateResult,
     mass: number,
@@ -243,74 +211,6 @@ export function createAsymmetricTrianglePotential(slope: number): (x: number) =>
 }
 
 /**
- * Calculate classical probability density for an asymmetric triangle potential.
- * P(x) ∝ 1/v(x) = 1/√[2(E - V(x))/m] = 1/√[2(E - Fx)/m]
- *
- * @param slope - Slope parameter F in Joules/meter (field strength)
- * @param energy - Energy of the particle in Joules
- * @param mass - Particle mass in kg
- * @param xGrid - Array of x positions in meters
- * @returns Array of normalized classical probability density values (in 1/meters)
- */
-export function calculateAsymmetricTriangleClassicalProbability(
-  slope: number,
-  energy: number,
-  mass: number,
-  xGrid: number[],
-): number[] {
-  const F = slope;
-  const classicalProbability: number[] = [];
-  let integralSum = 0;
-
-  // Classical turning point: x_0 = E/F
-  const x0 = energy / F;
-
-  // Find maximum kinetic energy for epsilon calculation
-  let maxKE = 0;
-  for (const x of xGrid) {
-    if (x >= 0 && x <= x0) {
-      const ke = energy - F * x;
-      if (ke > maxKE) {
-        maxKE = ke;
-      }
-    }
-  }
-
-  // Use minimum kinetic energy to prevent singularities at turning points
-  // This is 1% of maximum KE, which prevents infinities while preserving shape
-  const epsilon = 0.01 * maxKE;
-
-  // Calculate unnormalized probability
-  for (let i = 0; i < xGrid.length; i++) {
-    const x = xGrid[i]!;
-
-    // Only classically allowed in region 0 ≤ x ≤ x_0
-    if (x < 0 || x > x0) {
-      classicalProbability.push(0);
-    } else {
-      const kineticEnergy = energy - F * x;
-      const safeKE = Math.max(kineticEnergy, epsilon);
-      const probability = 1 / Math.sqrt((2 * safeKE) / mass);
-      classicalProbability.push(probability);
-
-      if (i > 0) {
-        const dx = xGrid[i]! - xGrid[i - 1]!;
-        integralSum += ((probability + classicalProbability[i - 1]!) * dx) / 2;
-      }
-    }
-  }
-
-  // Normalize
-  if (integralSum > 0) {
-    for (let i = 0; i < classicalProbability.length; i++) {
-      classicalProbability[i]! /= integralSum;
-    }
-  }
-
-  return classicalProbability;
-}
-
-/**
  * Calculate the classical turning points for an asymmetric triangle potential.
  * For this potential, there is one turning point at x = E/F (right side).
  * The left boundary is the infinite wall at x = 0.
@@ -332,81 +232,6 @@ export function calculateAsymmetricTriangleTurningPoints(
     left: 0, // Infinite wall at x = 0
     right: turningPoint,
   };
-}
-
-/**
- * Calculate wavefunction zeros for asymmetric triangle potential.
- * The wavefunction is ψ(x) = N · Ai(α(x - x_0)), where x_0 = E/F.
- * Zeros occur where Ai(α(x - x_0)) = 0.
- *
- * @param slope - Slope parameter F in Joules/meter (field strength)
- * @param mass - Particle mass in kg
- * @param energy - Energy of the eigenstate in Joules
- * @param searchRange - Range to search for zeros (in meters)
- * @returns Array of x positions (in meters) where wavefunction is zero
- */
-export function calculateAsymmetricTriangleWavefunctionZeros(
-  slope: number,
-  mass: number,
-  energy: number,
-  searchRange: number = 20e-9,
-): number[] {
-  const F = slope;
-  const alpha = calculateAiryAlpha(mass, F);
-  const x0 = energy / F;
-
-  const zeros: number[] = [];
-  const numSamples = 1000;
-  const dx = (2 * searchRange) / numSamples;
-
-  let prevX = -searchRange;
-  const prevZ = alpha * (prevX - x0);
-  let prevVal = prevX < 0 ? 0 : airyAi(prevZ);
-
-  for (let i = 1; i <= numSamples; i++) {
-    const x = -searchRange + i * dx;
-
-    if (x < 0) {
-      prevX = x;
-      prevVal = 0;
-      continue;
-    }
-
-    const z = alpha * (x - x0);
-    const val = airyAi(z);
-
-    // Sign change detected
-    if (prevVal * val < 0 && prevX >= 0) {
-      // Use bisection to refine
-      let left = prevX;
-      let right = x;
-      for (let iter = 0; iter < 20; iter++) {
-        const mid = (left + right) / 2;
-        const midZ = alpha * (mid - x0);
-        const valMid = airyAi(midZ);
-
-        if (Math.abs(valMid) < 1e-12) {
-          zeros.push(mid);
-          break;
-        }
-
-        if (valMid * prevVal < 0) {
-          right = mid;
-        } else {
-          left = mid;
-        }
-
-        if (iter === 19) {
-          zeros.push((left + right) / 2);
-        }
-      }
-    }
-
-    prevX = x;
-    prevVal = val;
-  }
-
-  return zeros;
 }
 
 /**
@@ -635,79 +460,4 @@ export function calculateAsymmetricTriangleWavefunctionMinMax(
   }
 
   return { min, max, extremaPositions };
-}
-
-/**
- * Calculate the minimum and maximum values of a superposition of wavefunctions
- * for an asymmetric triangle potential.
- *
- * The superposition is: Ψ(x,t) = Σ cₙ ψₙ(x) exp(-iEₙt/ℏ)
- * We return the min/max of the real part of this complex-valued function.
- *
- * @param slope - Slope parameter F in Joules/meter (field strength)
- * @param mass - Particle mass in kg
- * @param coefficients - Complex coefficients for each eigenstate (as [real, imag] pairs)
- * @param energies - Energy eigenvalues in Joules
- * @param time - Time in seconds
- * @param xMin - Left boundary of the region in meters
- * @param xMax - Right boundary of the region in meters
- * @param numPoints - Number of points to sample (default: 1000)
- * @returns Object containing min and max values of the superposition's real part
- */
-export function calculateAsymmetricTriangleSuperpositionMinMax(
-  slope: number,
-  mass: number,
-  coefficients: Array<[number, number]>,
-  energies: number[],
-  time: number,
-  xMin: number,
-  xMax: number,
-  numPoints: number = 1000,
-): { min: number; max: number } {
-  const { HBAR } = QuantumConstants;
-  const F = slope;
-  const alpha = calculateAiryAlpha(mass, F);
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  const dx = (xMax - xMin) / (numPoints - 1);
-
-  for (let i = 0; i < numPoints; i++) {
-    const x = xMin + i * dx;
-    let realPart = 0;
-
-    for (let n = 0; n < coefficients.length; n++) {
-      const [cReal, cImag] = coefficients[n]!;
-      const energy = energies[n]!;
-
-      const x0 = energy / F;
-
-      let psi: number;
-      if (x < 0) {
-        psi = 0;
-      } else {
-        const z = alpha * (x - x0);
-        psi = airyAi(z);
-      }
-
-      // Time evolution: exp(-iEt/ℏ) = cos(Et/ℏ) - i*sin(Et/ℏ)
-      const phase = (-energy * time) / HBAR;
-      const cosPhase = Math.cos(phase);
-      const sinPhase = Math.sin(phase);
-
-      // Complex multiplication: real part
-      // Re[(c_r + i c_i)(cos φ + i sin φ)] with φ = −E t/ℏ
-      realPart += cReal * psi * cosPhase - cImag * psi * sinPhase;
-    }
-
-    if (realPart < min) {
-      min = realPart;
-    }
-    if (realPart > max) {
-      max = realPart;
-    }
-  }
-
-  return { min, max };
 }
