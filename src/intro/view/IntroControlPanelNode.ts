@@ -18,6 +18,9 @@ import QPPWColors from "../../QPPWColors.js";
 import type { IntroModel } from "../model/IntroModel.js";
 import type { IntroViewState } from "./IntroViewState.js";
 
+/** Fixed panel width, so the Intro charts can be sized to fill the space beside it. */
+export const INTRO_CONTROL_PANEL_WIDTH = 290;
+
 export class IntroControlPanelNode extends Node {
   private readonly model: IntroModel;
   private readonly viewState: IntroViewState;
@@ -57,7 +60,10 @@ export class IntroControlPanelNode extends Node {
       children: children,
     });
 
-    const controlPanel = new QPPWPanel(contentVBox);
+    const controlPanel = new QPPWPanel(contentVBox, {
+      minWidth: INTRO_CONTROL_PANEL_WIDTH,
+      maxWidth: INTRO_CONTROL_PANEL_WIDTH,
+    });
 
     this.addChild(controlPanel);
   }

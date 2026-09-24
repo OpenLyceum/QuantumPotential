@@ -12,7 +12,7 @@ import { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.j
 import { WavenumberChartNode } from "../../common/view/WavenumberChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
 import type { IntroModel } from "../model/IntroModel.js";
-import { IntroControlPanelNode } from "./IntroControlPanelNode.js";
+import { INTRO_CONTROL_PANEL_WIDTH, IntroControlPanelNode } from "./IntroControlPanelNode.js";
 import { IntroViewState } from "./IntroViewState.js";
 
 export class IntroScreenView extends BaseScreenView {
@@ -33,72 +33,66 @@ export class IntroScreenView extends BaseScreenView {
     // Create the view state for display properties
     this.viewState = new IntroViewState();
 
-    // Calculate layout dimensions
     const margin = 10;
-    const chartSpacing = 5; // Reduced spacing between charts
+    const chartSpacing = 5;
+    const panelSpacing = 10;
 
-    // Fixed chart dimensions
-    const chartsWidth = 600;
-    const energyChartHeight = 220; // Increased from 200
-    const probabilityChartHeight = 170; // Increased from 150
-    const waveFunctionChartHeight = 150;
-    const wavenumberChartHeight = 200;
-    const wavenumberChartWidth = 350;
+    // The charts take all the width left of the control panel, which is pinned to the right edge
+    const chartsWidth = this.layoutBounds.width - 2 * margin - panelSpacing - INTRO_CONTROL_PANEL_WIDTH;
 
-    // Create the energy chart (top plot)
+    // Three charts stacked down the full height of the screen
+    const chartsTop = margin / 2;
+    const energyChartHeight = 220;
+    const lowerChartHeight = (this.layoutBounds.height - chartsTop - energyChartHeight - 2 * chartSpacing - margin) / 2;
+
     this.energyChart = new EnergyChartNode(model, this.viewState, {
       width: chartsWidth,
       height: energyChartHeight,
     });
 
-    // Create the probability density chart (middle plot) - always shows probability density
+    // Probability density chart (middle) - always shows probability density
     this.probabilityChart = new WaveFunctionChartNode(model, this.viewState, {
       width: chartsWidth,
-      height: probabilityChartHeight,
+      height: lowerChartHeight,
       fixedDisplayMode: "probabilityDensity",
     });
 
-    // Create the wave function chart - always shows wavefunction
+    // Wave function chart (bottom) - always shows the wavefunction, with the curvature/derivative tools
     this.waveFunctionChart = new WaveFunctionChartNode(model, this.viewState, {
       width: chartsWidth,
-      height: waveFunctionChartHeight,
+      height: lowerChartHeight,
       fixedDisplayMode: "waveFunction",
-      showToolCheckboxes: true, // Show curvature/derivative checkboxes on intro screen
+      showToolCheckboxes: true,
     });
 
-    // Create the wavenumber chart (bottom plot) - shows |φ(k)|²
-    this.wavenumberChart = new WavenumberChartNode(model, {
-      width: wavenumberChartWidth,
-      height: wavenumberChartHeight,
-      viewState: this.viewState,
-    });
-
-    // Position charts stacked vertically
     // Use each chart's local origin: visible bounds vary with axis labels, but the plot coordinates match.
     this.energyChart.x = margin;
-    this.energyChart.top = 10;
-
+    this.energyChart.y = chartsTop;
     this.probabilityChart.x = margin;
-    this.probabilityChart.top = this.energyChart.top + energyChartHeight + chartSpacing;
-
+    this.probabilityChart.y = this.energyChart.y + energyChartHeight + chartSpacing;
     this.waveFunctionChart.x = margin;
-    this.waveFunctionChart.top = this.probabilityChart.top + probabilityChartHeight + chartSpacing;
+    this.waveFunctionChart.y = this.probabilityChart.y + lowerChartHeight + chartSpacing;
 
-    this.wavenumberChart.left = 600;
-    this.wavenumberChart.top = 400;
-
-    // Create listbox parent node for ComboBox popups
-    this.listBoxParent = new Node();
-
-    // Create control panel (simplified for intro)
+    // Control panel in the top-right corner
+    this.listBoxParent = new Node(); // parent for ComboBox popups
     this.introControlPanel = new IntroControlPanelNode(
       model,
       this.viewState,
       this.listBoxParent,
       this.probabilityChart,
     );
-    this.introControlPanel.left = chartsWidth + margin * 2;
+    this.introControlPanel.right = this.layoutBounds.maxX - margin;
     this.introControlPanel.top = margin;
+
+    // Wavenumber chart |φ(k)|² fills the column under the control panel, down to the reset button
+    const wavenumberChartTop = this.introControlPanel.bottom + panelSpacing;
+    this.wavenumberChart = new WavenumberChartNode(model, {
+      width: this.introControlPanel.width,
+      height: this.resetButton.top - margin - wavenumberChartTop,
+      viewState: this.viewState,
+    });
+    this.wavenumberChart.x = this.introControlPanel.left;
+    this.wavenumberChart.y = wavenumberChartTop;
 
     // Add all components to the view
     this.addChild(this.energyChart);
