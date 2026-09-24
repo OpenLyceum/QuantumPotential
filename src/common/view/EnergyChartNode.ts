@@ -107,7 +107,6 @@ export class EnergyChartNode extends BaseChartNode {
   private levelViewYs: number[] = [];
   // Selectable hit areas over each level, with the aria-checked listener each one links to the model
   private readonly energyLevelHitAreas: Array<{ hitArea: Rectangle; listener: () => void }> = [];
-  private readonly totalEnergyLine: Line;
   private readonly legendNode: Node;
   public readonly potentialHandlesLayer: PotentialHandlesLayer;
 
@@ -213,14 +212,6 @@ export class EnergyChartNode extends BaseChartNode {
     });
     // Keep the picker above plotted lines and axes, as QBS does with its chart rectangle.
     this.addChild(this.levelPickerRectangle);
-
-    // Create total energy line
-    this.totalEnergyLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelProperty,
-      lineWidth: 2,
-      lineDash: [10, 5],
-    });
-    this.plotContentNode.addChild(this.totalEnergyLine);
 
     // Create classical turning point lines
     this.leftTurningPointLine = new Line(0, 0, 0, 0, {
@@ -569,17 +560,6 @@ export class EnergyChartNode extends BaseChartNode {
       align: this.sharedXAxis ? "center" : "left",
       children: [
         new Checkbox(
-          this.viewState.showTotalEnergyProperty,
-          new Text(stringManager.totalEnergyStringProperty, {
-            font: "12px sans-serif",
-            fill: QPPWColors.textFillProperty,
-          }),
-          {
-            ...PANEL_CHECKBOX_OPTIONS,
-            boxWidth: 15,
-          },
-        ),
-        new Checkbox(
           this.viewState.showPotentialEnergyProperty,
           new Text(stringManager.potentialEnergyStringProperty, {
             font: "12px sans-serif",
@@ -637,9 +617,6 @@ export class EnergyChartNode extends BaseChartNode {
     this.viewState.showEnergyValuesProperty.lazyLink(() => this.updateLevelLabels());
     this.model.potentialRevisionProperty.lazyLink(() => this.potentialUpdate.schedule());
     this.model.selectedEnergyLevelIndexProperty.lazyLink(() => this.updateSelection());
-    this.viewState.showTotalEnergyProperty.lazyLink((show: boolean) => {
-      this.totalEnergyLine.visible = show;
-    });
     this.viewState.showPotentialEnergyProperty.lazyLink((show: boolean) => {
       this.potentialPath.visible = show;
     });
@@ -691,7 +668,6 @@ export class EnergyChartNode extends BaseChartNode {
     this.updatePotentialCurve();
     this.updateEnergyLevels(boundStates);
     this.updateZeroLine();
-    this.updateTotalEnergyLine(boundStates);
     this.updateClassicalTurningPoints(boundStates);
   }
 
@@ -754,9 +730,6 @@ export class EnergyChartNode extends BaseChartNode {
     this.hoveredLevelPanel.visible = false;
 
     this.removeEnergyLevelHitAreas();
-
-    // Hide total energy line
-    this.totalEnergyLine.visible = false;
   }
 
   /**
@@ -974,7 +947,6 @@ export class EnergyChartNode extends BaseChartNode {
       }
     }
     this.updateLevelLabels();
-    this.totalEnergyLine.moveToFront();
     this.legendNode.moveToFront();
     this.potentialHandlesLayer.moveToFront();
   }
@@ -995,31 +967,12 @@ export class EnergyChartNode extends BaseChartNode {
   }
 
   /**
-   * Updates the total energy line for the selected state.
-   */
-  private updateTotalEnergyLine(boundStates: BoundStateResult): void {
-    const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-    if (selectedIndex >= 0 && selectedIndex < boundStates.energies.length) {
-      const energy = boundStates.energies[selectedIndex]! * QuantumConstants.JOULES_TO_EV;
-      const y = this.dataToViewY(energy);
-      this.totalEnergyLine.x1 = this.chartMargins.left;
-      this.totalEnergyLine.y1 = y;
-      this.totalEnergyLine.x2 = this.chartWidth - this.chartMargins.right;
-      this.totalEnergyLine.y2 = y;
-      this.totalEnergyLine.visible = this.viewState.showTotalEnergyProperty.value;
-    } else {
-      this.totalEnergyLine.visible = false;
-    }
-  }
-
-  /**
    * Updates the selection highlighting.
    */
   private updateSelection(): void {
     const boundStates = this.model.getBoundStates();
     if (boundStates) {
       this.updateEnergyLevelStyling();
-      this.updateTotalEnergyLine(boundStates);
       this.updateClassicalTurningPoints(boundStates);
     }
   }

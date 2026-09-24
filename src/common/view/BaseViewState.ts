@@ -18,7 +18,6 @@ export abstract class BaseViewState {
   public readonly showZerosProperty: Property<boolean>;
 
   // Chart element visibility
-  public readonly showTotalEnergyProperty: Property<boolean>;
   public readonly showPotentialEnergyProperty: Property<boolean>;
   public readonly showEnergyValuesProperty: Property<boolean>;
 
@@ -35,7 +34,6 @@ export abstract class BaseViewState {
     this.showZerosProperty = new Property<boolean>(false);
 
     // Initialize chart visibility
-    this.showTotalEnergyProperty = new Property<boolean>(true);
     this.showPotentialEnergyProperty = new Property<boolean>(true);
     this.showEnergyValuesProperty = new Property<boolean>(false);
   }
@@ -51,7 +49,6 @@ export abstract class BaseViewState {
     this.showPhaseProperty.reset();
     this.showClassicalProbabilityProperty.reset();
     this.showZerosProperty.reset();
-    this.showTotalEnergyProperty.reset();
     this.showPotentialEnergyProperty.reset();
     this.showEnergyValuesProperty.reset();
   }

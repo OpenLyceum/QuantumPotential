@@ -89,7 +89,6 @@
   "multiPoschlTeller": "Puits de Pöschl–Teller multiples",
   "energyEv": "Énergie (eV)",
   "positionNm": "Position (nm)",
-  "totalEnergy": "Énergie Totale",
   "waveFunctionMagnitude": "Amplitude de Fonction d'Onde",
   "energyLevelLabel": "E{{level}} = {{value}} eV",
   "time": "Temps:",

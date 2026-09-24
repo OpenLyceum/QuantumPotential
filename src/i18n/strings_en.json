@@ -89,7 +89,6 @@
   "multiPoschlTeller": "Multiple Pöschl–Teller Wells",
   "energyEv": "Energy (eV)",
   "positionNm": "Position (nm)",
-  "totalEnergy": "Total Energy",
   "waveFunctionMagnitude": "Wave Function Magnitude",
   "energyLevelLabel": "E{{level}} = {{value}} eV",
   "time": "Time:",

@@ -358,10 +358,6 @@ export class StringManager {
     return this.stringProperties.positionNmStringProperty;
   }
 
-  get totalEnergyStringProperty(): ReadOnlyProperty<string> {
-    return this.stringProperties.totalEnergyStringProperty;
-  }
-
   get waveFunctionMagnitudeStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.waveFunctionMagnitudeStringProperty;
   }
