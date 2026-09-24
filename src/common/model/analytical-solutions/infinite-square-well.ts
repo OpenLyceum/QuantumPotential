@@ -23,7 +23,7 @@
  *   ψ_n(x) = 0,  |x| > L/2
  */
 
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 
@@ -261,138 +261,6 @@ export function calculateInfiniteWellWavefunctionMinMax(
 }
 
 /**
- * Calculate the analytical Fourier transform of infinite square well wavefunctions.
- *
- * For ψ_n(x) = √(2/L) sin(nπ(x + L/2)/L) on [-L/2, L/2]:
- * φ_n(p) = (1/√(2πℏ)) ∫_{-L/2}^{L/2} √(2/L) sin(nπ(x + L/2)/L) e^(-ipx/ℏ) dx
- *
- * This can be computed analytically using integration by parts or complex exponentials.
- *
- * @param wellWidth - Width of the well (L) in meters
- * @param numStates - Number of states to transform
- * @param numMomentumPoints - Number of points in momentum space
- * @param pMax - Maximum momentum value in kg·m/s
- * @returns Momentum-space wavefunctions
- */
-export function calculateInfiniteWellFourierTransform(
-  wellWidth: number,
-  numStates: number,
-  numMomentumPoints: number,
-  pMax: number,
-): { pGrid: number[]; momentumWavefunctions: number[][] } {
-  const { HBAR } = QuantumConstants;
-  const L = wellWidth;
-
-  // Create momentum grid
-  const pGrid: number[] = [];
-  const dp = (2 * pMax) / (numMomentumPoints - 1);
-  for (let i = 0; i < numMomentumPoints; i++) {
-    pGrid.push(-pMax + i * dp);
-  }
-
-  // Calculate Fourier transform for each state
-  const momentumWavefunctions: number[][] = [];
-
-  for (let n = 1; n <= numStates; n++) {
-    const phiP: number[] = [];
-
-    for (const p of pGrid) {
-      // Fourier transform of sin(nπ(x + L/2)/L) from -L/2 to L/2
-      // Using sin(θ) = (e^(iθ) - e^(-iθ))/(2i)
-      // and ∫ e^(iax) e^(-ibx) dx = e^(i(a-b)x) / (i(a-b))
-
-      const kN = (n * Math.PI) / L; // Wave number of the nth state
-      const pHbar = p / HBAR; // p/ℏ
-
-      // Normalization from position space
-      const normX = Math.sqrt(2 / L);
-      // Normalization for Fourier transform
-      const normFT = 1 / Math.sqrt(2 * Math.PI * HBAR);
-
-      let magnitude: number;
-
-      if (Math.abs(p) < 1e-30) {
-        // Special case: p ≈ 0
-        // For odd n, the integral is zero (odd function)
-        // For even n, the integral is non-zero
-        if (n % 2 === 0) {
-          magnitude = 0;
-        } else {
-          // ∫_{-L/2}^{L/2} sin(nπ(x + L/2)/L) dx
-          magnitude = (normX * normFT * (2 * L)) / (n * Math.PI);
-        }
-      } else {
-        // General case: p ≠ 0
-        // The Fourier transform can be computed using the formula:
-        // ∫_{-L/2}^{L/2} sin(k_n(x + L/2)) e^(-ipx/ℏ) dx
-        //
-        // Substituting u = x + L/2, x = u - L/2:
-        // ∫_0^L sin(k_n u) e^(-ip(u - L/2)/ℏ) du
-        // = e^(ipL/(2ℏ)) ∫_0^L sin(k_n u) e^(-ipu/ℏ) du
-        //
-        // Using sin(k_n u) = (e^(ik_n u) - e^(-ik_n u))/(2i):
-        // = e^(ipL/(2ℏ))/(2i) [∫_0^L e^(i(k_n - p/ℏ)u) du - ∫_0^L e^(-i(k_n + p/ℏ)u) du]
-        //
-        // = e^(ipL/(2ℏ))/(2i) [(e^(i(k_n - p/ℏ)L) - 1)/(i(k_n - p/ℏ)) - (e^(-i(k_n + p/ℏ)L) - 1)/(-i(k_n + p/ℏ))]
-
-        const alphaPlus = kN - pHbar;
-        const alphaMinus = kN + pHbar;
-
-        const phase = (p * L) / (2 * HBAR);
-
-        // Compute the integrals
-        let integralReal = 0;
-        let integralImag = 0;
-
-        // First term: (e^(iα₊L) - 1)/(iα₊)
-        if (Math.abs(alphaPlus) > 1e-10) {
-          const anglePlus = alphaPlus * L;
-          const expPlusReal = Math.cos(anglePlus) - 1;
-          const expPlusImag = Math.sin(anglePlus);
-          // Divide by iα₊ = multiply by -i/α₊
-          const term1Real = expPlusImag / alphaPlus;
-          const term1Imag = -expPlusReal / alphaPlus;
-          integralReal += term1Real;
-          integralImag += term1Imag;
-        } else {
-          // Limit as α₊ → 0: L
-          integralReal += L;
-        }
-
-        // Second term: -(e^(-iα₋L) - 1)/(-iα₋)
-        if (Math.abs(alphaMinus) > 1e-10) {
-          const angleMinus = -alphaMinus * L;
-          const expMinusReal = Math.cos(angleMinus) - 1;
-          const expMinusImag = Math.sin(angleMinus);
-          // Divide by -iα₋ = multiply by i/α₋
-          const term2Real = -expMinusImag / alphaMinus;
-          const term2Imag = expMinusReal / alphaMinus;
-          integralReal += term2Real;
-          integralImag += term2Imag;
-        } else {
-          // Limit as α₋ → 0: -L
-          integralReal -= L;
-        }
-
-        // Multiply by e^(ipL/(2ℏ))/(2i)
-        const cosPhase = Math.cos(phase);
-        const sinPhase = Math.sin(phase);
-        const finalReal = (cosPhase * integralImag + sinPhase * integralReal) / 2;
-        const finalImag = (cosPhase * integralReal - sinPhase * integralImag) / 2;
-
-        magnitude = normX * normFT * Math.sqrt(finalReal * finalReal + finalImag * finalImag);
-      }
-
-      phiP.push(magnitude);
-    }
-
-    momentumWavefunctions.push(phiP);
-  }
-
-  return { pGrid, momentumWavefunctions };
-}
-
-/**
  * Class-based implementation of infinite square well analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
@@ -438,39 +306,6 @@ export class InfiniteSquareWellSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return calculateInfiniteWellWavefunctionMinMax(this.wellWidth, stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    _mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    const { HBAR } = QuantumConstants;
-    const numStates = boundStateResult.energies.length;
-
-    // Determine number of momentum points
-    const nMomentum = numMomentumPoints || boundStateResult.xGrid.length;
-
-    // Determine pMax if not provided
-    // Use a reasonable default based on the typical momentum scale
-    const L = this.wellWidth;
-    const defaultPMax = (HBAR * Math.PI * 10) / L; // ~10 times the fundamental momentum
-    const actualPMax = pMax || defaultPMax;
-
-    // Use analytical Fourier transform
-    const { pGrid, momentumWavefunctions } = calculateInfiniteWellFourierTransform(
-      this.wellWidth,
-      numStates,
-      nMomentum,
-      actualPMax,
-    );
-
-    return {
-      pGrid,
-      momentumWavefunctions,
-      method: "analytical",
-    };
   }
 }
 

@@ -250,6 +250,11 @@ export class EnergyChartNode extends BaseChartNode {
     );
     this.addChild(this.potentialHandlesLayer);
 
+    // The handles sit on the potential curve, so they hide (and leave the focus order) with it
+    viewState.showPotentialEnergyProperty.link((show) => {
+      this.potentialHandlesLayer.visible = show;
+    });
+
     if (isDevMode()) {
       const configureButton = createConfigurePotentialButton(model);
       configureButton.right = this.chartWidth - 5;

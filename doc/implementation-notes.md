@@ -119,7 +119,8 @@ closed-form coefficients for the harmonic oscillator.
 
 1. Add a key to `PotentialType` and a variant to `SingleWellParameters` in `PotentialFunction.ts`.
 2. Implement an `AnalyticalSolution` subclass in `analytical-solutions/` (energies, wave functions on the
-   grid, V(x), turning points, derivatives, Fourier transform). The classical probability comes free from
+   grid, V(x), turning points, derivatives). The wavenumber chart transforms the solved ψ(x) itself
+   (`WavenumberTransform.ts`), so there is no per-potential Fourier transform. The classical probability comes free from
    V(x); override it only for a closed form.
 3. Add a case to `PotentialFactory` and to `createSingleWellParameters` (and to the state-count switch in
    `SingleWellModel` if it needs a special count).

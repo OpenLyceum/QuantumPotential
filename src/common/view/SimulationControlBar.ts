@@ -3,14 +3,16 @@
  * One, Two and Many Wells screens.
  */
 
-import { DerivedProperty } from "scenerystack/axon";
+import { DerivedProperty, NumberProperty } from "scenerystack/axon";
+import { Dimension2, Range } from "scenerystack/dot";
 import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
-import { HorizontalAquaRadioButtonGroup } from "scenerystack/sun";
+import { HSlider } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import { BaseModel } from "../model/BaseModel.js";
 import { FLAT_BUTTON_APPEARANCE_OPTIONS, FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
+import { PANEL_SLIDER_OPTIONS } from "../QPPWControlOptions.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -109,23 +111,47 @@ export class SimulationControlBar extends Node {
     });
     const playbackControls = new HBox({ spacing: 6, align: "center", children: [restartButton, timeControlNode] });
 
-    const speedButtons = new HorizontalAquaRadioButtonGroup(
-      this.model.timeSpeedProperty,
-      BaseModel.TIME_SPEED_MULTIPLIERS.map((speed) => ({
-        value: speed,
-        createNode: () =>
-          new Text(`${speed}×`, {
-            font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
-          }),
-        options: { accessibleName: `${speed}×` },
-      })),
-      {
-        spacing: 10,
-        radioButtonOptions: { radius: 7 },
-        accessibleName: a11y.controls.animationSpeedStringProperty,
-      },
-    );
+    // Five-notch speed slider (slow → very fast). It drives a notch index, kept in sync with the
+    // model's speed multiplier, so the notches are evenly spaced even though the rates are geometric.
+    const speeds: readonly number[] = BaseModel.TIME_SPEED_MULTIPLIERS;
+    const maxSpeedIndex = speeds.length - 1;
+    const speedIndexProperty = new NumberProperty(speeds.indexOf(this.model.timeSpeedProperty.value), {
+      range: new Range(0, maxSpeedIndex),
+    });
+    const syncIndexFromSpeed = (speed: number) => {
+      const index = speeds.indexOf(speed);
+      if (index >= 0) {
+        speedIndexProperty.value = index;
+      }
+    };
+    const syncSpeedFromIndex = (index: number) => {
+      this.model.timeSpeedProperty.value = speeds[index]!;
+    };
+    this.model.timeSpeedProperty.lazyLink(syncIndexFromSpeed);
+    speedIndexProperty.lazyLink(syncSpeedFromIndex);
+
+    const tickLabelOptions = { font: new PhetFont(12), fill: QPPWColors.textFillProperty, maxWidth: 70 };
+    const speedSlider = new HSlider(speedIndexProperty, speedIndexProperty.range, {
+      ...PANEL_SLIDER_OPTIONS,
+      trackSize: new Dimension2(140, 4),
+      thumbSize: new Dimension2(13, 24),
+      constrainValue: (value: number) => Math.round(value),
+      keyboardStep: 1,
+      shiftKeyboardStep: 1,
+      pageKeyboardStep: 1,
+      majorTickLength: 12,
+      minorTickLength: 8,
+      majorTickStroke: QPPWColors.textFillProperty,
+      minorTickStroke: QPPWColors.textFillProperty,
+      accessibleName: a11y.controls.animationSpeedStringProperty,
+      pdomCreateAriaValueText: (index: number | null) => `${speeds[index ?? 0]}×`,
+    });
+    speedSlider.addMajorTick(0, new Text(a11y.controls.slowStringProperty, tickLabelOptions));
+    speedSlider.addMajorTick(maxSpeedIndex, new Text(a11y.controls.veryFastStringProperty, tickLabelOptions));
+    for (let index = 1; index < maxSpeedIndex; index++) {
+      speedSlider.addMinorTick(index);
+    }
+
     const speedSection = new VBox({
       spacing: 5,
       align: "center",
@@ -134,7 +160,7 @@ export class SimulationControlBar extends Node {
           font: new PhetFont(14),
           fill: QPPWColors.textFillProperty,
         }),
-        speedButtons,
+        speedSlider,
       ],
     });
 
@@ -147,5 +173,11 @@ export class SimulationControlBar extends Node {
 
     this.addChild(contentHBox);
     this.addDisposable(formattedTimeProperty);
+    this.addDisposable({
+      dispose: () => {
+        this.model.timeSpeedProperty.unlink(syncIndexFromSpeed);
+        speedIndexProperty.dispose();
+      },
+    });
   }
 }

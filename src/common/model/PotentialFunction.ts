@@ -125,36 +125,6 @@ export type EnergyOnlyResult = {
   method: SolverMethod;
 };
 
-/**
- * Result from computing the Fourier transform of a wavefunction.
- * The Fourier transform of ψ(x) is:
- * φ(p) = (1/√(2πℏ)) ∫ ψ(x) e^(-ipx/ℏ) dx
- *
- * where p is momentum in kg·m/s.
- */
-export type FourierTransformResult = {
-  /** Momentum values in kg·m/s */
-  pGrid: number[];
-  /** Fourier-transformed wavefunctions in momentum space (each row is one eigenstate) */
-  momentumWavefunctions: number[][];
-  /** Method used to compute the transform ('analytical' or 'numerical') */
-  method: "analytical" | "numerical";
-};
-
-/**
- * Result from computing the Fourier transform in wavenumber representation.
- * This is the same as FourierTransformResult but with wavenumber k = p/ℏ instead of momentum p.
- * The wavenumber representation is often more convenient for visualization and analysis.
- */
-export type WavenumberTransformResult = {
-  /** Wavenumber values in rad/m (or 1/m) */
-  kGrid: number[];
-  /** Fourier-transformed wavefunctions in wavenumber space (each row is one eigenstate) */
-  wavenumberWavefunctions: number[][];
-  /** Method used to compute the transform ('analytical' or 'numerical') */
-  method: "analytical" | "numerical";
-};
-
 qppw.register("PotentialFunction", { PotentialType });
 
 export type { PotentialFunction as default };

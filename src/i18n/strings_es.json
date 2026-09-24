@@ -152,7 +152,7 @@
   "firstDerivativeLabel": "dψ/dx = {{value}} nm⁻³ᐟ²",
   "notAvailable": "N/D",
   "averageWavenumberLabel": "⟨k⟩ = {{value}} nm⁻¹",
-  "rmsWavenumberLabel": "Δk_RMS = {{value}} nm⁻¹",
+  "rmsWavenumberLabel": "σ<sub>k</sub> = {{value}} nm⁻¹",
   "averagePositionLabel": "⟨x⟩ = {{value}} nm",
   "rmsPositionLabel": "σ<sub>x</sub> = {{value}} nm",
   "stateLabelProbability": "|{{label}}|²",
@@ -281,7 +281,9 @@
       "restartTime": "Volver al tiempo cero",
       "play": "Reproducir",
       "pause": "Pausa",
-      "animationSpeed": "Velocidad de la animación"
+      "animationSpeed": "Velocidad de la animación",
+      "slow": "Lenta",
+      "veryFast": "Muy rápida"
     },
     "sliderHelpPattern": "Ajuste {{parameter}}. {{effect}} Use las flechas izquierda/derecha para cambios pequeños, Mayús+flecha para un ajuste fino, Re Pág/Av Pág para pasos grandes, Inicio para el mínimo y Fin para el máximo.",
     "parameterChangedPattern": "{{parameter}}: {{value}} {{unit}}.",

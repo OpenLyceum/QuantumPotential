@@ -6,15 +6,15 @@
 import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
-import { convertToWavenumber } from "./analytical-solutions/fourier-transform-helper.js";
 import { calculateClassicalProbabilityDensity } from "./ClassicalProbability.js";
 import { calculateRMSStatistics } from "./DistributionStatistics.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
 import type { NumericalMethod } from "./NumericalMethod.js";
-import { type BoundStateResult, PotentialType, type WavenumberTransformResult } from "./PotentialFunction.js";
+import { type BoundStateResult, PotentialType } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
 import Schrodinger1DSolver from "./Schrodinger1DSolver.js";
 import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType.js";
+import { computeWavenumberTransform, type WavenumberTransform } from "./WavenumberTransform.js";
 
 /**
  * Per-screen initial values. They are passed to the constructor (rather than assigned after
@@ -102,8 +102,8 @@ export abstract class BaseModel {
    */
   private static readonly ENERGY_LEVEL_INDEX_MAX = 799;
 
-  /** Available animation rates, relative to the original normal speed. */
-  public static readonly TIME_SPEED_MULTIPLIERS = [0.1, 0.25, 0.5, 1, 2, 4] as const;
+  /** Animation rates for the five speed-slider notches (slow → very fast), relative to normal speed. */
+  public static readonly TIME_SPEED_MULTIPLIERS = [0.1, 0.3, 1, 3, 10] as const;
 
   // ==================== PROPERTIES ====================
 
@@ -139,6 +139,8 @@ export abstract class BaseModel {
     key: string;
     config: SuperpositionConfig;
   } | null = null;
+  // Wavenumber transforms of the current bound states, by state index
+  private wavenumberTransforms = new Map<number, WavenumberTransform | null>();
 
   // Solver for quantum calculations
   protected readonly solver: Schrodinger1DSolver;
@@ -151,7 +153,7 @@ export abstract class BaseModel {
     // Initialize simulation state
     this.isPlayingProperty = new Property<boolean>(false);
     this.timeProperty = new NumberProperty(0); // in femtoseconds
-    this.timeSpeedProperty = new NumberProperty(1, { range: new Range(0.1, 4) });
+    this.timeSpeedProperty = new NumberProperty(1, { range: new Range(0.1, 10) });
 
     // Initialize potential type
     this.potentialTypeProperty = new Property<PotentialType>(options.potentialType ?? PotentialType.INFINITE_WELL);
@@ -212,6 +214,7 @@ export abstract class BaseModel {
   protected invalidateBoundStates(): void {
     this.boundStateResult = undefined;
     this.wavePacketProjection = null;
+    this.wavenumberTransforms.clear();
     this.potentialRevisionProperty.value++;
   }
 
@@ -360,39 +363,24 @@ export abstract class BaseModel {
   }
 
   /**
-   * Get the Fourier transform of bound state wavefunctions in wavenumber space.
-   * Returns the wavenumber grid k and the transformed wavefunctions |φ(k)|.
-   *
-   * @param numWavenumberPoints - Optional number of points in wavenumber space
-   * @param kMax - Optional maximum wavenumber value in rad/m
-   * @returns Wavenumber transform result, or null if not available
+   * Wavenumber-space distribution of one eigenstate, the Fourier transform of the solved ψ(x).
+   * @returns k in rad/m and |φ(k)|² in m, or null if the state does not exist
    */
-  public getWavenumberTransform(numWavenumberPoints?: number, kMax?: number): WavenumberTransformResult | null {
-    // Ensure bound states are calculated
+  public getWavenumberTransform(energyIndex: number): WavenumberTransform | null {
     const boundStates = this.getBoundStates();
-    if (!boundStates) {
+    const psi = boundStates?.wavefunctions[energyIndex];
+    if (!(boundStates && psi)) {
       return null;
     }
-
-    // Get the analytical solution from the solver
-    const analyticalSolution = this.solver.getAnalyticalSolution();
-    if (!analyticalSolution) {
-      return null;
+    let transform = this.wavenumberTransforms.get(energyIndex);
+    if (transform === undefined) {
+      transform = computeWavenumberTransform(boundStates.xGrid, psi);
+      this.wavenumberTransforms.set(energyIndex, transform);
     }
-
-    // Calculate Fourier transform in momentum space
-    const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
-
-    // Convert kMax to pMax if provided: p = ℏk
-    const pMax = kMax ? kMax * QuantumConstants.HBAR : undefined;
-
-    const fourierResult = analyticalSolution.calculateFourierTransform(boundStates, mass, numWavenumberPoints, pMax);
-
-    // Convert to wavenumber space using the helper function
-    return convertToWavenumber(fourierResult);
+    return transform;
   }
 
-  /** Distribution in cycles/nm, together with the physical quantities used by its chart. */
+  /** Distribution over the angular wavenumber k = 2π/λ in nm⁻¹, with the physical quantities used by its chart. */
   public getWavenumberDistribution(energyIndex: number): {
     gridNm: number[];
     density: number[];
@@ -401,13 +389,13 @@ export abstract class BaseModel {
     averageMomentum: number;
     uncertaintyProduct: number | null;
   } | null {
-    const transform = this.getWavenumberTransform();
-    const phi = transform?.wavenumberWavefunctions[energyIndex];
-    if (!(transform && phi)) {
+    const transform = this.getWavenumberTransform(energyIndex);
+    if (!transform) {
       return null;
     }
-    const gridNm = transform.kGrid.map((k) => k / (2 * Math.PI * QuantumConstants.M_TO_NM));
-    const density = phi.map((value) => value * value);
+    // rad/m → nm⁻¹; the density is rescaled so it still integrates to 1 over k in nm⁻¹
+    const gridNm = transform.kGrid.map((k) => k / QuantumConstants.M_TO_NM);
+    const density = transform.density.map((value) => value * QuantumConstants.M_TO_NM);
     const stats = calculateRMSStatistics(gridNm, density);
     if (!stats) {
       return null;
@@ -418,8 +406,8 @@ export abstract class BaseModel {
       density,
       average: stats.avg,
       spread: stats.rms,
-      averageMomentum: stats.avg * 2 * Math.PI * QuantumConstants.M_TO_NM * QuantumConstants.HBAR,
-      uncertaintyProduct: positionStats ? positionStats.rms * stats.rms * 2 * Math.PI : null,
+      averageMomentum: stats.avg * QuantumConstants.M_TO_NM * QuantumConstants.HBAR,
+      uncertaintyProduct: positionStats ? positionStats.rms * stats.rms : null,
     };
   }
 

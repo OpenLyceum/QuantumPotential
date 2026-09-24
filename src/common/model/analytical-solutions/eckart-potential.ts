@@ -24,9 +24,8 @@
  */
 
 import { NoBoundStatesError } from "../NoBoundStatesError.js";
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { RosenMorsePotentialSolution } from "./rosen-morse-potential.js";
 
 /** The Rosen-Morse problem equivalent to an Eckart potential, and the energy shift between them. */
@@ -107,15 +106,6 @@ export class EckartPotentialSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return this.rosenMorse.calculateWavefunctionMinMax(stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    return computeNumericalFourierTransform(boundStateResult, mass, this.potentialDepth, numMomentumPoints, pMax);
   }
 }
 

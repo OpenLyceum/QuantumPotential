@@ -14,7 +14,7 @@
  */
 
 import { calculateClassicalProbabilityDensity } from "../ClassicalProbability.js";
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 
 export abstract class AnalyticalSolution {
   /**
@@ -127,30 +127,4 @@ export abstract class AnalyticalSolution {
     xMax: number,
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] };
-
-  /**
-   * Calculate the Fourier transform of the wavefunctions to obtain momentum-space representation.
-   *
-   * The Fourier transform of a wavefunction ψ(x) is defined as:
-   * φ(p) = (1/√(2πℏ)) ∫ ψ(x) e^(-ipx/ℏ) dx
-   *
-   * where p is the momentum. This method should be implemented analytically when possible,
-   * otherwise using numerical FFT methods.
-   *
-   * For some potentials (e.g., harmonic oscillator, infinite square well), the Fourier
-   * transform can be computed analytically. For others, numerical integration or FFT
-   * should be used.
-   *
-   * @param boundStateResult - The position-space wavefunction results to transform
-   * @param mass - Particle mass in kg (needed for momentum-position scaling)
-   * @param numMomentumPoints - Number of points in momentum space grid (optional)
-   * @param pMax - Maximum momentum value in kg·m/s (optional, auto-determined if not provided)
-   * @returns Fourier transform result with momentum-space wavefunctions
-   */
-  abstract calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult;
 }

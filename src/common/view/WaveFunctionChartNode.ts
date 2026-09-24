@@ -22,6 +22,7 @@ import { SuperpositionType } from "../model/SuperpositionType.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
 import Logger from "../utils/Logger.js";
 import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import { AreaMeasurementTool } from "./chart-tools/AreaMeasurementTool.js";
 import { ClassicalProbabilityOverlay } from "./chart-tools/ClassicalProbabilityOverlay.js";
@@ -103,6 +104,11 @@ export class WaveFunctionChartNode extends Node {
   private isUpdating: boolean = false;
   // Flag to indicate if an update was requested while another update was in progress
   private updatePending: boolean = false;
+
+  // Y-axis ticks, re-spaced whenever the displayed y range changes
+  private yTickMarkSet: TickMarkSet | null = null;
+  private yTickLabelSet: TickLabelSet | null = null;
+  private yTickSpacing = 0.5;
 
   // Optional fixed display mode (overrides model's display mode)
   private readonly fixedDisplayMode: "probabilityDensity" | "waveFunction" | "phaseColor" | undefined;
@@ -549,12 +555,11 @@ export class WaveFunctionChartNode extends Node {
     yAxis.y = this.chartMargins.top;
     axesNode.addChild(yAxis);
 
-    // Y-axis tick marks using bamboo TickMarkSet
-    // Use fixed spacing of 0.5 (works well for typical nm^-1 and nm^-1/2 values)
+    // Y-axis tick marks using bamboo TickMarkSet; spacing adapts to the y range (see setYRange)
     const yTickMarkSet = new TickMarkSet(
       this.chartTransform,
       Orientation.VERTICAL,
-      0.5, // spacing in nm^-1 or nm^-1/2 units
+      this.yTickSpacing, // spacing in nm^-1 or nm^-1/2 units
       {
         edge: "min",
         extent: 8,
@@ -565,12 +570,13 @@ export class WaveFunctionChartNode extends Node {
     yTickMarkSet.x = this.chartMargins.left;
     yTickMarkSet.y = this.chartMargins.top;
     axesNode.addChild(yTickMarkSet);
+    this.yTickMarkSet = yTickMarkSet;
 
     // Y-axis tick labels using bamboo TickLabelSet
     const yTickLabelSet = new TickLabelSet(
       this.chartTransform,
       Orientation.VERTICAL,
-      0.5, // spacing in nm^-1 or nm^-1/2 units
+      this.yTickSpacing, // spacing in nm^-1 or nm^-1/2 units
       {
         edge: "min",
         createLabel: (value: number) =>
@@ -583,6 +589,7 @@ export class WaveFunctionChartNode extends Node {
     yTickLabelSet.x = this.chartMargins.left;
     yTickLabelSet.y = this.chartMargins.top;
     axesNode.addChild(yTickLabelSet);
+    this.yTickLabelSet = yTickLabelSet;
 
     // Position this after setting its text, since the rotated text changes its bounds.
     this.yAxisLabel = new Text("", {
@@ -798,13 +805,33 @@ export class WaveFunctionChartNode extends Node {
    * Uses appropriate precision based on the magnitude of the value.
    */
   private formatYTickLabel(value: number): string {
+    // At least 2 decimal places, more when the tick spacing is finer than 0.01
+    const decimals = Math.max(2, getTickDecimals(this.yTickSpacing));
+
     // For values close to zero, show as 0.00
     if (Math.abs(value) < 1e-10) {
-      return "0.00";
+      return (0).toFixed(decimals);
+    }
+    return value.toFixed(decimals);
+  }
+
+  /**
+   * Applies a new y range to the chart and re-spaces the y-axis ticks to match.
+   */
+  private setYRange(yMin: number, yMax: number): void {
+    this.yMinProperty.value = yMin;
+    this.yMaxProperty.value = yMax;
+
+    const spacing = computeTickSpacing(yMax - yMin);
+    if (spacing !== this.yTickSpacing) {
+      this.yTickSpacing = spacing;
+      this.yTickMarkSet?.setSpacing(spacing);
+      this.yTickLabelSet?.setSpacing(spacing);
+      // Label precision depends on the spacing, so drop labels cached under the old spacing
+      this.yTickLabelSet?.invalidateTickLabelSet();
     }
 
-    // Use consistent 2 decimal places for all tick values
-    return value.toFixed(2);
+    this.chartTransform.setModelYRange(new Range(yMin, yMax));
   }
 
   public update(): void {
@@ -939,12 +966,7 @@ export class WaveFunctionChartNode extends Node {
       yMax = 1;
     }
 
-    // Update properties
-    this.yMinProperty.value = yMin;
-    this.yMaxProperty.value = yMax;
-
-    // Update chart transform
-    this.chartTransform.setModelYRange(new Range(yMin, yMax));
+    this.setYRange(yMin, yMax);
   }
 
   /**
@@ -999,12 +1021,7 @@ export class WaveFunctionChartNode extends Node {
       yMax = 1;
     }
 
-    // Update properties
-    this.yMinProperty.value = yMin;
-    this.yMaxProperty.value = yMax;
-
-    // Update chart transform
-    this.chartTransform.setModelYRange(new Range(yMin, yMax));
+    this.setYRange(yMin, yMax);
   }
 
   /**

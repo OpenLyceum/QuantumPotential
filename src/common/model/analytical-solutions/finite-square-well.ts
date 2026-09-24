@@ -36,10 +36,9 @@
  */
 
 import Logger from "../../utils/Logger.js";
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { findRootHybrid } from "./root-finding-utils.js";
 
 /**
@@ -570,16 +569,6 @@ export class FiniteSquareWellSolution extends AnalyticalSolution {
       xMax,
       numPoints,
     );
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    // Use the helper function with energy scale based on well depth
-    return computeNumericalFourierTransform(boundStateResult, mass, this.wellDepth, numMomentumPoints, pMax);
   }
 }
 

@@ -40,7 +40,7 @@
  * Boundary condition: ψ(0) = 0 leads to Ai(-αx_n) = 0, giving αx_n = -z_n.
  */
 
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
   calculateAiryAlpha,
@@ -49,7 +49,6 @@ import {
   getAiryZero,
   normalizeWavefunction,
 } from "./airy-utilities.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { airyAi } from "./math-utilities.js";
 
 /**
@@ -104,21 +103,6 @@ export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return calculateAsymmetricTriangleWavefunctionMinMax(this.slope, this.mass, stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      this.slope * this.wellWidth,
-      numMomentumPoints,
-      pMax,
-    );
   }
 }
 

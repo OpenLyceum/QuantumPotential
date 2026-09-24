@@ -16,10 +16,9 @@
  * Totality Quantum Bound States, CoulombSolution.ts / Sam McKagan's Coulomb potential.pdf.
  */
 
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { associatedLaguerre } from "./math-utilities.js";
 
 /**
@@ -64,21 +63,6 @@ export class Coulomb1DPotentialSolution extends AnalyticalSolution {
     numPoints?: number,
   ): { min: number; max: number; extremaPositions: number[] } {
     return calculateCoulomb1DWavefunctionMinMax(this.coulombStrength, this.mass, stateIndex, xMin, xMax, numPoints);
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    return computeNumericalFourierTransform(
-      boundStateResult,
-      mass,
-      Math.abs(boundStateResult.energies[0]!),
-      numMomentumPoints,
-      pMax,
-    );
   }
 }
 

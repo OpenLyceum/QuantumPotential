@@ -35,10 +35,9 @@
  */
 
 import { NoBoundStatesError } from "../NoBoundStatesError.js";
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { logAssociatedLaguerre, logGamma } from "./math-utilities.js";
 
 /**
@@ -122,15 +121,6 @@ export class MorsePotentialSolution extends AnalyticalSolution {
       xMax,
       numPoints,
     );
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    return computeNumericalFourierTransform(boundStateResult, mass, this.dissociationEnergy, numMomentumPoints, pMax);
   }
 }
 

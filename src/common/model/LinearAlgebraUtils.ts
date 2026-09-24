@@ -671,86 +671,6 @@ export function fftFreq(N: number, dx: number): number[] {
 }
 
 /**
- * Compute the Fourier transform of a position-space wavefunction using FFT.
- * The Fourier transform is defined as:
- * φ(p) = (1/√(2πℏ)) ∫ ψ(x) e^(-ipx/ℏ) dx
- *
- * This implementation uses FFT for efficient computation. The wavefunction is assumed
- * to be periodic or to decay to zero at the boundaries.
- *
- * @param psi - Position-space wavefunction values
- * @param xGrid - Position grid in meters
- * @param mass - Particle mass in kg (used for normalization)
- * @param numMomentumPoints - Optional number of points in momentum space (defaults to xGrid length)
- * @param pMax - Optional maximum momentum value in kg·m/s (auto-determined if not provided)
- * @returns Object with pGrid (momentum values) and phiP (momentum-space wavefunction)
- */
-export function numericalFourierTransform(
-  psi: number[],
-  xGrid: number[],
-  _mass: number,
-  numMomentumPoints?: number,
-  pMax?: number,
-): { pGrid: number[]; phiP: number[] } {
-  const N = numMomentumPoints || xGrid.length;
-  const dx = xGrid.length > 1 ? xGrid[1]! - xGrid[0]! : 1;
-  const HBAR = 1.054571817e-34; // Planck's constant / (2π)
-
-  // Determine momentum grid
-  // For FFT: p = ℏk where k = 2πn/L for n = -N/2..N/2
-  let momentumValues: number[];
-
-  if (pMax !== undefined) {
-    // Use specified pMax
-    const dp = (2 * pMax) / (N - 1);
-    momentumValues = [];
-    for (let i = 0; i < N; i++) {
-      momentumValues.push(-pMax + i * dp);
-    }
-  } else {
-    // Auto-determine from FFT frequency grid
-    const waveNumbers = fftFreq(N, dx);
-    momentumValues = waveNumbers.map((k) => HBAR * k);
-  }
-
-  // Prepare complex wavefunction for FFT
-  const psiComplex: Complex[] = psi.map((val) => ({ real: val, imaginary: 0 }));
-
-  // Pad or truncate if needed
-  if (psiComplex.length < N) {
-    // Zero-pad
-    while (psiComplex.length < N) {
-      psiComplex.push({ real: 0, imaginary: 0 });
-    }
-  } else if (psiComplex.length > N) {
-    // Truncate
-    psiComplex.length = N;
-  }
-
-  // Apply FFT
-  const phiComplex = fft(psiComplex);
-
-  // Extract magnitudes and apply normalization
-  // FFT normalization factor: dx / √(2πℏ)
-  const normalization = dx / Math.sqrt(2 * Math.PI * HBAR);
-  const phiP = phiComplex.map((c) => {
-    // For real-valued wavefunctions, we take the magnitude
-    const magnitude = Math.sqrt(c.real * c.real + c.imaginary * c.imaginary);
-    return magnitude * normalization;
-  });
-
-  // FFT shift to center zero frequency
-  const phiPShifted: number[] = new Array(N);
-  const halfN = Math.floor(N / 2);
-  for (let i = 0; i < N; i++) {
-    const shiftedIndex = (i + halfN) % N;
-    phiPShifted[i] = phiP[shiftedIndex]!;
-  }
-
-  return { pGrid: momentumValues, phiP: phiPShifted };
-}
-
-/**
  * Cubic spline interpolation for smooth wavefunction upsampling.
  * Uses natural boundary conditions (second derivative = 0 at endpoints).
  *
@@ -861,5 +781,4 @@ qppw.register("LinearAlgebraUtils", {
   fft,
   ifft,
   fftFreq,
-  numericalFourierTransform,
 });

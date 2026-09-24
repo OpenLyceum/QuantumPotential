@@ -31,7 +31,7 @@
  *   where H_n are the Hermite polynomials
  */
 
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import { hermiteFunctions } from "./math-utilities.js";
@@ -207,60 +207,6 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
 }
 
 /**
- * Calculate the analytical Fourier transform of harmonic oscillator wavefunctions.
- *
- * The harmonic oscillator has a remarkable property: its wavefunctions are
- * Hermite-Gaussian functions, which are eigenfunctions of the Fourier transform.
- *
- * For ψ_n(x) = N_n exp(-α²x²/2) H_n(αx) where α = √(mω/ℏ):
- * φ_n(p) = N_n exp(-p²/(2α²ℏ²)) H_n(p/(αℏ)) (-i)^n / √ℏ
- *
- * This means the momentum-space wavefunction has the same Hermite polynomial
- * structure as the position-space wavefunction!
- *
- * @param springConstant - Spring constant k in N/m
- * @param mass - Particle mass in kg
- * @param numStates - Number of states to transform
- * @param numMomentumPoints - Number of points in momentum space
- * @param pMax - Maximum momentum value in kg·m/s
- * @returns Momentum-space wavefunctions
- */
-export function calculateHarmonicOscillatorFourierTransform(
-  springConstant: number,
-  mass: number,
-  numStates: number,
-  numMomentumPoints: number,
-  pMax: number,
-): { pGrid: number[]; momentumWavefunctions: number[][] } {
-  const { HBAR } = QuantumConstants;
-  const omega = Math.sqrt(springConstant / mass);
-  const alpha = Math.sqrt((mass * omega) / HBAR);
-
-  // Create momentum grid
-  const pGrid: number[] = [];
-  const dp = (2 * pMax) / (numMomentumPoints - 1);
-  for (let i = 0; i < numMomentumPoints; i++) {
-    pGrid.push(-pMax + i * dp);
-  }
-
-  // |φ_n(p)| = φ_n(ξ_p) / √α with ξ_p = p/(αℏ): the same Hermite function as in position space. The transform
-  // also carries a phase (−i)ⁿ, which drops out of the magnitude. One recurrence per p gives every state.
-  const momentumWavefunctions: number[][] = [];
-  for (let n = 0; n < numStates; n++) {
-    momentumWavefunctions.push([]);
-  }
-  const normalization = 1 / Math.sqrt(alpha);
-  for (const p of pGrid) {
-    const phi = hermiteFunctions(numStates, p / (alpha * HBAR));
-    for (let n = 0; n < numStates; n++) {
-      momentumWavefunctions[n]!.push(Math.abs(normalization * phi[n]!));
-    }
-  }
-
-  return { pGrid, momentumWavefunctions };
-}
-
-/**
  * Class-based implementation of harmonic oscillator analytical solution.
  * Extends the AnalyticalSolution abstract base class.
  */
@@ -309,41 +255,6 @@ export class HarmonicOscillatorSolution extends AnalyticalSolution {
       xMax,
       numPoints,
     );
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    const { HBAR } = QuantumConstants;
-    const numStates = boundStateResult.energies.length;
-    const omega = Math.sqrt(this.springConstant / mass);
-
-    // Determine number of momentum points
-    const nMomentum = numMomentumPoints || boundStateResult.xGrid.length;
-
-    // Determine pMax if not provided
-    // For harmonic oscillator, use a momentum scale based on ℏω
-    const alpha = Math.sqrt((mass * omega) / HBAR);
-    const defaultPMax = alpha * HBAR * 5; // ~5 times the characteristic momentum
-    const actualPMax = pMax || defaultPMax;
-
-    // Use analytical Fourier transform
-    const { pGrid, momentumWavefunctions } = calculateHarmonicOscillatorFourierTransform(
-      this.springConstant,
-      mass,
-      numStates,
-      nMomentum,
-      actualPMax,
-    );
-
-    return {
-      pGrid,
-      momentumWavefunctions,
-      method: "analytical",
-    };
   }
 }
 

@@ -144,6 +144,7 @@ Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expo
 | `tests/common/model/numerov-solver.test.ts` | Numerov invariants, closed-form spectra, tilted wells, FGH cross-check |
 | `tests/common/model/{coulomb-1d-analytical,coherent-state,localized-wave-packet}.test.ts` | Coulomb, coherent-state and wave-packet physics |
 | `tests/common/model/{bound-state-cache,wavefunction-derivatives,uncertainty,fft}.test.ts` | Model and solver regressions |
+| `tests/common/model/wavenumber-transform.test.ts` | φ(k) matches the closed-form infinite-well spectrum; Δx·Δk for the oscillator and every single well |
 | `tests/common/view/{coalesced-update,phase-colormap}.test.ts` | View helpers |
 | `tests/accuracy/` | Hand-run accuracy scripts (see carve-outs) |
 

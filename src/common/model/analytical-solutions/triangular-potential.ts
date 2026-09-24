@@ -48,7 +48,7 @@
  * that determines allowed energies. Must be solved numerically.
  */
 
-import type { BoundStateResult, FourierTransformResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
+import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
@@ -58,7 +58,6 @@ import {
   normalizeWavefunction,
   refineBisection,
 } from "./airy-utilities.js";
-import { computeNumericalFourierTransform } from "./fourier-transform-helper.js";
 import { airyAi, airyAiPrime, airyBi, airyBiPrime } from "./math-utilities.js";
 
 /**
@@ -157,15 +156,6 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
       xMax,
       numPoints,
     );
-  }
-
-  calculateFourierTransform(
-    boundStateResult: BoundStateResult,
-    mass: number,
-    numMomentumPoints?: number,
-    pMax?: number,
-  ): FourierTransformResult {
-    return computeNumericalFourierTransform(boundStateResult, mass, this.height, numMomentumPoints, pMax);
   }
 }
 

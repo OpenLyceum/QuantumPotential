@@ -13,12 +13,13 @@ import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Line, Node, Path, Text } from "scenerystack/scenery";
+import { Line, Node, Path, RichText, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
 import type { PotentialType } from "../model/PotentialFunction.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
+import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import { createDoubleArrowShape } from "./RMSIndicatorUtils.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
@@ -54,7 +55,12 @@ export class WavenumberChartNode extends Node {
   private readonly axesNode: Node;
   private readonly titleLabel: Text;
   private readonly avgWavenumberLabel: Text;
-  private readonly rmsWavenumberLabel: Text;
+  private readonly rmsWavenumberLabel: RichText;
+
+  // X-axis ticks, re-spaced whenever the displayed k range changes
+  private xTickMarkSet: TickMarkSet | null = null;
+  private xTickLabelSet: TickLabelSet | null = null;
+  private xTickSpacing = 2;
 
   // Guard flag to prevent reentry during updates
   private isUpdating: boolean = false;
@@ -172,7 +178,7 @@ export class WavenumberChartNode extends Node {
     });
     this.addChild(this.avgWavenumberLabel);
 
-    this.rmsWavenumberLabel = new Text("", {
+    this.rmsWavenumberLabel = new RichText("", {
       font: new PhetFont(12),
       fill: QPPWColors.labelFillProperty,
       left: this.chartMargins.left + 10,
@@ -228,11 +234,10 @@ export class WavenumberChartNode extends Node {
   private createAxes(): Node {
     const axesNode = new Node();
 
-    // Y-axis at left edge using bamboo AxisLine
-    const yAxisLeftNode = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
+    // Y-axis at the left edge of the plot, which stays put as the k range follows the data
+    const yAxisLeftNode = new Line(0, 0, 0, this.plotHeight, {
       stroke: QPPWColors.axisProperty,
       lineWidth: 2,
-      value: this.kMinProperty.value,
     });
     yAxisLeftNode.x = this.chartMargins.left;
     yAxisLeftNode.y = this.chartMargins.top;
@@ -259,8 +264,8 @@ export class WavenumberChartNode extends Node {
     xAxisNode.y = this.chartMargins.top;
     axesNode.addChild(xAxisNode);
 
-    // X-axis tick marks
-    const xTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
+    // X-axis tick marks; spacing adapts to the k range (see updateViewRange)
+    const xTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.HORIZONTAL, this.xTickSpacing, {
       edge: "max",
       extent: 8,
       stroke: QPPWColors.axisProperty,
@@ -269,12 +274,13 @@ export class WavenumberChartNode extends Node {
     xTickMarksNode.x = this.chartMargins.left;
     xTickMarksNode.y = this.chartMargins.top + this.plotHeight;
     axesNode.addChild(xTickMarksNode);
+    this.xTickMarkSet = xTickMarksNode;
 
     // X-axis tick labels
-    const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
+    const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, this.xTickSpacing, {
       edge: "max",
       createLabel: (value: number) =>
-        new Text(value.toFixed(0), {
+        new Text(this.formatXTickLabel(value), {
           font: new PhetFont(12),
           fill: QPPWColors.labelFillProperty,
         }),
@@ -282,14 +288,15 @@ export class WavenumberChartNode extends Node {
     xTickLabelsNode.x = this.chartMargins.left;
     xTickLabelsNode.y = this.chartMargins.top + this.plotHeight;
     axesNode.addChild(xTickLabelsNode);
+    this.xTickLabelSet = xTickLabelsNode;
 
-    // Y-axis label
+    // Y-axis label, hugging the plot since this axis has no tick labels
     const yAxisLabel = new Text("|φ(k)|² (nm)", {
       font: new PhetFont(14),
       fill: QPPWColors.labelFillProperty,
       rotation: -Math.PI / 2,
-      centerX: this.chartMargins.left - 40,
-      centerY: this.chartHeight / 2,
+      right: this.chartMargins.left - 8,
+      centerY: this.chartMargins.top + this.plotHeight / 2,
     });
     axesNode.addChild(yAxisLabel);
 
@@ -435,9 +442,26 @@ export class WavenumberChartNode extends Node {
     this.yMinProperty.value = 0;
     this.yMaxProperty.value = maxValue * 1.2; // 20% margin
 
+    const spacing = computeTickSpacing(this.kMaxProperty.value - this.kMinProperty.value);
+    if (spacing !== this.xTickSpacing) {
+      this.xTickSpacing = spacing;
+      this.xTickMarkSet?.setSpacing(spacing);
+      this.xTickLabelSet?.setSpacing(spacing);
+      // Label precision depends on the spacing, so drop labels cached under the old spacing
+      this.xTickLabelSet?.invalidateTickLabelSet();
+    }
+
     // Update ChartTransform
     this.chartTransform.setModelXRange(new Range(this.kMinProperty.value, this.kMaxProperty.value));
     this.chartTransform.setModelYRange(new Range(this.yMinProperty.value, this.yMaxProperty.value));
+  }
+
+  /**
+   * Formats an x-axis tick with as many decimals as the current spacing needs (never "-0").
+   */
+  private formatXTickLabel(value: number): string {
+    const decimals = getTickDecimals(this.xTickSpacing);
+    return Math.abs(value) < this.xTickSpacing * 1e-6 ? (0).toFixed(decimals) : value.toFixed(decimals);
   }
 
   /**

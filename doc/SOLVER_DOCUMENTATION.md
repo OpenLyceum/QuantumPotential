@@ -81,7 +81,8 @@ src/common/model/
 │   ├── XGrid.ts                    # Uniform odd grid (nm)
 │   └── NumerovConstants.ts         # ħ in √(eV·mₑ)·nm
 ├── FGHSolver.ts                    # Cross-check
-├── LinearAlgebraUtils.ts           # Matrix diagonalization + FFT (FGH, momentum space)
+├── LinearAlgebraUtils.ts           # Matrix diagonalization + FFT (FGH)
+├── WavenumberTransform.ts          # φ(k) of a solved state by direct quadrature (wavenumber chart)
 ├── PotentialFactory.ts             # Builds analytical solutions
 ├── multiPoschlTellerPotential.ts   # V(x) for the double and multi Pöschl–Teller wells
 └── analytical-solutions/           # One file per closed-form potential, plus the multi-well wrappers

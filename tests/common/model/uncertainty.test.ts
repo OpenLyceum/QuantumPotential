@@ -1,7 +1,7 @@
 /**
  * The harmonic-oscillator ground state is a minimum-uncertainty state, so Δx·Δk = ½ with k the
- * angular wavenumber p/ħ. This pins the units used by the wavenumber chart's description (which
- * plots 1/λ = k/2π and must multiply by 2π before comparing with Heisenberg's bound).
+ * angular wavenumber p/ħ. This pins the units of the wavenumber chart, which plots angular k in nm⁻¹
+ * so that its σₓ·σₖ readouts can be compared with Heisenberg's bound directly.
  */
 
 import { describe, expect, it } from "vitest";
@@ -16,20 +16,18 @@ describe("position–momentum uncertainty", () => {
 
     const boundStates = model.getBoundStates()!;
     const position = model.getWavefunctionInNmUnits(1)!;
-    const transform = model.getWavenumberTransform()!;
+    const transform = model.getWavenumberTransform(0)!;
 
     const xNm = boundStates.xGrid.map((x) => x * 1e9);
     const deltaX = calculateRMSStatistics(xNm, position.probabilityDensity)!.rms; // nm
 
     const kRadPerNm = transform.kGrid.map((k) => k * 1e-9);
-    const phi = transform.wavenumberWavefunctions[0]!;
-    const deltaK = calculateRMSStatistics(
-      kRadPerNm,
-      phi.map((value) => value * value),
-    )!.rms; // rad/nm
+    const deltaK = calculateRMSStatistics(kRadPerNm, transform.density)!.rms; // rad/nm
 
     expect(deltaX * deltaK).toBeCloseTo(0.5, 2);
     expect(model.getWavenumberDistribution(0)?.uncertaintyProduct).toBeCloseTo(0.5, 2);
+    // The chart shows angular k, so its σₖ readout is Δk itself
+    expect(model.getWavenumberDistribution(0)?.spread).toBeCloseTo(deltaK, 6);
     expect(model.getPositionStatistics(0)?.rms).toBeCloseTo(deltaX, 8);
     model.dispose();
   });
