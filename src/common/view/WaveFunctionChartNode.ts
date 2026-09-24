@@ -597,8 +597,11 @@ export class WaveFunctionChartNode extends Node {
     const xLabelText = new Text(stringManager.positionNmStringProperty, {
       font: new PhetFont(14),
       fill: QPPWColors.labelFillProperty,
-      centerX: this.chartWidth / 2,
       centerY: this.chartHeight - 15,
+    });
+    // Center on the plot area (not the whole chart), and keep it centered when the locale changes.
+    xLabelText.localBoundsProperty.link(() => {
+      xLabelText.centerX = this.chartMargins.left + this.plotWidth / 2;
     });
     axesNode.addChild(xLabelText);
 
@@ -726,8 +729,7 @@ export class WaveFunctionChartNode extends Node {
     } else {
       this.yAxisLabel.string = a11y.visible.waveFunctionAxisStringProperty.value;
     }
-    // Leave room for the state and indicator labels at the top of the plot.
-    this.yAxisLabel.centerY = this.chartMargins.top + this.plotHeight / 2 + 30;
+    this.yAxisLabel.centerY = this.chartMargins.top + this.plotHeight / 2;
   }
 
   /**
