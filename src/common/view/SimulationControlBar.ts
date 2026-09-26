@@ -5,6 +5,7 @@
 
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { Dimension2, Range } from "scenerystack/dot";
+import { StringUtils } from "scenerystack/phetcommon";
 import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
 import { HSlider } from "scenerystack/sun";
@@ -33,7 +34,7 @@ export class SimulationControlBar extends Node {
 
     const formattedTimeProperty = new DerivedProperty(
       [this.model.timeProperty, stringManager.timeFormatStringProperty],
-      (time, format) => format.replace("{{time}}", time.toFixed(2)),
+      (time, format) => StringUtils.fillIn(format, { time: time.toFixed(2) }),
     );
     this.timeText = new Text(formattedTimeProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
@@ -67,9 +68,7 @@ export class SimulationControlBar extends Node {
 
           // PDOM
           innerContent: a11y.controls.stepForwardStringProperty,
-          // TODO: Add helpText when PhET accessibility is fully configured
-          // helpText:
-          //   "Step forward one frame in time. Advances wavefunction by small time increment.",
+          accessibleHelpText: a11y.controls.stepForwardHelpStringProperty,
         },
         stepBackwardButtonOptions: {
           ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS.stepBackwardButtonOptions,
@@ -82,9 +81,7 @@ export class SimulationControlBar extends Node {
 
           // PDOM
           innerContent: a11y.controls.stepBackwardStringProperty,
-          // TODO: Add helpText when PhET accessibility is fully configured
-          // helpText:
-          //   "Step backward one frame in time. Reverses wavefunction by small time increment.",
+          accessibleHelpText: a11y.controls.stepBackwardHelpStringProperty,
         },
         playPauseButtonOptions: {
           ...FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS.playPauseButtonOptions,
@@ -93,9 +90,7 @@ export class SimulationControlBar extends Node {
             [this.model.isPlayingProperty, a11y.controls.pauseStringProperty, a11y.controls.playStringProperty],
             (isPlaying, pause, play) => (isPlaying ? pause : play),
           ),
-          // TODO: Add helpText when PhET accessibility is fully configured
-          // helpText:
-          //   "Start or stop time evolution of the wavefunction. Keyboard shortcut: Space bar.",
+          accessibleHelpText: a11y.controls.playPauseHelpStringProperty,
         },
       },
     });

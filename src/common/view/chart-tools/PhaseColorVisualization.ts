@@ -104,7 +104,7 @@ export class PhaseColorVisualization extends Node {
   /**
    * Plot phase-colored superposition from real and imaginary parts
    */
-  public plotSuperposition(xGrid: number[], realPart: number[], imagPart: number[]): void {
+  public plotSuperposition(xGrid: readonly number[], realPart: readonly number[], imagPart: readonly number[]): void {
     const { dataToViewX, dataToViewY } = this.options;
     const y0 = dataToViewY(0);
     const numStrips = xGrid.length - 1;

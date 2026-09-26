@@ -19,9 +19,9 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 |---|---|
 | Screen models | `src/{intro,one-well,two-wells,many-wells}/model/*Model.ts`, all extending `src/common/model/BaseModel.ts`; Intro and One Well share `SingleWellModel.ts` (bound states, turning points, classical probability) |
 | Solver facade | `src/common/model/Schrodinger1DSolver.ts` — analytical when possible, else Numerov (`?numericalMethod=fgh` for the FGH cross-check); converts SI ↔ the solver's nm/eV/mₑ. `PotentialFactory` builds the closed-form solution for each single-well type |
-| Numerical solver | `src/common/model/numerov/` (Numerov shooting, ported from PhET *Quantum Bound States*); `FGHSolver.ts` kept as a cross-check |
+| Numerical solver | `src/common/model/numerov/` (Numerov shooting, ported from PhET *Quantum Bound States*); `FGHSolver.ts` kept as a cross-check, loaded on demand (`Schrodinger1DSolver.loadFGH()`) so it stays out of the main bundle |
 | Closed-form solutions | `src/common/model/analytical-solutions/` (one file per potential, each an `AnalyticalSolution` subclass plus standalone helpers); `multiPoschlTellerPotential.ts` for the smooth multi-well V(x); `ClassicalProbability.ts` for the regularized 1/v density every potential shares |
-| Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/` |
+| Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/`; `StatisticsIndicator` draws the ⟨q⟩ ± σ overlay on the probability-density and wavenumber charts |
 | Layout | `BaseScreenView.createStandardLayout` (One/Two/Many Wells): QBS-style energy chart over the wave-function chart (shared x axis), energy panel + graph panel on the right, time controls below |
 | Control panels | `src/common/view/ControlPanelNode.ts` builds `energyPanel` + `graphPanel`; `src/intro/view/IntroControlPanelNode.ts` (Intro); `QPPWNumberControl` (◀ value ▶ spinner) |
 | Potential handles | `src/common/view/handles/` — `PotentialHandleNode` (drag + accessible slider), `PotentialHandlesLayer` (per-potential anchors) |
@@ -56,6 +56,14 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 - **Per-screen defaults go through the `BaseModel` constructor** (`BaseModelOptions`: potential type,
   well width + range, superposition config) so every Property's `reset()` returns to the screen's own
   default. Don't assign defaults after `super()`.
+- **ψ(x,t) is cached per frame.** `getTimeEvolvedSuperposition(t)` (and its `…InNmUnits` twin) is cached on
+  (bound states, superposition config, t), so the chart, its y-range fit and the tools share one evaluation.
+  The returned arrays are shared and typed `readonly`; never mutate them. Views get t from
+  `model.getTimeInSeconds()` (`timeProperty` is in fs; one wall-clock second is one fs at normal speed).
+- **Derivatives and extrema work for every potential.** `getWavefunctionAtPosition`,
+  `getWavefunction{First,Second}Derivative` and `getWavefunctionMinMax` use the analytical solution when there
+  is one, and otherwise central differences on the solved grid (extrema refined by a parabola through three
+  samples). The double square well and the Two/Many Wells potentials take the grid path.
 - **Selected-level clamping happens in `step()`**, not while computing bound states (that re-entered
   `selectedEnergyLevelIndexProperty`'s own notification). Views must treat an index ≥ the number of
   states as "nothing selected" for up to one frame.
@@ -72,8 +80,12 @@ Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
 
 - **m → nm wavefunction conversion divides by √(10⁹)** — `psi / Math.sqrt(M_TO_NM)` preserves
   ∫|ψ|² dx = 1. Multiplying produces ~10¹⁸ values (`BaseModel.getWavefunctionInNmUnits`, `getTimeEvolvedSuperpositionInNmUnits`).
-- **Chart constructors use `lazyLink` and defer the first `update()`** (`setTimeout(…, 0)`).
-  Synchronous `link()` lets charts cross-trigger during construction and hang the sim.
+- **Chart constructors use `lazyLink` and defer the first `update()`** to a microtask (a `CoalescedUpdate`,
+  or `queueMicrotask` in `EnergyChartNode`). Synchronous `link()` lets charts cross-trigger during
+  construction and hang the sim. Parameter and display-toggle changes also go through `CoalescedUpdate`, so
+  a reset or potential switch redraws once; only time evolution redraws synchronously, once per frame.
+- **Chart readouts must follow the locale.** Use `PatternStringProperty` / `StringUtils.fillIn` (never
+  `.value.replace("{{…}}")`), and rebuild imperatively set labels on `localeProperty` changes.
 - **Classical probability 1/√(E − V) is singular at turning points** — regularize with a *relative*
   epsilon (1% of max kinetic energy), never an absolute one. The closed-form harmonic-oscillator
   classical density is unusable for the same reason.
@@ -143,7 +155,9 @@ Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expo
 | `tests/common/model/analytical-vs-numerical.test.ts` | Pöschl–Teller, Rosen–Morse, Eckart spectra vs fine-grid Numerov |
 | `tests/common/model/numerov-solver.test.ts` | Numerov invariants, closed-form spectra, tilted wells, FGH cross-check |
 | `tests/common/model/{coulomb-1d-analytical,coherent-state,localized-wave-packet}.test.ts` | Coulomb, coherent-state and wave-packet physics |
-| `tests/common/model/{bound-state-cache,wavefunction-derivatives,uncertainty,fft}.test.ts` | Model and solver regressions |
+| `tests/common/model/{bound-state-cache,uncertainty,fft}.test.ts` | Model and solver regressions |
+| `tests/common/model/wavefunction-derivatives.test.ts` | Grid fallbacks: curvature, central-difference ψ′, extrema, derivative arrays |
+| `tests/common/model/time-evolved-superposition.test.ts` | ψ(x,t) cache hits/invalidation; norm kept over time (analytical and Numerov) |
 | `tests/common/model/wavenumber-transform.test.ts` | φ(k) matches the closed-form infinite-well spectrum; Δx·Δk for the oscillator and every single well |
 | `tests/common/view/{coalesced-update,phase-colormap}.test.ts` | View helpers |
 | `tests/accuracy/` | Hand-run accuracy scripts (see carve-outs) |

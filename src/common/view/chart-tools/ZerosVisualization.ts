@@ -70,7 +70,7 @@ export class ZerosVisualization extends Node {
   /**
    * Update the visualization with new wavefunction data
    */
-  public update(xGrid: number[], wavefunction: number[]): void {
+  public update(xGrid: readonly number[], wavefunction: readonly number[]): void {
     // Clear existing zeros
     this.container.removeAllChildren();
 
@@ -110,7 +110,7 @@ export class ZerosVisualization extends Node {
    * Finds zeros (sign changes) in the wavefunction.
    * Uses linear interpolation for accurate zero positions.
    */
-  private findZeros(xGrid: number[], wavefunction: number[]): number[] {
+  private findZeros(xGrid: readonly number[], wavefunction: readonly number[]): number[] {
     const zeros: number[] = [];
 
     for (let i = 0; i < wavefunction.length - 1; i++) {

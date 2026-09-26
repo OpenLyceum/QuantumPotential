@@ -13,7 +13,7 @@ import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
 import { StringUtils } from "scenerystack/phetcommon";
-import { Line, Node, Path, RichText, Text } from "scenerystack/scenery";
+import { Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 import QPPWColors from "../../QPPWColors.js";
@@ -21,8 +21,8 @@ import type { PotentialType } from "../model/PotentialFunction.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
-import { createDoubleArrowShape } from "./RMSIndicatorUtils.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
+import { StatisticsIndicator } from "./StatisticsIndicator.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -51,11 +51,9 @@ export class WavenumberChartNode extends Node {
   private readonly plotContentNode: Node; // Clipped container for plot content
   private readonly wavenumberPath: Path;
   private readonly zeroLine: Line;
-  private readonly rmsIndicator: Path; // Double arrow indicator for RMS wavenumber
+  private readonly wavenumberStatistics: StatisticsIndicator; // ±σₖ arrow and the ⟨k⟩, σₖ readouts
   private readonly axesNode: Node;
   private readonly titleLabel: Text;
-  private readonly avgWavenumberLabel: Text;
-  private readonly rmsWavenumberLabel: RichText;
 
   // X-axis ticks, re-spaced whenever the displayed k range changes
   private xTickMarkSet: TickMarkSet | null = null;
@@ -161,30 +159,14 @@ export class WavenumberChartNode extends Node {
     });
     this.plotContentNode.addChild(this.wavenumberPath);
 
-    // Create RMS wavenumber indicator (double arrow)
-    this.rmsIndicator = new Path(null, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
-      lineWidth: 2,
-      fill: QPPWColors.energyLevelSelectedProperty,
+    // RMS spread arrow and the average and RMS readouts
+    this.wavenumberStatistics = new StatisticsIndicator(this.plotContentNode, this, {
+      averagePatternStringProperty: stringManager.averageWavenumberLabelStringProperty,
+      spreadPatternStringProperty: stringManager.rmsWavenumberLabelStringProperty,
+      showAverageLine: false,
+      labelLeft: this.chartMargins.left + 10,
+      labelTop: this.chartMargins.top + 5,
     });
-    this.plotContentNode.addChild(this.rmsIndicator);
-
-    // Create labels for average and RMS wavenumber
-    this.avgWavenumberLabel = new Text("", {
-      font: new PhetFont(12),
-      fill: QPPWColors.labelFillProperty,
-      left: this.chartMargins.left + 10,
-      top: this.chartMargins.top + 5,
-    });
-    this.addChild(this.avgWavenumberLabel);
-
-    this.rmsWavenumberLabel = new RichText("", {
-      font: new PhetFont(12),
-      fill: QPPWColors.labelFillProperty,
-      left: this.chartMargins.left + 10,
-      top: this.chartMargins.top + 25,
-    });
-    this.addChild(this.rmsWavenumberLabel);
 
     // Ensure axes are on top of the clipped plot content
     this.axesNode.moveToFront();
@@ -316,20 +298,15 @@ export class WavenumberChartNode extends Node {
    * Links chart updates to model property changes.
    */
   private linkToModel(): void {
-    const potentialUpdate = new CoalescedUpdate(() => this.update());
-    this.model.potentialRevisionProperty.lazyLink(() => potentialUpdate.schedule());
-    this.model.selectedEnergyLevelIndexProperty.lazyLink(() => this.update());
+    const scheduledUpdate = new CoalescedUpdate(() => this.update());
+    const scheduleUpdate = () => scheduledUpdate.schedule();
+    this.model.potentialRevisionProperty.lazyLink(scheduleUpdate);
+    this.model.selectedEnergyLevelIndexProperty.lazyLink(scheduleUpdate);
+    this.viewState?.showRMSIndicatorProperty.lazyLink(scheduleUpdate);
 
-    // Update visibility of RMS indicators
-    this.viewState?.showRMSIndicatorProperty.lazyLink(() => {
-      this.update();
-    });
-
-    // Perform initial update asynchronously (after construction completes)
-    // This prevents blocking the page load with expensive calculations
-    setTimeout(() => {
-      this.update();
-    }, 0);
+    // The first draw runs once construction has finished (a synchronous draw here let charts cross-trigger
+    // while they were being built)
+    scheduleUpdate();
   }
 
   /**
@@ -355,9 +332,7 @@ export class WavenumberChartNode extends Node {
       if (!distribution) {
         // Clear the chart if no data available
         this.wavenumberPath.shape = null;
-        this.rmsIndicator.shape = null;
-        this.avgWavenumberLabel.string = "";
-        this.rmsWavenumberLabel.string = "";
+        this.wavenumberStatistics.hide();
         return;
       }
 
@@ -374,29 +349,15 @@ export class WavenumberChartNode extends Node {
       // Calculate and display average and RMS wavenumber
       // Only show indicators if showRMSIndicatorProperty is true and the distribution has a mean and spread
       if (this.shouldShowRMSIndicators()) {
-        const { average: avg, spread: rms } = distribution;
-        this.avgWavenumberLabel.string = stringManager.averageWavenumberLabelStringProperty.value.replace(
-          "{{value}}",
-          avg.toFixed(2),
-        );
-        this.rmsWavenumberLabel.string = stringManager.rmsWavenumberLabelStringProperty.value.replace(
-          "{{value}}",
-          rms.toFixed(2),
-        );
-
-        // Update RMS indicator: horizontal double arrow from (avg - rms) to (avg + rms)
-        const leftK = avg - rms;
-        const rightK = avg + rms;
-        const x1 = this.dataToViewX(leftK);
-        const x2 = this.dataToViewX(rightK);
-        // Position the indicator at 20% from the top of the visible range
-        const indicatorY = this.dataToViewY(this.yMaxProperty.value * 0.8);
-        this.rmsIndicator.shape = createDoubleArrowShape(x1, x2, indicatorY);
+        this.wavenumberStatistics.show(distribution.average, distribution.spread, {
+          dataToViewX: (k) => this.dataToViewX(k),
+          yTop: this.dataToViewY(this.yMaxProperty.value),
+          yBottom: this.dataToViewY(this.yMinProperty.value),
+          // The arrow sits 20% below the top of the visible range
+          arrowY: this.dataToViewY(this.yMaxProperty.value * 0.8),
+        });
       } else {
-        // Hide indicators when checkbox is unchecked
-        this.avgWavenumberLabel.string = "";
-        this.rmsWavenumberLabel.string = "";
-        this.rmsIndicator.shape = null;
+        this.wavenumberStatistics.hide();
       }
     } finally {
       this.isUpdating = false;

@@ -12,7 +12,7 @@ import qppw from "../../QPPWNamespace.js";
 import Logger from "../utils/Logger.js";
 import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
-import { solveFGH } from "./FGHSolver.js";
+import type { solveFGH } from "./FGHSolver.js";
 import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.js";
 import { NumericalMethod } from "./NumericalMethod.js";
 import NumerovSolver from "./numerov/NumerovSolver.js";
@@ -26,6 +26,12 @@ import {
   type WellParameters,
 } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
+
+/**
+ * The FGH cross-check, once loadFGH() has fetched it. FGH and its dense linear algebra are only used behind
+ * ?numericalMethod=fgh, so they are split out of the main bundle.
+ */
+let solveFGHModule: typeof solveFGH | null = null;
 
 /** Samples per cell for cellAveragedPotential (midpoint rule). */
 const CELL_AVERAGE_SAMPLES = 16;
@@ -72,6 +78,14 @@ export class Schrodinger1DSolver {
    */
   constructor(method: NumericalMethod = NumericalMethod.NUMEROV) {
     this.numericalMethod = method;
+  }
+
+  /**
+   * Loads the FGH cross-check solver. Call (and await) this before solving with NumericalMethod.FGH; until it
+   * resolves, an FGH solver falls back to Numerov.
+   */
+  public static async loadFGH(): Promise<void> {
+    solveFGHModule ??= (await import("./FGHSolver.js")).solveFGH;
   }
 
   /**
@@ -216,9 +230,13 @@ export class Schrodinger1DSolver {
     gridConfig: GridConfig,
     energyRange?: [number, number],
   ): BoundStateResult {
-    return this.numericalMethod === NumericalMethod.FGH
-      ? this.solveFGH(pointPotential, mass, numStates, gridConfig)
-      : this.solveNumerov(pointPotential, mass, numStates, gridConfig, energyRange);
+    if (this.numericalMethod === NumericalMethod.FGH) {
+      if (solveFGHModule) {
+        return this.solveFGH(solveFGHModule, pointPotential, mass, numStates, gridConfig);
+      }
+      Logger.warn("FGH solver requested before Schrodinger1DSolver.loadFGH() resolved; using Numerov");
+    }
+    return this.solveNumerov(pointPotential, mass, numStates, gridConfig, energyRange);
   }
 
   private solveNumerov(
@@ -283,6 +301,7 @@ export class Schrodinger1DSolver {
   }
 
   private solveFGH(
+    solve: typeof solveFGH,
     pointPotential: PotentialFunction,
     mass: number,
     numStates: number,
@@ -293,7 +312,7 @@ export class Schrodinger1DSolver {
     // Evaluate the potential as its average over each grid cell rather than at the grid point, so the
     // effective width of a step potential does not depend on where its edges fall between samples.
     const cellWidth = (gridConfig.xMax - gridConfig.xMin) / (FGH_GRID_POINTS - 1);
-    return solveFGH(cellAveragedPotential(pointPotential, cellWidth), mass, numStates, fghGridConfig, false);
+    return solve(cellAveragedPotential(pointPotential, cellWidth), mass, numStates, fghGridConfig, false);
   }
 
   /**

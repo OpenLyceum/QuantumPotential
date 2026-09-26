@@ -630,15 +630,15 @@ export class EnergyChartNode extends BaseChartNode {
     });
 
     // Update classical probability visualization when property changes
-    this.viewState.showClassicalProbabilityProperty.lazyLink(() => this.update());
+    this.viewState.showClassicalProbabilityProperty.lazyLink(() => this.potentialUpdate.schedule());
 
-    // Perform initial updates asynchronously (after construction completes)
-    // This prevents blocking the page load with expensive calculations
-    setTimeout(() => {
+    // The first draw runs once construction has finished (a synchronous draw here let charts cross-trigger
+    // while they were being built)
+    queueMicrotask(() => {
       this.updateEnergyAxisRange();
       this.update();
       this.updateSelection();
-    }, 0);
+    });
   }
 
   /**

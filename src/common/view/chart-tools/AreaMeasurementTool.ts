@@ -458,11 +458,11 @@ export class AreaMeasurementTool extends Node {
     const superpositionType = this.model.superpositionTypeProperty.value;
     const isSuperposition = superpositionType !== SuperpositionType.SINGLE;
 
-    let probabilityDensity: number[];
+    let probabilityDensity: readonly number[];
 
     if (isSuperposition) {
       // Get superposition probability density in nm units
-      const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
+      const time = this.model.getTimeInSeconds();
       const nmData = this.model.getTimeEvolvedSuperpositionInNmUnits(time);
       if (!nmData) {
         return shape; // Return empty shape
@@ -544,7 +544,7 @@ export class AreaMeasurementTool extends Node {
     const isSuperposition = superpositionType !== SuperpositionType.SINGLE;
 
     const selectedIndex = this.model.selectedEnergyLevelIndexProperty.value;
-    const time = this.model.timeProperty.value * 1e-15; // Convert fs to seconds
+    const time = this.model.getTimeInSeconds();
 
     // Use model's calculation method
     return this.model.getProbabilityInRegion(xStart, xEnd, selectedIndex, time, isSuperposition);

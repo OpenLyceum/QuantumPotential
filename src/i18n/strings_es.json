@@ -283,7 +283,17 @@
       "pause": "Pausa",
       "animationSpeed": "Velocidad de la animación",
       "slow": "Lenta",
-      "veryFast": "Muy rápida"
+      "veryFast": "Muy rápida",
+      "stepForwardHelp": "Avanzar el tiempo un pequeño paso mientras la simulación está en pausa.",
+      "stepBackwardHelp": "Retroceder el tiempo un pequeño paso mientras la simulación está en pausa.",
+      "playPauseHelp": "Iniciar o detener la evolución temporal de la función de onda.",
+      "displayModeHelp": "Elegir cómo se muestra la función de onda: densidad de probabilidad, partes real e imaginaria, o fase como color.",
+      "showClassicalProbabilityHelp": "Superponer dónde se encontraría una partícula clásica con la misma energía, para compararla con la densidad de probabilidad cuántica.",
+      "showRealPartHelp": "Mostrar la parte real de la función de onda, que oscila entre valores positivos y negativos con el tiempo.",
+      "showImaginaryPartHelp": "Mostrar la parte imaginaria de la función de onda, que oscila desfasada un cuarto de periodo respecto a la parte real.",
+      "showMagnitudeHelp": "Mostrar el módulo de la función de onda, la raíz cuadrada de la densidad de probabilidad.",
+      "showPhaseHelp": "Colorear el área bajo el módulo según la fase de la función de onda, que gira con el tiempo.",
+      "resetAllHelp": "Devolver todos los parámetros y controles de esta pantalla a su valor inicial."
     },
     "sliderHelpPattern": "Ajuste {{parameter}}. {{effect}} Use las flechas izquierda/derecha para cambios pequeños, Mayús+flecha para un ajuste fino, Re Pág/Av Pág para pasos grandes, Inicio para el mínimo y Fin para el máximo.",
     "parameterChangedPattern": "{{parameter}}: {{value}} {{unit}}.",

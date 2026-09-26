@@ -62,7 +62,9 @@ it; every other potential is analytical.
 
 **FGH (Fourier Grid Hamiltonian)** is kept as a developer cross-check: `?numericalMethod=fgh`. It builds
 the Hamiltonian on a 256-point periodic grid, with the kinetic energy diagonal in k-space, and
-diagonalizes it densely.
+diagonalizes it densely. It is a separate chunk loaded by `Schrodinger1DSolver.loadFGH()`: the sim awaits it
+at startup when the query parameter asks for FGH, and code that solves with FGH through the facade (tests)
+must await it first; until then the facade falls back to Numerov.
 
 The earlier DVR, spectral, matrix-Numerov, shooting and "QuantumBound" solvers, and the Preferences
 controls that chose between them, have been removed.
@@ -80,7 +82,7 @@ src/common/model/
 │   ├── WaveFunctionNormalizer.ts   # Trapezoidal normalization
 │   ├── XGrid.ts                    # Uniform odd grid (nm)
 │   └── NumerovConstants.ts         # ħ in √(eV·mₑ)·nm
-├── FGHSolver.ts                    # Cross-check
+├── FGHSolver.ts                    # Cross-check (dynamically imported)
 ├── LinearAlgebraUtils.ts           # Matrix diagonalization + FFT (FGH)
 ├── WavenumberTransform.ts          # φ(k) of a solved state by direct quadrature (wavenumber chart)
 ├── PotentialFactory.ts             # Builds analytical solutions

@@ -39,3 +39,45 @@ describe("wavefunction derivatives (finite-difference fallback)", () => {
     model.dispose();
   });
 });
+
+describe("grid fallbacks for potentials without a closed form", () => {
+  it("locates the ground-state peak, where the central-difference ψ′ vanishes", () => {
+    const model = new ManyWellsModel();
+    const { xGrid, wavefunctions } = model.getBoundStates()!;
+    const psi = wavefunctions[0]!;
+    const h = (xGrid[1]! - xGrid[0]!) * 1e9; // nm
+
+    let peak = 0;
+    for (let i = 0; i < psi.length; i++) {
+      if (Math.abs(psi[i]!) > Math.abs(psi[peak]!)) {
+        peak = i;
+      }
+    }
+    const peakNm = xGrid[peak]! * 1e9;
+
+    const extrema = model.getWavefunctionMinMax(1, -4, 4);
+    expect(extrema).not.toBeNull();
+    const nearest = extrema!.extremaPositions.reduce((best, x) =>
+      Math.abs(x - peakNm) < Math.abs(best - peakNm) ? x : best,
+    );
+    expect(Math.abs(nearest - peakNm)).toBeLessThanOrEqual(h);
+
+    // At the refined extremum ψ′ ≈ 0 to second order in h; a forward difference would be off by ~h|ψ″|/2 there
+    const at = model.getWavefunctionAtPosition(0, nearest)!;
+    expect(Math.abs(at.firstDerivative)).toBeLessThan(0.05 * h * Math.abs(at.secondDerivative));
+    model.dispose();
+  });
+
+  it("returns first and second derivative arrays on the solved grid", () => {
+    const model = new ManyWellsModel();
+    const { xGrid } = model.getBoundStates()!;
+    const first = model.getWavefunctionFirstDerivative(1);
+    const second = model.getWavefunctionSecondDerivative(1);
+    expect(first).toHaveLength(xGrid.length);
+    expect(second).toHaveLength(xGrid.length);
+    // Interior points are finite; only the outermost cells lack a central difference
+    expect(first!.slice(2, -3).every(Number.isFinite)).toBe(true);
+    expect(second!.slice(2, -3).every(Number.isFinite)).toBe(true);
+    model.dispose();
+  });
+});

@@ -42,6 +42,11 @@ const QuantumConstants = {
    * Meters to nanometer conversion
    */
   M_TO_NM: 1e9,
+
+  /**
+   * Femtoseconds to seconds conversion (the models keep time in femtoseconds)
+   */
+  FS_TO_S: 1e-15,
 };
 
 qppw.register("QuantumConstants", QuantumConstants);

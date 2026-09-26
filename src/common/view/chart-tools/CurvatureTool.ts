@@ -183,21 +183,8 @@ export class CurvatureTool extends Node {
       }
     });
 
-    // Invalidate cache when model parameters change
-    model.potentialTypeProperty.lazyLink(() => this.invalidateCache());
-    model.wellWidthProperty.lazyLink(() => this.invalidateCache());
-    model.wellDepthProperty.lazyLink(() => this.invalidateCache());
-    model.particleMassProperty.lazyLink(() => this.invalidateCache());
-
-    // Check for optional properties using type guards
-    if ("wellOffsetProperty" in model) {
-      (model as { wellOffsetProperty: NumberProperty }).wellOffsetProperty.lazyLink(() => this.invalidateCache());
-    }
-    if ("wellSeparationProperty" in model) {
-      (model as { wellSeparationProperty: NumberProperty }).wellSeparationProperty.lazyLink(() =>
-        this.invalidateCache(),
-      );
-    }
+    // Invalidate the cache whenever the potential or its eigenstates change
+    model.potentialRevisionProperty.lazyLink(() => this.invalidateCache());
   }
 
   /**

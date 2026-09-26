@@ -454,9 +454,7 @@ export class ControlPanelNode {
 
         // PDOM
         accessibleName: a11y.controls.displayModeStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Choose how to visualize the wavefunction. Use arrow keys to navigate options, Space or Enter to select.",
+        accessibleHelpText: a11y.controls.displayModeHelpStringProperty,
       },
     );
 
@@ -474,9 +472,7 @@ export class ControlPanelNode {
 
               // PDOM
               labelContent: a11y.controls.showClassicalProbabilityStringProperty,
-              // TODO: Add helpText when PhET accessibility is fully configured
-              // helpText:
-              //   "Toggle visibility of classical probability distribution. Shows where a classical particle would be found, for comparison with quantum probability.",
+              accessibleHelpText: a11y.controls.showClassicalProbabilityHelpStringProperty,
             },
           )
         : null;
@@ -521,9 +517,7 @@ export class ControlPanelNode {
 
         // PDOM
         labelContent: a11y.controls.showRealPartStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Toggle visibility of real component of wavefunction. Real part oscillates between positive and negative values.",
+        accessibleHelpText: a11y.controls.showRealPartHelpStringProperty,
       },
     );
 
@@ -536,9 +530,7 @@ export class ControlPanelNode {
 
         // PDOM
         labelContent: a11y.controls.showImaginaryPartStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Toggle visibility of imaginary component of wavefunction. Imaginary part oscillates 90 degrees out of phase with real part.",
+        accessibleHelpText: a11y.controls.showImaginaryPartHelpStringProperty,
       },
     );
 
@@ -551,9 +543,7 @@ export class ControlPanelNode {
 
         // PDOM
         labelContent: a11y.controls.showMagnitudeStringProperty,
-        // TODO: Add helpText when PhET accessibility is fully configured
-        // helpText:
-        //   "Toggle visibility of wavefunction magnitude. Magnitude equals square root of probability density.",
+        accessibleHelpText: a11y.controls.showMagnitudeHelpStringProperty,
       },
     );
 
@@ -590,9 +580,7 @@ export class ControlPanelNode {
 
       // PDOM
       labelContent: a11y.controls.showPhaseStringProperty,
-      // TODO: Add helpText when PhET accessibility is fully configured
-      // helpText:
-      //   "Toggle visibility of quantum phase angle. Phase rotates continuously during time evolution.",
+      accessibleHelpText: a11y.controls.showPhaseHelpStringProperty,
     });
 
     const waveFunctionCheckboxes = new VBox({

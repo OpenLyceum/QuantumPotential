@@ -283,7 +283,17 @@
       "pause": "Pause",
       "animationSpeed": "Animation Speed",
       "slow": "Slow",
-      "veryFast": "Very Fast"
+      "veryFast": "Very Fast",
+      "stepForwardHelp": "Advance time by one small step while paused.",
+      "stepBackwardHelp": "Move time back by one small step while paused.",
+      "playPauseHelp": "Start or stop the time evolution of the wave function.",
+      "displayModeHelp": "Choose how the wave function is shown: probability density, real and imaginary parts, or phase as color.",
+      "showClassicalProbabilityHelp": "Overlay where a classical particle with the same energy would be found, for comparison with the quantum probability density.",
+      "showRealPartHelp": "Show the real part of the wave function, which oscillates between positive and negative values in time.",
+      "showImaginaryPartHelp": "Show the imaginary part of the wave function, which oscillates a quarter period out of step with the real part.",
+      "showMagnitudeHelp": "Show the magnitude of the wave function, the square root of the probability density.",
+      "showPhaseHelp": "Color the area under the magnitude by the phase of the wave function, which rotates as time evolves.",
+      "resetAllHelp": "Return every parameter and control on this screen to its initial value."
     },
     "sliderHelpPattern": "Adjust {{parameter}}. {{effect}} Use Left/Right arrow keys for small changes, Shift+Arrow for fine control, Page Up/Down for large steps, Home for minimum, End for maximum.",
     "parameterChangedPattern": "{{parameter}} changed to {{value}} {{unit}}.",

@@ -27,11 +27,12 @@ src/
 │   │   ├── LocalizedWavePacket.ts        # Spatial presets projected onto eigenstates
 │   │   ├── analytical-solutions/         # One AnalyticalSolution subclass per closed-form potential
 │   │   ├── numerov/                      # Numerov shooting solver (ported from Quantum Bound States)
-│   │   └── FGHSolver.ts                  # Developer cross-check (?numericalMethod=fgh)
+│   │   └── FGHSolver.ts                  # Developer cross-check (?numericalMethod=fgh), loaded on demand
 │   ├── view/
 │   │   ├── BaseScreenView.ts             # createStandardLayout, screen summary, PDOM order
 │   │   ├── BaseChartNode.ts              # Margins, x range, model↔view transforms
 │   │   ├── {Energy,WaveFunction,Wavenumber}ChartNode.ts
+│   │   ├── StatisticsIndicator.ts        # ⟨q⟩ ± σ overlay (probability density, wavenumber)
 │   │   ├── ControlPanelNode.ts           # Energy panel + graph panel (One/Two/Many Wells)
 │   │   ├── chart-tools/                  # Area, derivative, curvature, zeros, classical overlay, phase
 │   │   ├── handles/                      # Drag handles on the potential curve
@@ -83,17 +84,28 @@ has its own closed-form function. The solver keeps the last `AnalyticalSolution`
 turning points, derivatives, V(x) and the momentum-space transform (`getAnalyticalSolution()`).
 
 `solveNumerical` is a strategy switch between Numerov (default) and FGH, chosen once from
-`?numericalMethod`. See [SOLVER_DOCUMENTATION.md](SOLVER_DOCUMENTATION.md).
+`?numericalMethod`. FGH is imported dynamically: `main.ts` awaits `Schrodinger1DSolver.loadFGH()` before
+launching when `?numericalMethod=fgh` is set (tests call it in `beforeAll`), and an FGH solver used before
+the load resolves falls back to Numerov. See [SOLVER_DOCUMENTATION.md](SOLVER_DOCUMENTATION.md).
+
+Derivatives and extrema (`getWavefunctionAtPosition`, `getWavefunction{First,Second}Derivative`,
+`getWavefunctionMinMax`) come from the `AnalyticalSolution` when there is one. Otherwise they use central
+differences on the solved grid, interpolated to x, with each extremum refined to the vertex of the parabola
+through its three samples.
 
 ### Units
 
 Models and solvers work in SI (m, J, kg). Conversion to nm, eV and nm^(−1/2) happens in the `…InNmUnits`
-queries that views call. `timeProperty` is in femtoseconds; `step(dt)` advances it by `dt × speed`.
+queries that views call. `timeProperty` is in femtoseconds; `step(dt)` advances it by `dt × speed`, so one
+wall-clock second is one femtosecond at normal speed. Views read the time in seconds from
+`getTimeInSeconds()` rather than converting it themselves.
 
 ### Time evolution and superpositions
 
 Eigenstates are stored once; nothing is re-solved as time passes. `getTimeEvolvedSuperposition(t)` sums
-cₙ e^(iφₙ) ψₙ(x) e^(−iEₙt/ħ) on demand. `superpositionConfigProperty` holds the amplitudes and phases.
+cₙ e^(iφₙ) ψₙ(x) e^(−iEₙt/ħ) on demand and caches the result (and its nm-unit version) for the current
+bound states, configuration and t, so every chart and tool that draws a frame shares one evaluation. The
+cached arrays are shared and `readonly`. `superpositionConfigProperty` holds the amplitudes and phases.
 The spatial presets (localized, moving, two-lobed) are defined in position space and projected onto the
 current eigenstates by `LocalizedWavePacket` (cached per bound-state result). The coherent state uses
 closed-form coefficients for the harmonic oscillator.
@@ -104,7 +116,10 @@ closed-form coefficients for the harmonic oscillator.
   the wave-function chart on a shared x axis, with the energy and graph panels on the right and the time
   controls below. Intro builds its own simpler layout.
 - **Charts** extend `BaseChartNode` and draw only what the model returns; they never recompute physics or
-  re-derive the potential.
+  re-derive the potential. Parameter and display-toggle changes are batched through `CoalescedUpdate` (one
+  redraw per change burst, and the first draw after construction); time evolution redraws synchronously.
+  Readouts use `PatternStringProperty`, and imperatively set labels are rebuilt on `localeProperty`
+  changes, so everything follows a language switch.
 - **View state.** Display toggles (which parts of ψ are drawn, display mode, tools) live in the screen's
   `…ViewState`, not in the model.
 - **Handles.** Each geometric parameter is a handle declared by its anchor, its (nm, eV) point on the

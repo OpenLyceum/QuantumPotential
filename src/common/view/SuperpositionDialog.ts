@@ -739,7 +739,7 @@ export class SuperpositionDialog {
         return;
       }
       const max = wave.maxMagnitude || 1;
-      const plot = (values: number[]): Shape => {
+      const plot = (values: readonly number[]): Shape => {
         const shape = new Shape();
         const count = Math.min(values.length, boundStates.xGrid.length);
         let hasPoint = false;

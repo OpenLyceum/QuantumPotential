@@ -5,7 +5,7 @@
  * the Many Wells screen solves — including the tilted (electric field) case, which has no parity symmetry.
  */
 
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   createMultiSquareWellPotential,
   withElectricField,
@@ -133,6 +133,9 @@ describe("Numerov solver", () => {
   it.each([0.3, -0.5])("tilted multi-square well (ℰ = %f V/nm) satisfies the invariants", (field) => {
     expectInvariants(solve(multiWell(4, 0.5, 10, 0.1, field)), false);
   });
+
+  // FGH is split out of the main bundle and must be loaded before it can solve
+  beforeAll(() => Schrodinger1DSolver.loadFGH());
 
   it.each([
     [3, 1.0, 5, 0.2, 0],

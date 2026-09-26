@@ -283,7 +283,17 @@
       "pause": "Pause",
       "animationSpeed": "Vitesse de l'animation",
       "slow": "Lent",
-      "veryFast": "Très rapide"
+      "veryFast": "Très rapide",
+      "stepForwardHelp": "Avancer le temps d’un petit pas lorsque la simulation est en pause.",
+      "stepBackwardHelp": "Reculer le temps d’un petit pas lorsque la simulation est en pause.",
+      "playPauseHelp": "Démarrer ou arrêter l’évolution temporelle de la fonction d’onde.",
+      "displayModeHelp": "Choisir l’affichage de la fonction d’onde : densité de probabilité, parties réelle et imaginaire, ou phase en couleur.",
+      "showClassicalProbabilityHelp": "Superposer l’endroit où se trouverait une particule classique de même énergie, pour comparer avec la densité de probabilité quantique.",
+      "showRealPartHelp": "Afficher la partie réelle de la fonction d’onde, qui oscille entre valeurs positives et négatives au cours du temps.",
+      "showImaginaryPartHelp": "Afficher la partie imaginaire de la fonction d’onde, qui oscille avec un quart de période de décalage par rapport à la partie réelle.",
+      "showMagnitudeHelp": "Afficher le module de la fonction d’onde, la racine carrée de la densité de probabilité.",
+      "showPhaseHelp": "Colorer l’aire sous le module selon la phase de la fonction d’onde, qui tourne au cours du temps.",
+      "resetAllHelp": "Remettre tous les paramètres et contrôles de cet écran à leur valeur initiale."
     },
     "sliderHelpPattern": "Réglez {{parameter}}. {{effect}} Utilisez les flèches gauche/droite pour de petits changements, Maj+flèche pour un réglage fin, Page préc./Page suiv. pour de grands pas, Début pour le minimum et Fin pour le maximum.",
     "parameterChangedPattern": "{{parameter}} : {{value}} {{unit}}.",
