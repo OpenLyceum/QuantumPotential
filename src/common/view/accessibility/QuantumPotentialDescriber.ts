@@ -1,5 +1,5 @@
 /**
- * QPPWDescriber turns simulation state into localized accessible text: names and physics
+ * QuantumPotentialDescriber turns simulation state into localized accessible text: names and physics
  * descriptions of potentials and superpositions, slider help text, and the sentences used by the
  * screen summary, chart descriptions and live alerts. All wording comes from the `a11y` group of
  * the locale files (StringManager.getA11yStrings()).
@@ -18,10 +18,10 @@ import { SuperpositionType } from "../../model/SuperpositionType.js";
 const a11y = stringManager.getA11yStrings();
 
 /** Adjustable model parameters that have a localized name and effect description. */
-export type QPPWParameter = keyof typeof a11y.parameters extends `${infer K}StringProperty` ? K : never;
+export type QuantumPotentialParameter = keyof typeof a11y.parameters extends `${infer K}StringProperty` ? K : never;
 
 /** Units spoken in parameter-change alerts. */
-export type QPPWUnit = keyof typeof a11y.units extends `${infer K}StringProperty` ? K : never;
+export type QuantumPotentialUnit = keyof typeof a11y.units extends `${infer K}StringProperty` ? K : never;
 
 export type DisplayMode = "probabilityDensity" | "waveFunction" | "phaseColor";
 
@@ -42,13 +42,13 @@ const SUPERPOSITION_KEYS: Record<
 /** Fixed-precision number formatting shared by every spoken value. */
 const format = (value: number, decimals: number): string => value.toFixed(decimals);
 
-export const QPPWDescriber = {
+export const QuantumPotentialDescriber = {
   getPotentialTypeNameProperty(potentialType: PotentialType): TReadOnlyProperty<string> {
     return a11y.potentialNames[`${potentialType}StringProperty`];
   },
 
   getPotentialTypeName(potentialType: PotentialType): string {
-    return QPPWDescriber.getPotentialTypeNameProperty(potentialType).value;
+    return QuantumPotentialDescriber.getPotentialTypeNameProperty(potentialType).value;
   },
 
   getPotentialTypeDescriptionProperty(potentialType: PotentialType): TReadOnlyProperty<string> {
@@ -67,14 +67,14 @@ export const QPPWDescriber = {
     return a11y.displayModeDescriptions[`${displayMode}StringProperty`];
   },
 
-  getParameterNameProperty(parameter: QPPWParameter): TReadOnlyProperty<string> {
+  getParameterNameProperty(parameter: QuantumPotentialParameter): TReadOnlyProperty<string> {
     return a11y.parameters[`${parameter}StringProperty`];
   },
 
   /**
    * Help text for a parameter slider: what the parameter does, then the keyboard controls.
    */
-  getSliderHelpText(parameter: QPPWParameter): TReadOnlyProperty<string> {
+  getSliderHelpText(parameter: QuantumPotentialParameter): TReadOnlyProperty<string> {
     return new PatternStringProperty(a11y.sliderHelpPatternStringProperty, {
       parameter: a11y.parameters[`${parameter}StringProperty`],
       effect: a11y.parameterEffects[`${parameter}StringProperty`],
@@ -108,7 +108,7 @@ export const QPPWDescriber = {
       energy: format(energy, 3),
     });
     // The n-th eigenstate (0-indexed) has n nodes
-    return `${selected} ${QPPWDescriber.describeNodes(level)}`;
+    return `${selected} ${QuantumPotentialDescriber.describeNodes(level)}`;
   },
 
   /**
@@ -121,9 +121,9 @@ export const QPPWDescriber = {
   ): string {
     const parts = [
       StringUtils.fillIn(a11y.potentialChangedPatternStringProperty, {
-        potential: QPPWDescriber.getPotentialTypeName(potentialType),
+        potential: QuantumPotentialDescriber.getPotentialTypeName(potentialType),
       }),
-      QPPWDescriber.describeBoundStateCount(numBoundStates),
+      QuantumPotentialDescriber.describeBoundStateCount(numBoundStates),
     ];
     if (numBoundStates > 0 && groundStateEnergy !== undefined) {
       parts.push(
@@ -136,7 +136,12 @@ export const QPPWDescriber = {
   /**
    * Announcement for a (debounced) parameter change, optionally followed by its consequence.
    */
-  createParameterChangeAnnouncement(parameter: QPPWParameter, value: number, unit: QPPWUnit, effect?: string): string {
+  createParameterChangeAnnouncement(
+    parameter: QuantumPotentialParameter,
+    value: number,
+    unit: QuantumPotentialUnit,
+    effect?: string,
+  ): string {
     const announcement = StringUtils.fillIn(a11y.parameterChangedPatternStringProperty, {
       parameter: a11y.parameters[`${parameter}StringProperty`],
       value: format(value, 2),

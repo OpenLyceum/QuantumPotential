@@ -17,9 +17,12 @@ import { DragListener, Node, type NodeOptions, type SceneryEvent, Text } from "s
 import { ArrowNode, PhetFont } from "scenerystack/scenery-phet";
 import { AccessibleSlider, type AccessibleSliderOptions } from "scenerystack/sun";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import type { PotentialType } from "../../model/PotentialFunction.js";
-import { QPPWDescriber, type QPPWParameter } from "../accessibility/QPPWDescriber.js";
+import {
+  QuantumPotentialDescriber,
+  type QuantumPotentialParameter,
+} from "../accessibility/QuantumPotentialDescriber.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -34,7 +37,7 @@ export type ChartPoint = { x: number; y: number };
 
 export type HandleSpec = {
   property: NumberProperty;
-  parameter: QPPWParameter; // names the handle for assistive technology
+  parameter: QuantumPotentialParameter; // names the handle for assistive technology
   orientation: "horizontal" | "vertical";
 
   // The handle's point on the curve if `property` had the given value (the other parameters as they are now)
@@ -93,8 +96,8 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
       cursor: "pointer",
 
       // PDOM
-      accessibleName: QPPWDescriber.getParameterNameProperty(spec.parameter),
-      accessibleHelpText: QPPWDescriber.getSliderHelpText(spec.parameter),
+      accessibleName: QuantumPotentialDescriber.getParameterNameProperty(spec.parameter),
+      accessibleHelpText: QuantumPotentialDescriber.getSliderHelpText(spec.parameter),
       accessibleRoleDescription: a11y.handles.roleDescriptionStringProperty,
     };
 
@@ -112,14 +115,14 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
       headHeight: 10,
       headWidth: 14,
       tailWidth: 5,
-      fill: QPPWColors.potentialHandleFillProperty,
-      stroke: QPPWColors.potentialHandleStrokeProperty,
+      fill: QuantumPotentialColors.potentialHandleFillProperty,
+      stroke: QuantumPotentialColors.potentialHandleStrokeProperty,
     });
     this.addChild(this.arrowNode);
 
     this.valueText = new Text("", {
       font: new PhetFont(11),
-      fill: QPPWColors.potentialHandleFillProperty,
+      fill: QuantumPotentialColors.potentialHandleFillProperty,
       pickable: false,
     });
     this.addChild(this.valueText);
@@ -139,7 +142,7 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
       }),
     );
 
-    const parameterNameProperty = QPPWDescriber.getParameterNameProperty(spec.parameter);
+    const parameterNameProperty = QuantumPotentialDescriber.getParameterNameProperty(spec.parameter);
     const updateValueText = () => {
       this.valueText.string = showValuesProperty.value
         ? `${parameterNameProperty.value} = ${StringUtils.fillIn(spec.valuePattern, { value: spec.property.value.toFixed(spec.decimalPlaces) })}`

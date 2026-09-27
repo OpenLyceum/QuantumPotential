@@ -7,14 +7,17 @@ import { HBox, HSeparator, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, ComboBox, type ComboBoxItem } from "scenerystack/sun";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
-import { PANEL_CHECKBOX_OPTIONS } from "../../common/QPPWControlOptions.js";
-import { QPPWPanel } from "../../common/QPPWPanel.js";
-import { QPPWDescriber } from "../../common/view/accessibility/QPPWDescriber.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../../common/QuantumPotentialControlOptions.js";
+import { QuantumPotentialPanel } from "../../common/QuantumPotentialPanel.js";
+import { QuantumPotentialDescriber } from "../../common/view/accessibility/QuantumPotentialDescriber.js";
 import { EnergyLevelControl } from "../../common/view/EnergyLevelControl.js";
-import { PARTICLE_MASS_STEP_OPTIONS, QPPWNumberControl } from "../../common/view/QPPWNumberControl.js";
+import {
+  PARTICLE_MASS_STEP_OPTIONS,
+  QuantumPotentialNumberControl,
+} from "../../common/view/QuantumPotentialNumberControl.js";
 import type { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { IntroModel } from "../model/IntroModel.js";
 import type { IntroViewState } from "./IntroViewState.js";
 
@@ -46,11 +49,11 @@ export class IntroControlPanelNode extends Node {
     // Arrange groups vertically
     const children: Node[] = [
       energyChartGroup,
-      new HSeparator({ stroke: QPPWColors.gridLineProperty }),
+      new HSeparator({ stroke: QuantumPotentialColors.gridLineProperty }),
       bottomChartGroup,
-      new HSeparator({ stroke: QPPWColors.gridLineProperty }),
+      new HSeparator({ stroke: QuantumPotentialColors.gridLineProperty }),
       wellConfigGroup,
-      new HSeparator({ stroke: QPPWColors.gridLineProperty }),
+      new HSeparator({ stroke: QuantumPotentialColors.gridLineProperty }),
     ];
 
     // Arrange groups vertically
@@ -60,7 +63,7 @@ export class IntroControlPanelNode extends Node {
       children: children,
     });
 
-    const controlPanel = new QPPWPanel(contentVBox, {
+    const controlPanel = new QuantumPotentialPanel(contentVBox, {
       minWidth: INTRO_CONTROL_PANEL_WIDTH,
       maxWidth: INTRO_CONTROL_PANEL_WIDTH,
     });
@@ -74,7 +77,7 @@ export class IntroControlPanelNode extends Node {
   private createEnergyChartGroup(listBoxParent: Node): Node {
     const titleText = new Text(stringManager.energyChartStringProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
     });
 
     // Potential Well dropdown - limited to intro-friendly potentials
@@ -84,7 +87,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.squareInfiniteStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -92,7 +95,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.squareFiniteStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -100,7 +103,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.harmonicOscillatorStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -108,7 +111,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.morseStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -116,7 +119,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.poschlTellerStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -124,7 +127,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.rosenMorseStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -132,7 +135,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.eckartStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -140,7 +143,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.asymmetricTriangleStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -148,7 +151,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.triangularStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
       {
@@ -156,7 +159,7 @@ export class IntroControlPanelNode extends Node {
         createNode: () =>
           new Text(stringManager.coulomb1DStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
       },
     ];
@@ -165,16 +168,16 @@ export class IntroControlPanelNode extends Node {
       xMargin: 8,
       yMargin: 6,
       cornerRadius: 4,
-      buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
-      buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
-      listFill: QPPWColors.controlPanelBackgroundColorProperty,
-      listStroke: QPPWColors.controlPanelStrokeColorProperty,
-      highlightFill: QPPWColors.controlPanelStrokeColorProperty,
+      buttonFill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+      buttonStroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+      listFill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+      listStroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+      highlightFill: QuantumPotentialColors.controlPanelStrokeColorProperty,
     });
 
     const potentialLabelText = new Text(stringManager.potentialWellStringProperty, {
       font: new PhetFont(14),
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
     });
 
     const potentialRowNode = new HBox({
@@ -190,7 +193,10 @@ export class IntroControlPanelNode extends Node {
       new EnergyLevelControl(this.model),
       new Checkbox(
         this.viewState.showEnergyValuesProperty,
-        new Text(stringManager.valuesStringProperty, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        new Text(stringManager.valuesStringProperty, {
+          font: new PhetFont(12),
+          fill: QuantumPotentialColors.textFillProperty,
+        }),
         { ...PANEL_CHECKBOX_OPTIONS },
       ),
     ];
@@ -212,7 +218,7 @@ export class IntroControlPanelNode extends Node {
       this.viewState.showClassicalProbabilityProperty,
       new Text(stringManager.classicalProbabilityDensityStringProperty, {
         font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
       }),
       { ...PANEL_CHECKBOX_OPTIONS },
     );
@@ -227,7 +233,7 @@ export class IntroControlPanelNode extends Node {
       this.viewState.showZerosProperty,
       new Text(stringManager.showZerosStringProperty, {
         font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
       }),
       { ...PANEL_CHECKBOX_OPTIONS },
     );
@@ -243,7 +249,7 @@ export class IntroControlPanelNode extends Node {
           this.probabilityChartNode.showAreaToolProperty,
           new Text(stringManager.getA11yStrings().visible.measureAreaStringProperty, {
             font: new PhetFont(12),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
           { ...PANEL_CHECKBOX_OPTIONS },
         )
@@ -262,7 +268,7 @@ export class IntroControlPanelNode extends Node {
       this.viewState.showRMSIndicatorProperty,
       new Text(stringManager.getA11yStrings().visible.showAverageAndRmsStringProperty, {
         font: new PhetFont(12),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
       }),
       { ...PANEL_CHECKBOX_OPTIONS },
     );
@@ -293,17 +299,17 @@ export class IntroControlPanelNode extends Node {
   private createWellConfigurationGroup(): Node {
     const titleText = new Text(stringManager.wellConfigurationStringProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
     });
 
     // Particle mass has no handle on the potential, so it keeps a ◀ value ▶ control
-    const massControl = new QPPWNumberControl(
+    const massControl = new QuantumPotentialNumberControl(
       stringManager.particleMassStringProperty,
       this.model.particleMassProperty,
       {
         ...PARTICLE_MASS_STEP_OPTIONS,
         valuePattern: stringManager.valueWithElectronMassStringProperty,
-        accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
+        accessibleName: QuantumPotentialDescriber.getParameterNameProperty("particleMass"),
       },
     );
 

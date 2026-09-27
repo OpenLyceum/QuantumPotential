@@ -12,7 +12,7 @@
  * Reference: Marston & Balint-Kurti, J. Chem. Phys. 91, 3571 (1989)
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 import {
   type Complex,
   cubicSplineInterpolation,
@@ -217,4 +217,4 @@ function buildFGHHamiltonian(N: number, Tk: number[], Vx: number[]): DotMatrix {
   return H;
 }
 
-qppw.register("FGHSolver", { solveFGH });
+QuantumPotentialNamespace.register("FGHSolver", { solveFGH });

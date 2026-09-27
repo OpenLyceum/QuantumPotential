@@ -3,7 +3,7 @@
  * All values are in SI units unless otherwise specified.
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 
 const ELEMENTARY_CHARGE = 1.602176634e-19; // Coulombs
 
@@ -49,6 +49,6 @@ const QuantumConstants = {
   FS_TO_S: 1e-15,
 };
 
-qppw.register("QuantumConstants", QuantumConstants);
+QuantumPotentialNamespace.register("QuantumConstants", QuantumConstants);
 
 export default QuantumConstants;

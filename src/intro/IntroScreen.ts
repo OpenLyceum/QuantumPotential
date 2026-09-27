@@ -5,8 +5,8 @@
 
 import { type EmptySelfOptions, optionize } from "scenerystack/phet-core";
 import { Screen, type ScreenOptions } from "scenerystack/sim";
-import { QPPWKeyboardHelpContent } from "../common/view/QPPWKeyboardHelpContent.js";
-import QPPWColors from "../QPPWColors.js";
+import { QuantumPotentialKeyboardHelpContent } from "../common/view/QuantumPotentialKeyboardHelpContent.js";
+import QuantumPotentialColors from "../QuantumPotentialColors.js";
 import { IntroModel } from "./model/IntroModel.js";
 import { IntroScreenIcon } from "./view/IntroScreenIcon.js";
 import { IntroScreenView } from "./view/IntroScreenView.js";
@@ -20,10 +20,10 @@ export class IntroScreen extends Screen<IntroModel, IntroScreenView> {
       (model: IntroModel) => new IntroScreenView(model),
       optionize<IntroScreenOptions, EmptySelfOptions, ScreenOptions>()(
         {
-          backgroundColorProperty: QPPWColors.backgroundColorProperty,
+          backgroundColorProperty: QuantumPotentialColors.backgroundColorProperty,
           homeScreenIcon: new IntroScreenIcon(),
           navigationBarIcon: new IntroScreenIcon(),
-          createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
+          createKeyboardHelpNode: () => new QuantumPotentialKeyboardHelpContent(),
         },
         options,
       ),

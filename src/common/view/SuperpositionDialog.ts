@@ -22,7 +22,7 @@ import { HSlider, RectangularPushButton } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
 import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "../model/LocalizedWavePacket.js";
 import { isOneWellModel } from "../model/ModelTypeGuards.js";
@@ -30,7 +30,7 @@ import type { BoundStateResult } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { SuperpositionConfig } from "../model/SuperpositionType.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
-import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
+import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
 
 type SuperpositionModel = OneWellModel | TwoWellsModel | ManyWellsModel;
 
@@ -59,15 +59,15 @@ export class SuperpositionDialog {
     this.dialog = new Dialog(this.createContent(model.getBoundStates()), {
       title: new Text(stringManager.superpositionDialogTitleStringProperty, {
         font: new PhetFont({ size: 18, weight: "bold" }),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
       }),
       accessibleName: stringManager.superpositionDialogTitleStringProperty,
       xSpacing: 18,
       ySpacing: 14,
       cornerRadius: 8,
-      fill: QPPWColors.controlPanelBackgroundColorProperty,
-      stroke: QPPWColors.controlPanelStrokeColorProperty,
-      closeButtonColor: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+      stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+      closeButtonColor: QuantumPotentialColors.textFillProperty,
       closeButtonListener: () => this.handleCancel(),
     });
   }
@@ -121,7 +121,10 @@ export class SuperpositionDialog {
       });
     };
     const presetButton = (label: TReadOnlyProperty<string>, type: SuperpositionType | "all", listener: () => void) => {
-      const indicator = new Text("●", { font: new PhetFont(12), fill: QPPWColors.energyLevelSelectedProperty });
+      const indicator = new Text("●", {
+        font: new PhetFont(12),
+        fill: QuantumPotentialColors.energyLevelSelectedProperty,
+      });
       indicator.opacity = selectedPreset === type ? 1 : 0;
       presetIndicators.set(type, indicator);
       return new HBox({ spacing: 4, children: [indicator, this.createButton(label, listener)] });
@@ -160,8 +163,8 @@ export class SuperpositionDialog {
       this.amplitudeProperties.push(amplitudeProperty);
       this.phaseProperties.push(phaseProperty);
 
-      const amplitudeText = new Text("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
-      const phaseText = new Text("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+      const amplitudeText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
+      const phaseText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       amplitudeProperty.link((value) => {
         amplitudeText.string = value.toFixed(2);
       });
@@ -172,7 +175,7 @@ export class SuperpositionDialog {
       phaseProperty.lazyLink(updateConfig);
 
       rows.push([
-        new RichText(`ψ<sub>${i}</sub>`, { font: new PhetFont(13), fill: QPPWColors.textFillProperty }),
+        new RichText(`ψ<sub>${i}</sub>`, { font: new PhetFont(13), fill: QuantumPotentialColors.textFillProperty }),
         new HSlider(amplitudeProperty, amplitudeProperty.range!, {
           trackSize: new Dimension2(145, 4),
           thumbSize: new Dimension2(13, 24),
@@ -201,10 +204,19 @@ export class SuperpositionDialog {
 
     for (let page = 0; page < pageCount; page++) {
       const header: (Node | null)[] = [
-        new Text(stringManager.stateStringProperty, { font: new PhetFont(12), fill: QPPWColors.labelFillProperty }),
-        new Text(stringManager.amplitudeStringProperty, { font: new PhetFont(12), fill: QPPWColors.labelFillProperty }),
+        new Text(stringManager.stateStringProperty, {
+          font: new PhetFont(12),
+          fill: QuantumPotentialColors.labelFillProperty,
+        }),
+        new Text(stringManager.amplitudeStringProperty, {
+          font: new PhetFont(12),
+          fill: QuantumPotentialColors.labelFillProperty,
+        }),
         null,
-        new Text(stringManager.phaseStringProperty, { font: new PhetFont(12), fill: QPPWColors.labelFillProperty }),
+        new Text(stringManager.phaseStringProperty, {
+          font: new PhetFont(12),
+          fill: QuantumPotentialColors.labelFillProperty,
+        }),
         null,
       ];
       pages.push(
@@ -221,7 +233,7 @@ export class SuperpositionDialog {
       );
     }
 
-    const pageLabel = new Text("", { font: new PhetFont(12), fill: QPPWColors.labelFillProperty });
+    const pageLabel = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.labelFillProperty });
     const previousButton = this.createButton(
       "◀",
       () => {
@@ -250,12 +262,14 @@ export class SuperpositionDialog {
       showPage();
     }
 
-    const normalizationText = new Text("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+    const normalizationText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
     const updateNormalization = () => {
       const sum = this.amplitudeProperties.reduce((total, property) => total + property.value ** 2, 0);
       normalizationText.string = stringManager.normalizationSumStringProperty.value + sum.toFixed(3);
       normalizationText.fill =
-        Math.abs(sum - 1) > 0.01 ? QPPWColors.warningColorProperty.value : QPPWColors.textFillProperty.value;
+        Math.abs(sum - 1) > 0.01
+          ? QuantumPotentialColors.warningColorProperty.value
+          : QuantumPotentialColors.textFillProperty.value;
     };
     for (const property of this.amplitudeProperties) {
       property.link(updateNormalization);
@@ -294,7 +308,7 @@ export class SuperpositionDialog {
       customControls.children = [
         new Text(stringManager.superpositionInstructionsStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.labelFillProperty,
+          fill: QuantumPotentialColors.labelFillProperty,
           maxWidth: SuperpositionDialog.PREVIEW_WIDTH,
         }),
         ...pages,
@@ -308,7 +322,7 @@ export class SuperpositionDialog {
       property: NumberProperty,
       format: (value: number) => string,
     ): Node => {
-      const valueText = new Text("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+      const valueText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       property.link((value) => {
         valueText.string = format(value);
       });
@@ -316,7 +330,7 @@ export class SuperpositionDialog {
         spacing: 3,
         align: "left",
         children: [
-          new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+          new Text(label, { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty }),
           new HBox({
             spacing: 6,
             children: [
@@ -405,7 +419,7 @@ export class SuperpositionDialog {
       visible: model.superpositionTypeProperty.value === SuperpositionType.COHERENT && isOneWellModel(model),
     });
     if (isOneWellModel(model)) {
-      const displacementValue = new Text("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+      const displacementValue = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       const displacementProperty = new NumberProperty(model.coherentDisplacementProperty.value, {
         range: model.coherentDisplacementProperty.range,
       });
@@ -420,7 +434,7 @@ export class SuperpositionDialog {
       displacementRow.children = [
         new Text(stringManager.positionStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         new HBox({
           spacing: 10,
@@ -541,11 +555,11 @@ export class SuperpositionDialog {
           children: [
             new RichText(stringManager.superpositionEquationStringProperty, {
               font: new PhetFont(14),
-              fill: QPPWColors.textFillProperty,
+              fill: QuantumPotentialColors.textFillProperty,
             }),
             new RichText(stringManager.superpositionEquationHelpStringProperty, {
               font: new PhetFont(11),
-              fill: QPPWColors.labelFillProperty,
+              fill: QuantumPotentialColors.labelFillProperty,
               maxWidth: SuperpositionDialog.PREVIEW_WIDTH,
             }),
           ],
@@ -555,23 +569,29 @@ export class SuperpositionDialog {
           : [
               new Text(stringManager.noBoundStatesForSuperpositionStringProperty, {
                 font: new PhetFont(13),
-                fill: QPPWColors.textFillProperty,
+                fill: QuantumPotentialColors.textFillProperty,
               }),
             ]),
         new Text(stringManager.waveFunctionPreviewStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.labelFillProperty,
+          fill: QuantumPotentialColors.labelFillProperty,
         }),
         preview.node,
         new HBox({
           spacing: 16,
           children: [
-            this.createLegend(stringManager.realPartStringProperty, QPPWColors.wavefunctionRealProperty),
-            this.createLegend(stringManager.imaginaryPartStringProperty, QPPWColors.wavefunctionImaginaryProperty),
-            this.createLegend(stringManager.magnitudeStringProperty, QPPWColors.wavefunctionMagnitudeProperty),
+            this.createLegend(stringManager.realPartStringProperty, QuantumPotentialColors.wavefunctionRealProperty),
+            this.createLegend(
+              stringManager.imaginaryPartStringProperty,
+              QuantumPotentialColors.wavefunctionImaginaryProperty,
+            ),
+            this.createLegend(
+              stringManager.magnitudeStringProperty,
+              QuantumPotentialColors.wavefunctionMagnitudeProperty,
+            ),
           ],
         }),
-        new HSeparator({ stroke: QPPWColors.panelStrokeProperty }),
+        new HSeparator({ stroke: QuantumPotentialColors.panelStrokeProperty }),
         new HBox({ spacing: 12, align: "center", children: [cancelButton, okButton] }),
       ],
     });
@@ -601,7 +621,7 @@ export class SuperpositionDialog {
       },
     );
     const pairSlider = (label: TReadOnlyProperty<string>, property: NumberProperty) => {
-      const value = new RichText("", { font: new PhetFont(12), fill: QPPWColors.textFillProperty });
+      const value = new RichText("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       property.link((index) => {
         value.string = `${stringManager.stateStringProperty.value} ${index + 1} (ψ<sub>${index}</sub>)`;
       });
@@ -609,7 +629,7 @@ export class SuperpositionDialog {
         spacing: 3,
         align: "left",
         children: [
-          new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+          new Text(label, { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty }),
           new HBox({
             spacing: 6,
             children: [
@@ -684,7 +704,7 @@ export class SuperpositionDialog {
       spacing: 5,
       children: [
         new Line(0, 0, 18, 0, { stroke: color, lineWidth: 2 }),
-        new Text(label, { font: new PhetFont(11), fill: QPPWColors.labelFillProperty }),
+        new Text(label, { font: new PhetFont(11), fill: QuantumPotentialColors.labelFillProperty }),
       ],
     });
   }
@@ -696,7 +716,7 @@ export class SuperpositionDialog {
   ): RectangularPushButton {
     return new RectangularPushButton({
       ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
-      content: new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+      content: new Text(label, { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty }),
       ...(accessibleName ? { accessibleName } : {}),
       listener,
     });
@@ -707,14 +727,20 @@ export class SuperpositionDialog {
     const height = SuperpositionDialog.PREVIEW_HEIGHT;
     const xMinNm = -4;
     const xMaxNm = 4;
-    const realPath = new Path(null, { stroke: QPPWColors.wavefunctionRealProperty, lineWidth: 2 });
-    const imaginaryPath = new Path(null, { stroke: QPPWColors.wavefunctionImaginaryProperty, lineWidth: 2 });
-    const magnitudePath = new Path(null, { stroke: QPPWColors.wavefunctionMagnitudeProperty, lineWidth: 2 });
+    const realPath = new Path(null, { stroke: QuantumPotentialColors.wavefunctionRealProperty, lineWidth: 2 });
+    const imaginaryPath = new Path(null, {
+      stroke: QuantumPotentialColors.wavefunctionImaginaryProperty,
+      lineWidth: 2,
+    });
+    const magnitudePath = new Path(null, {
+      stroke: QuantumPotentialColors.wavefunctionMagnitudeProperty,
+      lineWidth: 2,
+    });
     const ticks: Node[] = [];
     for (const value of [-4, -2, 0, 2, 4]) {
       const x = ((value - xMinNm) / (xMaxNm - xMinNm)) * width;
-      ticks.push(new Line(x, height, x, height + 5, { stroke: QPPWColors.axisProperty }));
-      const label = new Text(String(value), { font: new PhetFont(11), fill: QPPWColors.labelFillProperty });
+      ticks.push(new Line(x, height, x, height + 5, { stroke: QuantumPotentialColors.axisProperty }));
+      const label = new Text(String(value), { font: new PhetFont(11), fill: QuantumPotentialColors.labelFillProperty });
       label.centerX = x;
       label.top = height + 7;
       ticks.push(label);
@@ -722,10 +748,10 @@ export class SuperpositionDialog {
     const node = new Node({
       children: [
         new Rectangle(0, 0, width, height, {
-          fill: QPPWColors.backgroundColorProperty,
-          stroke: QPPWColors.panelStrokeProperty,
+          fill: QuantumPotentialColors.backgroundColorProperty,
+          stroke: QuantumPotentialColors.panelStrokeProperty,
         }),
-        new Line(0, height / 2, width, height / 2, { stroke: QPPWColors.gridLineProperty }),
+        new Line(0, height / 2, width, height / 2, { stroke: QuantumPotentialColors.gridLineProperty }),
         realPath,
         imaginaryPath,
         magnitudePath,

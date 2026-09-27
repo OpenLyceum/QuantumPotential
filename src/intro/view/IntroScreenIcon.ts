@@ -6,7 +6,7 @@
 import { Shape } from "scenerystack/kite";
 import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 
 // Dimensions
 const ICON_WIDTH = 60;
@@ -34,8 +34,8 @@ export class IntroScreenIcon extends ScreenIcon {
   public constructor() {
     // Create background with gradient
     const backgroundGradient = new LinearGradient(0, 0, 0, ICON_HEIGHT)
-      .addColorStop(0, QPPWColors.iconBackgroundTopProperty.value)
-      .addColorStop(1, QPPWColors.iconBackgroundBottomProperty.value);
+      .addColorStop(0, QuantumPotentialColors.iconBackgroundTopProperty.value)
+      .addColorStop(1, QuantumPotentialColors.iconBackgroundBottomProperty.value);
 
     const background = new Rectangle(0, 0, ICON_WIDTH, ICON_HEIGHT, {
       fill: backgroundGradient,
@@ -50,7 +50,7 @@ export class IntroScreenIcon extends ScreenIcon {
       .lineTo(ICON_WIDTH - PADDING, WELL_TOP);
 
     const well = new Path(wellShape, {
-      stroke: QPPWColors.iconWellStrokeProperty,
+      stroke: QuantumPotentialColors.iconWellStrokeProperty,
       lineWidth: WELL_LINE_WIDTH,
     });
 
@@ -64,7 +64,7 @@ export class IntroScreenIcon extends ScreenIcon {
     }
 
     const waveFunction = new Path(waveShape, {
-      stroke: QPPWColors.iconWaveFunctionProperty,
+      stroke: QuantumPotentialColors.iconWaveFunctionProperty,
       lineWidth: WAVE_LINE_WIDTH,
     });
 
@@ -78,7 +78,7 @@ export class IntroScreenIcon extends ScreenIcon {
     probabilityShape.lineTo(WAVE_PADDING + WAVE_WIDTH, PROBABILITY_BASELINE).close();
 
     const probabilityFill = new Path(probabilityShape, {
-      fill: QPPWColors.iconProbabilityFillProperty,
+      fill: QuantumPotentialColors.iconProbabilityFillProperty,
     });
 
     const iconNode = new Node({
@@ -86,7 +86,7 @@ export class IntroScreenIcon extends ScreenIcon {
     });
 
     super(iconNode, {
-      fill: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.backgroundColorProperty,
     });
   }
 }

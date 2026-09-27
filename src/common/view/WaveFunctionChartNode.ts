@@ -14,14 +14,14 @@ import { Line, Node, Path, Text, VBox } from "scenerystack/scenery";
 import { EyeToggleButton, PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
-import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
 import Logger from "../utils/Logger.js";
-import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import { AreaMeasurementTool } from "./chart-tools/AreaMeasurementTool.js";
@@ -184,7 +184,7 @@ export class WaveFunctionChartNode extends Node {
 
     // Create background using ChartRectangle
     this.backgroundRect = new ChartRectangle(this.chartTransform, {
-      fill: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.backgroundColorProperty,
       stroke: null, // Remove border to avoid line appearing below energy chart
       lineWidth: 1,
     });
@@ -204,7 +204,7 @@ export class WaveFunctionChartNode extends Node {
 
     // Create zero line
     this.zeroLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.gridLineProperty,
+      stroke: QuantumPotentialColors.gridLineProperty,
       lineWidth: 1,
       lineDash: [5, 5],
     });
@@ -221,30 +221,30 @@ export class WaveFunctionChartNode extends Node {
 
     // Create wave function paths
     this.realPartPath = new Path(null, {
-      stroke: QPPWColors.wavefunctionRealProperty,
+      stroke: QuantumPotentialColors.wavefunctionRealProperty,
       lineWidth: 2,
       visible: false,
     });
     this.curvesNode.addChild(this.realPartPath);
 
     this.imaginaryPartPath = new Path(null, {
-      stroke: QPPWColors.wavefunctionImaginaryProperty,
+      stroke: QuantumPotentialColors.wavefunctionImaginaryProperty,
       lineWidth: 2,
       visible: false,
     });
     this.curvesNode.addChild(this.imaginaryPartPath);
 
     this.magnitudePath = new Path(null, {
-      stroke: QPPWColors.wavefunctionMagnitudeProperty,
+      stroke: QuantumPotentialColors.wavefunctionMagnitudeProperty,
       lineWidth: 2,
       visible: false,
     });
     this.curvesNode.addChild(this.magnitudePath);
 
     this.probabilityDensityPath = new Path(null, {
-      stroke: QPPWColors.wavefunctionProbabilityProperty,
+      stroke: QuantumPotentialColors.wavefunctionProbabilityProperty,
       lineWidth: 2,
-      fill: QPPWColors.wavefunctionProbabilityFillProperty, // Semi-transparent fill
+      fill: QuantumPotentialColors.wavefunctionProbabilityFillProperty, // Semi-transparent fill
     });
     this.curvesNode.addChild(this.probabilityDensityPath);
 
@@ -299,11 +299,11 @@ export class WaveFunctionChartNode extends Node {
     // Create state label in upper right corner (outside clipped area)
     this.stateLabelNode = new Text("", {
       font: new PhetFont({ size: 16, style: "italic" }),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
     });
     this.stateLabelPanel = new Panel(this.stateLabelNode, {
-      fill: QPPWColors.controlPanelBackgroundColorProperty,
-      stroke: QPPWColors.controlPanelStrokeColorProperty,
+      fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+      stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
       cornerRadius: 3,
       xMargin: 5,
       yMargin: 2,
@@ -331,7 +331,7 @@ export class WaveFunctionChartNode extends Node {
         this.curvatureTool.showProperty,
         new Text(a11y.visible.showCurvatureStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
       );
@@ -340,7 +340,7 @@ export class WaveFunctionChartNode extends Node {
         this.derivativeTool.showProperty,
         new Text(a11y.visible.showDerivativeStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
       );
@@ -368,7 +368,7 @@ export class WaveFunctionChartNode extends Node {
         this.viewState.showRMSIndicatorProperty,
         new Text(a11y.visible.showAverageAndRmsStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         { ...PANEL_CHECKBOX_OPTIONS, boxWidth: 14 },
       );
@@ -441,7 +441,7 @@ export class WaveFunctionChartNode extends Node {
 
     // Node count for single eigenstates (the n-th state, 0-indexed, has n nodes)
     if (!isSuperposition && selectedIndex >= 0 && selectedIndex < boundStates.energies.length) {
-      paragraphs.push(QPPWDescriber.describeNodes(selectedIndex));
+      paragraphs.push(QuantumPotentialDescriber.describeNodes(selectedIndex));
     }
 
     return paragraphs.join("\n\n");
@@ -459,7 +459,7 @@ export class WaveFunctionChartNode extends Node {
       if (pos !== -X_AXIS_RANGE_NM) {
         const x = this.chartMargins.left + this.chartTransform.modelToViewX(pos);
         const gridLine = new Line(x, this.chartMargins.top, x, this.chartMargins.top + this.plotHeight, {
-          stroke: QPPWColors.gridLineProperty,
+          stroke: QuantumPotentialColors.gridLineProperty,
           lineWidth: 1,
           lineDash: [5, 5],
         });
@@ -469,7 +469,7 @@ export class WaveFunctionChartNode extends Node {
 
     // Horizontal axis follows y=0 as the displayed range changes.
     const xAxis = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       value: 0,
     });
     xAxis.x = this.chartMargins.left;
@@ -485,7 +485,7 @@ export class WaveFunctionChartNode extends Node {
       {
         edge: "min",
         extent: 8,
-        stroke: QPPWColors.labelFillProperty,
+        stroke: QuantumPotentialColors.labelFillProperty,
         lineWidth: 1,
       },
     );
@@ -502,7 +502,7 @@ export class WaveFunctionChartNode extends Node {
         createLabel: (value: number) =>
           new Text(value.toString(), {
             font: new PhetFont(14),
-            fill: QPPWColors.labelFillProperty,
+            fill: QuantumPotentialColors.labelFillProperty,
           }),
       },
     );
@@ -512,7 +512,7 @@ export class WaveFunctionChartNode extends Node {
 
     // The y-axis sits at the left edge of the plot, beside its tick marks and labels.
     const yAxisLeft = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       value: this.xMinProperty.value,
     });
     yAxisLeft.x = this.chartMargins.left;
@@ -521,7 +521,7 @@ export class WaveFunctionChartNode extends Node {
 
     // Vertical axis follows x=0, centered in the shared position range.
     const yAxis = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       value: 0,
     });
     yAxis.x = this.chartMargins.left;
@@ -536,7 +536,7 @@ export class WaveFunctionChartNode extends Node {
       {
         edge: "min",
         extent: 8,
-        stroke: QPPWColors.labelFillProperty,
+        stroke: QuantumPotentialColors.labelFillProperty,
         lineWidth: 1,
       },
     );
@@ -555,7 +555,7 @@ export class WaveFunctionChartNode extends Node {
         createLabel: (value: number) =>
           new Text(this.formatYTickLabel(value), {
             font: new PhetFont(12),
-            fill: QPPWColors.labelFillProperty,
+            fill: QuantumPotentialColors.labelFillProperty,
           }),
       },
     );
@@ -567,7 +567,7 @@ export class WaveFunctionChartNode extends Node {
     // Position this after setting its text, since the rotated text changes its bounds.
     this.yAxisLabel = new Text("", {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       centerX: 15,
       rotation: -Math.PI / 2,
     });
@@ -576,7 +576,7 @@ export class WaveFunctionChartNode extends Node {
     // X-axis label
     const xLabelText = new Text(stringManager.positionNmStringProperty, {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       centerY: this.chartHeight - 15,
     });
     // Center on the plot area (not the whole chart), and keep it centered when the locale changes.

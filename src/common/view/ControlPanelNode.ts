@@ -23,18 +23,18 @@ import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
 import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import { hasElectricField, isManyWellsModel } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
-import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
-import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
-import { QPPWPanel } from "../QPPWPanel.js";
-import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
+import { QuantumPotentialPanel } from "../QuantumPotentialPanel.js";
+import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { EnergyLevelControl } from "./EnergyLevelControl.js";
-import { PARTICLE_MASS_STEP_OPTIONS, QPPWNumberControl } from "./QPPWNumberControl.js";
+import { PARTICLE_MASS_STEP_OPTIONS, QuantumPotentialNumberControl } from "./QuantumPotentialNumberControl.js";
 import { SuperpositionDialog } from "./SuperpositionDialog.js";
 
 const a11y = stringManager.getA11yStrings();
@@ -49,11 +49,11 @@ const COMBO_BOX_OPTIONS = {
   xMargin: 8,
   yMargin: 5,
   cornerRadius: 4,
-  buttonFill: QPPWColors.controlPanelBackgroundColorProperty,
-  buttonStroke: QPPWColors.controlPanelStrokeColorProperty,
-  listFill: QPPWColors.controlPanelBackgroundColorProperty,
-  listStroke: QPPWColors.controlPanelStrokeColorProperty,
-  highlightFill: QPPWColors.controlPanelStrokeColorProperty,
+  buttonFill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+  buttonStroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+  listFill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+  listStroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+  highlightFill: QuantumPotentialColors.controlPanelStrokeColorProperty,
 };
 
 /** Potential types with more than one well (they have a separation and, in Many Wells, a count and a field). */
@@ -99,20 +99,23 @@ export class ControlPanelNode {
       new EnergyLevelControl(model),
       new Checkbox(
         this.viewState.showEnergyValuesProperty,
-        new Text(stringManager.valuesStringProperty, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        new Text(stringManager.valuesStringProperty, {
+          font: new PhetFont(12),
+          fill: QuantumPotentialColors.textFillProperty,
+        }),
         { ...PANEL_CHECKBOX_OPTIONS },
       ),
     ];
     energyChildren.push(...this.createParameterControls());
 
-    this.energyPanel = new QPPWPanel(new VBox({ spacing: 10, align: "left", children: energyChildren }), {
+    this.energyPanel = new QuantumPotentialPanel(new VBox({ spacing: 10, align: "left", children: energyChildren }), {
       minWidth: CONTROL_PANEL_WIDTH,
       maxWidth: CONTROL_PANEL_WIDTH,
       xMargin: 12,
       yMargin: 10,
     });
 
-    this.graphPanel = new QPPWPanel(this.createGraphGroup(), {
+    this.graphPanel = new QuantumPotentialPanel(this.createGraphGroup(), {
       minWidth: CONTROL_PANEL_WIDTH,
       maxWidth: CONTROL_PANEL_WIDTH,
       xMargin: 12,
@@ -132,11 +135,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.squareInfiniteStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.INFINITE_WELL),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.INFINITE_WELL),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.INFINITE_WELL),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.INFINITE_WELL,
+          ),
         },
       },
       {
@@ -144,11 +149,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.squareFiniteStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.FINITE_WELL),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.FINITE_WELL),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.FINITE_WELL),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.FINITE_WELL),
         },
       },
       {
@@ -156,11 +161,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.harmonicOscillatorStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.HARMONIC_OSCILLATOR),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.HARMONIC_OSCILLATOR),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.HARMONIC_OSCILLATOR),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.HARMONIC_OSCILLATOR,
+          ),
         },
       },
       {
@@ -168,11 +175,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.morseStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.MORSE),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.MORSE),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.MORSE),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.MORSE),
         },
       },
       {
@@ -180,11 +187,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.poschlTellerStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.POSCHL_TELLER),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.POSCHL_TELLER),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.POSCHL_TELLER),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.POSCHL_TELLER,
+          ),
         },
       },
       {
@@ -192,11 +201,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.rosenMorseStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.ROSEN_MORSE),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.ROSEN_MORSE),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.ROSEN_MORSE),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.ROSEN_MORSE),
         },
       },
       {
@@ -204,11 +213,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.eckartStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.ECKART),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.ECKART),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.ECKART),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.ECKART),
         },
       },
       {
@@ -216,11 +225,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.asymmetricTriangleStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.ASYMMETRIC_TRIANGLE),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.ASYMMETRIC_TRIANGLE),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.ASYMMETRIC_TRIANGLE),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.ASYMMETRIC_TRIANGLE,
+          ),
         },
       },
       {
@@ -228,11 +239,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.triangularStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.TRIANGULAR),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.TRIANGULAR),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.TRIANGULAR),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.TRIANGULAR),
         },
       },
       {
@@ -240,11 +251,11 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.coulomb1DStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.COULOMB_1D),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.COULOMB_1D),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.COULOMB_1D),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(PotentialType.COULOMB_1D),
         },
       },
       {
@@ -252,11 +263,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.doubleSquareWellStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.DOUBLE_SQUARE_WELL),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.DOUBLE_SQUARE_WELL),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.DOUBLE_SQUARE_WELL),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.DOUBLE_SQUARE_WELL,
+          ),
         },
       },
       {
@@ -264,11 +277,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.doublePoschlTellerStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.DOUBLE_POSCHL_TELLER),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.DOUBLE_POSCHL_TELLER),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.DOUBLE_POSCHL_TELLER),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.DOUBLE_POSCHL_TELLER,
+          ),
         },
       },
       {
@@ -276,11 +291,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.multiSquareWellStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_SQUARE_WELL),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_SQUARE_WELL),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.MULTI_SQUARE_WELL),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.MULTI_SQUARE_WELL,
+          ),
         },
       },
       {
@@ -288,11 +305,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.multiPoschlTellerStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
-        accessibleName: QPPWDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_POSCHL_TELLER),
+        accessibleName: QuantumPotentialDescriber.getPotentialTypeNameProperty(PotentialType.MULTI_POSCHL_TELLER),
         comboBoxListItemNodeOptions: {
-          accessibleHelpText: QPPWDescriber.getPotentialTypeDescriptionProperty(PotentialType.MULTI_POSCHL_TELLER),
+          accessibleHelpText: QuantumPotentialDescriber.getPotentialTypeDescriptionProperty(
+            PotentialType.MULTI_POSCHL_TELLER,
+          ),
         },
       },
     ];
@@ -315,7 +334,7 @@ export class ControlPanelNode {
       children: [
         new Text(stringManager.potentialWellStringProperty, {
           font: TITLE_FONT,
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
           maxWidth: CONTENT_WIDTH,
         }),
         potentialComboBox,
@@ -328,7 +347,7 @@ export class ControlPanelNode {
     const choice = (label: TReadOnlyProperty<string>, listener: () => void): Node =>
       new RectangularPushButton({
         ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
-        content: new Text(label, { font: new PhetFont(12), fill: QPPWColors.textFillProperty }),
+        content: new Text(label, { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty }),
         accessibleName: label,
         listener,
       });
@@ -338,7 +357,7 @@ export class ControlPanelNode {
       children: [
         new Text(stringManager.superpositionStringProperty, {
           font: TITLE_FONT,
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
           maxWidth: CONTENT_WIDTH,
         }),
         choice(stringManager.configureSuperpositionStringProperty, () => {
@@ -357,22 +376,22 @@ export class ControlPanelNode {
 
     if (this.options.showParticleMass) {
       controls.push(
-        new QPPWNumberControl(stringManager.particleMassStringProperty, this.model.particleMassProperty, {
+        new QuantumPotentialNumberControl(stringManager.particleMassStringProperty, this.model.particleMassProperty, {
           ...PARTICLE_MASS_STEP_OPTIONS,
           valuePattern: stringManager.valueWithElectronMassStringProperty,
-          accessibleName: QPPWDescriber.getParameterNameProperty("particleMass"),
+          accessibleName: QuantumPotentialDescriber.getParameterNameProperty("particleMass"),
         }),
       );
     }
 
     if (isManyWellsModel(this.model)) {
-      const numberOfWellsControl = new QPPWNumberControl(
+      const numberOfWellsControl = new QuantumPotentialNumberControl(
         stringManager.numberOfWellsStringProperty,
         this.model.numberOfWellsProperty,
         {
           deltaValue: 1,
           decimalPlaces: 0,
-          accessibleName: QPPWDescriber.getParameterNameProperty("numberOfWells"),
+          accessibleName: QuantumPotentialDescriber.getParameterNameProperty("numberOfWells"),
         },
       );
       controls.push(numberOfWellsControl);
@@ -382,14 +401,14 @@ export class ControlPanelNode {
     }
 
     if (hasElectricField(this.model)) {
-      const electricFieldControl = new QPPWNumberControl(
+      const electricFieldControl = new QuantumPotentialNumberControl(
         stringManager.electricFieldStringProperty,
         this.model.electricFieldProperty,
         {
           deltaValue: 0.05,
           decimalPlaces: 2,
           valuePattern: stringManager.valueWithElectronVoltsPerNanometerStringProperty,
-          accessibleName: QPPWDescriber.getParameterNameProperty("electricField"),
+          accessibleName: QuantumPotentialDescriber.getParameterNameProperty("electricField"),
         },
       );
       controls.push(electricFieldControl);
@@ -407,7 +426,7 @@ export class ControlPanelNode {
   private createGraphGroup(): Node {
     const titleText = new Text(stringManager.quantumStateGraphStringProperty, {
       font: TITLE_FONT,
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
       maxWidth: CONTENT_WIDTH,
     });
 
@@ -418,13 +437,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.probabilityDensityStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
 
         // PDOM
         options: {
           accessibleName: a11y.controls.probabilityDensityStringProperty,
-          accessibleHelpText: QPPWDescriber.getDisplayModeDescriptionProperty("probabilityDensity"),
+          accessibleHelpText: QuantumPotentialDescriber.getDisplayModeDescriptionProperty("probabilityDensity"),
         },
       },
       {
@@ -432,13 +451,13 @@ export class ControlPanelNode {
         createNode: () =>
           new Text(stringManager.wavefunctionStringProperty, {
             font: new PhetFont(14),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
 
         // PDOM
         options: {
           accessibleName: a11y.controls.waveFunctionStringProperty,
-          accessibleHelpText: QPPWDescriber.getDisplayModeDescriptionProperty("waveFunction"),
+          accessibleHelpText: QuantumPotentialDescriber.getDisplayModeDescriptionProperty("waveFunction"),
         },
       },
     ];
@@ -465,7 +484,7 @@ export class ControlPanelNode {
             this.viewState.showClassicalProbabilityProperty,
             new Text(stringManager.classicalProbabilityDensityStringProperty, {
               font: new PhetFont(12),
-              fill: QPPWColors.textFillProperty,
+              fill: QuantumPotentialColors.textFillProperty,
             }),
             {
               ...PANEL_CHECKBOX_OPTIONS,
@@ -498,7 +517,7 @@ export class ControlPanelNode {
         children: [
           new Text(labelProperty, {
             font: new PhetFont(12),
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
             maxWidth: 120,
           }),
           new Line(0, 0, 30, 0, {
@@ -510,7 +529,7 @@ export class ControlPanelNode {
 
     const realPartCheckbox = new Checkbox(
       this.viewState.showRealPartProperty,
-      createComponentContent(stringManager.realPartStringProperty, QPPWColors.wavefunctionRealProperty),
+      createComponentContent(stringManager.realPartStringProperty, QuantumPotentialColors.wavefunctionRealProperty),
       {
         ...PANEL_CHECKBOX_OPTIONS,
         enabledProperty: waveFunctionModeProperty,
@@ -523,7 +542,10 @@ export class ControlPanelNode {
 
     const imaginaryPartCheckbox = new Checkbox(
       this.viewState.showImaginaryPartProperty,
-      createComponentContent(stringManager.imaginaryPartStringProperty, QPPWColors.wavefunctionImaginaryProperty),
+      createComponentContent(
+        stringManager.imaginaryPartStringProperty,
+        QuantumPotentialColors.wavefunctionImaginaryProperty,
+      ),
       {
         ...PANEL_CHECKBOX_OPTIONS,
         enabledProperty: waveFunctionModeProperty,
@@ -536,7 +558,10 @@ export class ControlPanelNode {
 
     const magnitudeCheckbox = new Checkbox(
       this.viewState.showMagnitudeProperty,
-      createComponentContent(stringManager.magnitudeStringProperty, QPPWColors.wavefunctionMagnitudeProperty),
+      createComponentContent(
+        stringManager.magnitudeStringProperty,
+        QuantumPotentialColors.wavefunctionMagnitudeProperty,
+      ),
       {
         ...PANEL_CHECKBOX_OPTIONS,
         enabledProperty: waveFunctionModeProperty,
@@ -556,20 +581,20 @@ export class ControlPanelNode {
       children: [
         new Text(stringManager.phaseStringProperty, {
           font: new PhetFont(12),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
           maxWidth: 55,
         }),
         new HBox({
           spacing: 3,
           children: [
-            new Text("0", { font: new PhetFont(11), fill: QPPWColors.textFillProperty }),
+            new Text("0", { font: new PhetFont(11), fill: QuantumPotentialColors.textFillProperty }),
             new SpectrumNode({
               minValue: 0,
               maxValue: 2 * Math.PI,
               valueToColor: (phase) => new Color(phaseToReversedTwilight(phase)),
               size: new Dimension2(44, 10),
             }),
-            new Text("2π", { font: new PhetFont(11), fill: QPPWColors.textFillProperty }),
+            new Text("2π", { font: new PhetFont(11), fill: QuantumPotentialColors.textFillProperty }),
           ],
         }),
       ],

@@ -28,8 +28,8 @@ import stringManager from "./i18n/StringManager.js";
 import { IntroScreen } from "./intro/IntroScreen.js";
 import { ManyWellsScreen } from "./many-wells/ManyWellsScreen.js";
 import { OneWellScreen } from "./one-well/OneWellScreen.js";
-import { QPPWPreferencesNode } from "./preferences/QPPWPreferencesNode.js";
-import qppwQueryParameters from "./preferences/qppwQueryParameters.js";
+import { QuantumPotentialPreferencesNode } from "./preferences/QuantumPotentialPreferencesNode.js";
+import quantumPotentialQueryParameters from "./preferences/quantumPotentialQueryParameters.js";
 import { TwoWellsScreen } from "./two-wells/TwoWellsScreen.js";
 
 function launch(): void {
@@ -69,7 +69,7 @@ function launch(): void {
         supportsSound: true,
       },
       simulationOptions: {
-        customPreferences: [{ createContent: () => new QPPWPreferencesNode() }],
+        customPreferences: [{ createContent: () => new QuantumPotentialPreferencesNode() }],
       },
       localizationOptions: {
         // Adds a language picker in Preferences → Language
@@ -82,7 +82,7 @@ function launch(): void {
 
 onReadyToLaunch(() => {
   // The FGH cross-check is split out of the main bundle; fetch it before any screen solves
-  if (qppwQueryParameters.numericalMethod === NumericalMethod.FGH) {
+  if (quantumPotentialQueryParameters.numericalMethod === NumericalMethod.FGH) {
     Schrodinger1DSolver.loadFGH().then(launch, (error: unknown) => {
       // Launch anyway: the solver falls back to Numerov
       Logger.warn("Could not load the FGH solver", error);

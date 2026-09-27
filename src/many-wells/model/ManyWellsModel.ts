@@ -14,7 +14,7 @@ import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
-import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
+import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 
 export class ManyWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -210,7 +210,9 @@ export class ManyWellsModel extends BaseModel {
           ? Math.max(ManyWellsModel.DOMAIN_MARGIN_NM, (5 * this.wellWidthProperty.value) / 2)
           : ManyWellsModel.DOMAIN_MARGIN_NM),
     );
-    const scaledPoints = Math.round((qppwQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM);
+    const scaledPoints = Math.round(
+      (quantumPotentialQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
+    );
     const gridConfig = {
       xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
       xMax: halfSpanNm * QuantumConstants.NM_TO_M,

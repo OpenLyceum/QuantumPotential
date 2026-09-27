@@ -5,19 +5,19 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import { Dialog } from "scenerystack/sim";
 import { HSlider, RectangularPushButton } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
-import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
-import { COMPACT_PANEL_SLIDER_OPTIONS } from "../QPPWControlOptions.js";
-import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
+import { COMPACT_PANEL_SLIDER_OPTIONS } from "../QuantumPotentialControlOptions.js";
+import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { PotentialHandlesLayer } from "./handles/PotentialHandlesLayer.js";
-import { QPPWNumberControl } from "./QPPWNumberControl.js";
+import { QuantumPotentialNumberControl } from "./QuantumPotentialNumberControl.js";
 
 /** The gear is available only with ?dev, as in Totality's Quantum Bound States. */
 export function createConfigurePotentialButton(model: ScreenModel): RectangularPushButton {
   const button = new RectangularPushButton({
     ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
-    content: new Text("⚙", { font: new PhetFont(22), fill: QPPWColors.textFillProperty }),
+    content: new Text("⚙", { font: new PhetFont(22), fill: QuantumPotentialColors.textFillProperty }),
     accessibleName: stringManager.configurePotentialStringProperty,
     xMargin: 5,
     yMargin: 1,
@@ -33,12 +33,12 @@ export function createConfigurePotentialButton(model: ScreenModel): RectangularP
       });
 
       const controls = specs.map((spec) => {
-        const name = QPPWDescriber.getParameterNameProperty(spec.parameter);
+        const name = QuantumPotentialDescriber.getParameterNameProperty(spec.parameter);
         return new VBox({
           spacing: 5,
           align: "left",
           children: [
-            new QPPWNumberControl(name, spec.property, {
+            new QuantumPotentialNumberControl(name, spec.property, {
               deltaValue: 0.01,
               decimalPlaces: spec.decimalPlaces,
               valuePattern: spec.valuePattern,
@@ -47,7 +47,7 @@ export function createConfigurePotentialButton(model: ScreenModel): RectangularP
             new HSlider(spec.property, spec.property.range, {
               ...COMPACT_PANEL_SLIDER_OPTIONS,
               accessibleName: name,
-              descriptionContent: QPPWDescriber.getSliderHelpText(spec.parameter),
+              descriptionContent: QuantumPotentialDescriber.getSliderHelpText(spec.parameter),
             }),
           ],
         });
@@ -56,12 +56,12 @@ export function createConfigurePotentialButton(model: ScreenModel): RectangularP
       const dialog = new Dialog(new VBox({ spacing: 14, align: "left", children: controls }), {
         title: new Text(stringManager.configurePotentialStringProperty, {
           font: new PhetFont({ size: 18, weight: "bold" }),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         accessibleName: stringManager.configurePotentialStringProperty,
-        fill: QPPWColors.controlPanelBackgroundColorProperty,
-        stroke: QPPWColors.controlPanelStrokeColorProperty,
-        closeButtonColor: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+        stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+        closeButtonColor: QuantumPotentialColors.textFillProperty,
         hideCallback: () => dialog.dispose(),
       });
       dialog.show();

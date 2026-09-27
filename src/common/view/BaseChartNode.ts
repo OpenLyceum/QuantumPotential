@@ -8,7 +8,7 @@ import { ChartRectangle, ChartTransform } from "scenerystack/bamboo";
 import { Range } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { Line, Node } from "scenerystack/scenery";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import { BaseModel } from "../model/BaseModel.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
@@ -91,7 +91,7 @@ export abstract class BaseChartNode extends Node {
 
     // Create background using ChartRectangle
     this.backgroundRect = new ChartRectangle(this.chartTransform, {
-      fill: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.backgroundColorProperty,
       stroke: null,
       lineWidth: 1,
     });
@@ -107,7 +107,7 @@ export abstract class BaseChartNode extends Node {
 
     // Create zero line
     this.zeroLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.gridLineProperty,
+      stroke: QuantumPotentialColors.gridLineProperty,
       lineWidth: 1,
       lineDash: [5, 5],
     });

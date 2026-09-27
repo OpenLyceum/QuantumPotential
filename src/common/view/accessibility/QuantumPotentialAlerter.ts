@@ -1,5 +1,5 @@
 /**
- * QPPWAlerter manages live announcements to screen readers.
+ * QuantumPotentialAlerter manages live announcements to screen readers.
  * It uses the global voicing utterance queue from scenery to provide
  * non-visual feedback for state changes.
  */
@@ -17,11 +17,11 @@ import type { TwoWellsModel } from "../../../two-wells/model/TwoWellsModel.js";
 import type { BaseModel } from "../../model/BaseModel.js";
 import type { PotentialType } from "../../model/PotentialFunction.js";
 import type { SuperpositionType } from "../../model/SuperpositionType.js";
-import { QPPWDescriber } from "./QPPWDescriber.js";
+import { QuantumPotentialDescriber } from "./QuantumPotentialDescriber.js";
 
 const a11y = stringManager.getA11yStrings();
 
-export class QPPWAlerter {
+export class QuantumPotentialAlerter {
   private readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
   private debouncedAlertTimer: number | null = null;
 
@@ -57,7 +57,7 @@ export class QPPWAlerter {
     // Mass changes (debounced)
     this.model.particleMassProperty.lazyLink((mass: number) => {
       this.debouncedAlert(
-        QPPWDescriber.createParameterChangeAnnouncement(
+        QuantumPotentialDescriber.createParameterChangeAnnouncement(
           "particleMass",
           mass,
           "electronMasses",
@@ -71,11 +71,11 @@ export class QPPWAlerter {
     this.model.wellWidthProperty.lazyLink((width: number) => {
       const numLevels = this.model.getEnergyLevels().length;
       this.debouncedAlert(
-        QPPWDescriber.createParameterChangeAnnouncement(
+        QuantumPotentialDescriber.createParameterChangeAnnouncement(
           "wellWidth",
           width,
           "nanometers",
-          QPPWDescriber.describeBoundStateCount(numLevels),
+          QuantumPotentialDescriber.describeBoundStateCount(numLevels),
         ),
         500,
       );
@@ -85,11 +85,11 @@ export class QPPWAlerter {
     this.model.wellDepthProperty.lazyLink((depth: number) => {
       const numLevels = this.model.getEnergyLevels().length;
       this.debouncedAlert(
-        QPPWDescriber.createParameterChangeAnnouncement(
+        QuantumPotentialDescriber.createParameterChangeAnnouncement(
           "wellDepth",
           depth,
           "electronVolts",
-          QPPWDescriber.describeBoundStateCount(numLevels),
+          QuantumPotentialDescriber.describeBoundStateCount(numLevels),
         ),
         500,
       );
@@ -106,7 +106,7 @@ export class QPPWAlerter {
       return; // No states, or a selection the model has not clamped yet
     }
 
-    const announcement = QPPWDescriber.createEnergyLevelAnnouncement(level, energy, energyLevels.length);
+    const announcement = QuantumPotentialDescriber.createEnergyLevelAnnouncement(level, energy, energyLevels.length);
 
     utteranceQueue.addToBack(new Utterance({ alert: announcement }));
   }
@@ -119,7 +119,11 @@ export class QPPWAlerter {
     const numLevels = energyLevels.length;
     const groundEnergy = numLevels > 0 ? energyLevels[0] : undefined;
 
-    const announcement = QPPWDescriber.createPotentialTypeAnnouncement(potentialType, numLevels, groundEnergy);
+    const announcement = QuantumPotentialDescriber.createPotentialTypeAnnouncement(
+      potentialType,
+      numLevels,
+      groundEnergy,
+    );
 
     utteranceQueue.addToBack(new Utterance({ alert: announcement }));
   }
@@ -128,7 +132,7 @@ export class QPPWAlerter {
    * Alert when superposition type changes.
    */
   private alertSuperpositionTypeChange(superpositionType: SuperpositionType): void {
-    const description = QPPWDescriber.getSuperpositionTypeDescriptionProperty(superpositionType).value;
+    const description = QuantumPotentialDescriber.getSuperpositionTypeDescriptionProperty(superpositionType).value;
     utteranceQueue.addToBack(new Utterance({ alert: description }));
   }
 

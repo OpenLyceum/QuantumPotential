@@ -7,7 +7,7 @@ import { BooleanProperty, DerivedProperty, Property } from "scenerystack/axon";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, Node } from "scenerystack/scenery";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 
 export type ZerosVisualizationOptions = {
@@ -93,8 +93,8 @@ export class ZerosVisualization extends Node {
       const y = this.options.dataToViewY(0); // Zeros are at y=0
 
       const circle = new Circle(4, {
-        fill: QPPWColors.energyLevelSelectedProperty,
-        stroke: QPPWColors.backgroundColorProperty,
+        fill: QuantumPotentialColors.energyLevelSelectedProperty,
+        stroke: QuantumPotentialColors.backgroundColorProperty,
         lineWidth: 1.5,
         centerX: x,
         centerY: y,

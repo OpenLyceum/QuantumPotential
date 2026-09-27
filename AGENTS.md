@@ -1,4 +1,4 @@
-# AGENTS.md — Quantum Potential (QPPW)
+# AGENTS.md — Quantum Potential (QuantumPotential)
 
 Sim-specific context for AI assistants. General SceneryStack guidance: [OpenLyceum/.github/AGENTS.md](https://github.com/OpenLyceum/.github/blob/main/AGENTS.md).
 
@@ -7,7 +7,7 @@ Sim-specific context for AI assistants. General SceneryStack guidance: [OpenLyce
 Four-screen SceneryStack simulation of **bound states in 1D potential wells** — *Intro*, *One Well*,
 *Two Wells*, *Many Wells* — re-solving the time-independent Schrödinger equation live as the user
 drags and reshapes the well. Inspired by PhET's *Quantum Bound States*. The class prefix is
-**`QPPW`** (historical name: Quantum Physics Potential Wells); the repo, package and namespace id
+**`QuantumPotential`** (historical name: Quantum Physics Potential Wells); the repo, package and namespace id
 are `QuantumPotential` / `quantum-potential`.
 
 Educator physics: [`doc/model.md`](doc/model.md). Architecture: [`doc/implementation-notes.md`](doc/implementation-notes.md).
@@ -23,12 +23,12 @@ Solver details: [`doc/solver.md`](doc/solver.md).
 | Closed-form solutions | `src/common/model/analytical-solutions/` (one file per potential, each an `AnalyticalSolution` subclass plus standalone helpers); `multiPoschlTellerPotential.ts` for the smooth multi-well V(x); `ClassicalProbability.ts` for the regularized 1/v density every potential shares |
 | Charts | `src/common/view/{WaveFunction,Energy,Wavenumber}ChartNode.ts` (extend `BaseChartNode`), tools in `chart-tools/`; `StatisticsIndicator` draws the ⟨q⟩ ± σ overlay on the probability-density and wavenumber charts |
 | Layout | `BaseScreenView.createStandardLayout` (One/Two/Many Wells): QBS-style energy chart over the wave-function chart (shared x axis), energy panel + graph panel on the right, time controls below |
-| Control panels | `src/common/view/ControlPanelNode.ts` builds `energyPanel` + `graphPanel`; `src/intro/view/IntroControlPanelNode.ts` (Intro); `QPPWNumberControl` (◀ value ▶ spinner) |
+| Control panels | `src/common/view/ControlPanelNode.ts` builds `energyPanel` + `graphPanel`; `src/intro/view/IntroControlPanelNode.ts` (Intro); `QuantumPotentialNumberControl` (◀ value ▶ spinner) |
 | Potential handles | `src/common/view/handles/` — `PotentialHandleNode` (drag + accessible slider), `PotentialHandlesLayer` (per-potential anchors) |
-| Shared UI styling | `src/common/QPPWPanel.ts`, `QPPWButtonOptions.ts`, `QPPWControlOptions.ts` |
-| A11y | `src/common/view/accessibility/` (`QPPWDescriber`, `QPPWAlerter`); screen summary in `BaseScreenView`, `src/common/view/QPPWKeyboardHelpContent.ts` |
-| Preferences | `src/preferences/` — `QPPWPreferencesModel` (auto-pause), `QPPWPreferencesNode`, `qppwQueryParameters` (`numericalMethod`, `numberOfPoints`) |
-| Colors / namespace | `src/QPPWColors.ts`, `src/QPPWNamespace.ts` |
+| Shared UI styling | `src/common/QuantumPotentialPanel.ts`, `QuantumPotentialButtonOptions.ts`, `QuantumPotentialControlOptions.ts` |
+| A11y | `src/common/view/accessibility/` (`QuantumPotentialDescriber`, `QuantumPotentialAlerter`); screen summary in `BaseScreenView`, `src/common/view/QuantumPotentialKeyboardHelpContent.ts` |
+| Preferences | `src/preferences/` — `QuantumPotentialPreferencesModel` (auto-pause), `QuantumPotentialPreferencesNode`, `quantumPotentialQueryParameters` (`numericalMethod`, `numberOfPoints`) |
+| Colors / namespace | `src/QuantumPotentialColors.ts`, `src/QuantumPotentialNamespace.ts` |
 | Logging | `src/common/utils/Logger.ts` — the **only** place in `src/` allowed to use `console` |
 
 ## Model
@@ -101,7 +101,7 @@ Solver details: [`doc/solver.md`](doc/solver.md).
   needs anchors. `tests/potential-handles.test.ts` checks that every anchor is on the solved curve and
   that the mapping inverts. Handles pause time while dragged. Keyboard access is an `AccessibleSlider`,
   and handles come first in the chart's focus order.
-- **Non-geometric parameters use ◀ ▶ spinners** (`QPPWNumberControl`, a sun `NumberSpinner`): particle
+- **Non-geometric parameters use ◀ ▶ spinners** (`QuantumPotentialNumberControl`, a sun `NumberSpinner`): particle
   mass, number of wells, electric field.
 - **The parameter gear is `?dev` only** (`src/common/utils/isDevMode.ts`); it opens controls for the current potential's handles.
 - **Energy levels**: a transparent picker over the plot hovers and selects the level nearest the
@@ -112,9 +112,9 @@ Solver details: [`doc/solver.md`](doc/solver.md).
 Ships the three required layers: PDOM names on interactive nodes (combo-box items and radio buttons
 included), a screen summary (`ScreenSummaryContent` built in `BaseScreenView` with live
 `currentDetailsContent`), and keyboard support — arrow/Home/End energy-level navigation on the energy
-chart, `KeyboardDragListener`s on the chart tools, and `QPPWKeyboardHelpContent` wired through each
+chart, `KeyboardDragListener`s on the chart tools, and `QuantumPotentialKeyboardHelpContent` wired through each
 Screen's `createKeyboardHelpNode`. All accessible text lives under the `a11y` group of the locale
-files (`StringManager.getA11yStrings()`); `QPPWDescriber` turns model state into sentences
+files (`StringManager.getA11yStrings()`); `QuantumPotentialDescriber` turns model state into sentences
 (`*Pattern` strings + `StringUtils.fillIn`), and description `DerivedProperty`s depend on
 `localeProperty` so they follow language changes. Voicing is not offered (no voicing responses yet;
 deferred fleet-wide). Full convention:
@@ -122,7 +122,8 @@ deferred fleet-wide). Full convention:
 
 ## Compliance carve-outs
 
-- **Nested constants:** there is no root `QPPWConstants.ts`. Physical constants live in
+- **Hardcoded colors:** `src/common/view/chart-tools/PhaseColormap.ts` computes `rgb()` strings from the wave-function phase — a data colormap, not a theme token.
+- **Nested constants:** there is no root `QuantumPotentialConstants.ts`. Physical constants live in
   `src/common/model/QuantumConstants.ts`; the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`
   (used by the models and `BaseChartNode`); chart margins are in `BaseChartNode`; per-model ranges are
   `static readonly` on `BaseModel` and the screen models.

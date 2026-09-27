@@ -1,11 +1,11 @@
 /**
- * BaseModel is an abstract base class for all physics models in QPPW.
+ * BaseModel is an abstract base class for all physics models in QuantumPotential.
  * It provides common functionality for time evolution, simulation control, and solver configuration.
  */
 
 import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
-import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
+import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 import { calculateClassicalProbabilityDensity } from "./ClassicalProbability.js";
 import { calculateRMSStatistics } from "./DistributionStatistics.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
@@ -212,7 +212,7 @@ export abstract class BaseModel {
     );
 
     // Numerov by default; ?numericalMethod=fgh selects the FGH cross-check
-    this.solver = new Schrodinger1DSolver(qppwQueryParameters.numericalMethod as NumericalMethod);
+    this.solver = new Schrodinger1DSolver(quantumPotentialQueryParameters.numericalMethod as NumericalMethod);
 
     // Note: setupCacheInvalidation() must be called by subclasses
     // after all their properties are initialized

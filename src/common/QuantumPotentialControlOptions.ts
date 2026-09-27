@@ -2,12 +2,12 @@
 
 import { Dimension2 } from "scenerystack/dot";
 import type { CheckboxOptions, HSliderOptions } from "scenerystack/sun";
-import QPPWColors from "../QPPWColors.js";
+import QuantumPotentialColors from "../QuantumPotentialColors.js";
 
 export const PANEL_SLIDER_OPTIONS = {
   trackSize: new Dimension2(150, 4),
   thumbSize: new Dimension2(15, 30),
-  trackFillEnabled: QPPWColors.textFillProperty,
+  trackFillEnabled: QuantumPotentialColors.textFillProperty,
 } satisfies HSliderOptions;
 
 export const COMPACT_PANEL_SLIDER_OPTIONS = {
@@ -18,6 +18,6 @@ export const COMPACT_PANEL_SLIDER_OPTIONS = {
 export const PANEL_CHECKBOX_OPTIONS = {
   boxWidth: 16,
   spacing: 4,
-  checkboxColor: QPPWColors.textFillProperty,
-  checkboxColorBackground: QPPWColors.panelFillProperty,
+  checkboxColor: QuantumPotentialColors.textFillProperty,
+  checkboxColorBackground: QuantumPotentialColors.panelFillProperty,
 } satisfies CheckboxOptions;

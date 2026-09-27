@@ -31,7 +31,7 @@
  * @module LinearAlgebraUtils
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 
 /**
  * Matrix class providing core linear algebra operations for quantum mechanics.
@@ -773,7 +773,7 @@ export function cubicSplineInterpolation(
   return { fineXGrid, fineYValues };
 }
 
-qppw.register("LinearAlgebraUtils", {
+QuantumPotentialNamespace.register("LinearAlgebraUtils", {
   matrixToArray,
   diagonalize,
   normalizeWavefunction,

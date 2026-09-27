@@ -1,5 +1,5 @@
 /**
- * QPPWKeyboardHelpContent — content for the standard keyboard-help dialog (the keyboard button joist adds
+ * QuantumPotentialKeyboardHelpContent — content for the standard keyboard-help dialog (the keyboard button joist adds
  * to the navigation bar), shared by every screen. Its sections follow PhET's Quantum Bound States (QBSKeyboardHelpContent),
  * laid out in two columns. Every section describes keys that are actually wired up in the views:
  *
@@ -8,7 +8,7 @@
  * - Time Controls: the Alt+K play/pause hotkey registered by TimeControlNode (SimulationControlBar)
  * - Combo Boxes: the potential-type pickers
  * - Slider Controls: the potential handles, which are accessible sliders
- * - Spinner Controls: the ◀ ▶ spinners (QPPWNumberControl) for mass, number of wells, electric field, level
+ * - Spinner Controls: the ◀ ▶ spinners (QuantumPotentialNumberControl) for mass, number of wells, electric field, level
  * - Basic Actions: buttons, checkboxes and navigation
  */
 
@@ -28,7 +28,7 @@ import {
 } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
 
-export class QPPWKeyboardHelpContent extends TwoColumnKeyboardHelpContent {
+export class QuantumPotentialKeyboardHelpContent extends TwoColumnKeyboardHelpContent {
   public constructor() {
     const strings = stringManager.getKeyboardShortcutsStrings();
 

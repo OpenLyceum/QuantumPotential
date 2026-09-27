@@ -1,5 +1,5 @@
 /**
- * StringManager handles internationalization for the QPPW simulation.
+ * StringManager handles internationalization for the QuantumPotential simulation.
  * It provides StringProperty instances for all translatable strings in the application.
  */
 

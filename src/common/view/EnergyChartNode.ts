@@ -14,14 +14,14 @@ import { HBox, Line, Node, Path, Rectangle, RichText, type SceneryEvent, Text, V
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox, Panel } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import { isSingleWellModel } from "../model/ModelTypeGuards.js";
 import { type BoundStateResult, PotentialType } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
-import { PANEL_CHECKBOX_OPTIONS } from "../QPPWControlOptions.js";
+import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
 import isDevMode from "../utils/isDevMode.js";
-import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import { createConfigurePotentialButton } from "./ConfigurePotentialDialog.js";
@@ -161,7 +161,7 @@ export class EnergyChartNode extends BaseChartNode {
     );
 
     // Reconfigure zero line with energy chart specific styling
-    this.zeroLine.stroke = QPPWColors.potentialBarrierProperty;
+    this.zeroLine.stroke = QuantumPotentialColors.potentialBarrierProperty;
     this.zeroLine.lineWidth = 1;
     this.zeroLine.lineDash = [5, 5];
 
@@ -171,7 +171,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Create potential energy path
     this.potentialPath = new Path(null, {
-      stroke: QPPWColors.potentialWellProperty,
+      stroke: QuantumPotentialColors.potentialWellProperty,
       lineWidth: 3,
     });
     this.plotContentNode.addChild(this.potentialPath);
@@ -179,11 +179,14 @@ export class EnergyChartNode extends BaseChartNode {
     // Create energy level lines and labels containers
     this.energyLevelNodes = new Map();
     const levelLabelOptions = { font: new PhetFont({ size: 12, weight: "bold" }), maxWidth: 200 };
-    this.selectedLevelLabel = new RichText("", { ...levelLabelOptions, fill: QPPWColors.energyLevelSelectedProperty });
-    this.hoveredLevelLabel = new RichText("", { ...levelLabelOptions, fill: QPPWColors.labelFillProperty });
+    this.selectedLevelLabel = new RichText("", {
+      ...levelLabelOptions,
+      fill: QuantumPotentialColors.energyLevelSelectedProperty,
+    });
+    this.hoveredLevelLabel = new RichText("", { ...levelLabelOptions, fill: QuantumPotentialColors.labelFillProperty });
     const levelPanelOptions = {
-      fill: QPPWColors.controlPanelBackgroundColorProperty,
-      stroke: QPPWColors.controlPanelStrokeColorProperty,
+      fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+      stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
       cornerRadius: 3,
       xMargin: 6,
       yMargin: 2,
@@ -215,7 +218,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Create classical turning point lines
     this.leftTurningPointLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [8, 4],
       visible: false,
@@ -223,7 +226,7 @@ export class EnergyChartNode extends BaseChartNode {
     this.plotContentNode.addChild(this.leftTurningPointLine);
 
     this.rightTurningPointLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [8, 4],
       visible: false,
@@ -297,7 +300,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     const well = [
       StringUtils.fillIn(strings.wellPatternStringProperty, {
-        potential: QPPWDescriber.getPotentialTypeName(potentialType),
+        potential: QuantumPotentialDescriber.getPotentialTypeName(potentialType),
         width: width.toFixed(2),
       }),
     ];
@@ -307,7 +310,7 @@ export class EnergyChartNode extends BaseChartNode {
     }
 
     const levels = [
-      QPPWDescriber.describeBoundStateCount(numLevels),
+      QuantumPotentialDescriber.describeBoundStateCount(numLevels),
       StringUtils.fillIn(strings.groundStatePatternStringProperty, { energy: groundEnergy.toFixed(3) }),
     ];
     if (numLevels > 1) {
@@ -423,7 +426,7 @@ export class EnergyChartNode extends BaseChartNode {
       if (energy !== yMin) {
         const y = this.chartMargins.top + this.chartTransform.modelToViewY(energy);
         const gridLine = new Line(this.chartMargins.left, y, this.chartMargins.left + this.plotWidth, y, {
-          stroke: QPPWColors.gridLineProperty,
+          stroke: QuantumPotentialColors.gridLineProperty,
           lineWidth: 1,
         });
         axesNode.addChild(gridLine);
@@ -435,7 +438,7 @@ export class EnergyChartNode extends BaseChartNode {
       if (pos !== -X_AXIS_RANGE_NM) {
         const x = this.chartMargins.left + this.chartTransform.modelToViewX(pos);
         const gridLine = new Line(x, this.chartMargins.top, x, this.chartMargins.top + this.plotHeight, {
-          stroke: QPPWColors.gridLineProperty,
+          stroke: QuantumPotentialColors.gridLineProperty,
           lineWidth: 1,
         });
         axesNode.addChild(gridLine);
@@ -444,7 +447,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Y-axis at left edge using bamboo AxisLine (at model x=-4nm)
     const yAxisLeftNode = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: this.xMinProperty.value,
     });
@@ -454,7 +457,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // Y-axis at origin using bamboo AxisLine (at model x=0)
     const yAxisNode = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: 0,
       opacity: 0.3,
@@ -465,7 +468,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // X-axis using bamboo AxisLine (at model y=0)
     const xAxisNode = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: 0,
     });
@@ -475,7 +478,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     // X-axis at bottom using bamboo AxisLine (at model y=yMin)
     const xAxisBottomNode = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: this.yMinProperty.value,
     });
@@ -487,7 +490,7 @@ export class EnergyChartNode extends BaseChartNode {
     const yTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.VERTICAL, 5, {
       edge: "min",
       extent: 8,
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 1,
     });
     yTickMarksNode.x = this.chartMargins.left;
@@ -498,7 +501,7 @@ export class EnergyChartNode extends BaseChartNode {
     const xTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
       edge: "max",
       extent: 8,
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 1,
     });
     xTickMarksNode.x = this.chartMargins.left;
@@ -511,7 +514,7 @@ export class EnergyChartNode extends BaseChartNode {
       createLabel: (value: number) =>
         new Text(value.toFixed(0), {
           font: new PhetFont(12),
-          fill: QPPWColors.labelFillProperty,
+          fill: QuantumPotentialColors.labelFillProperty,
         }),
     });
     yTickLabelsNode.x = this.chartMargins.left;
@@ -525,7 +528,7 @@ export class EnergyChartNode extends BaseChartNode {
         createLabel: (value: number) =>
           new Text(value.toFixed(0), {
             font: new PhetFont(12),
-            fill: QPPWColors.labelFillProperty,
+            fill: QuantumPotentialColors.labelFillProperty,
           }),
       });
       xTickLabelsNode.x = this.chartMargins.left;
@@ -536,7 +539,7 @@ export class EnergyChartNode extends BaseChartNode {
     // Axis labels
     const yLabelText = new Text(stringManager.energyEvStringProperty, {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       rotation: -Math.PI / 2,
       centerX: this.chartMargins.left - 40,
       centerY: this.chartHeight / 2,
@@ -546,7 +549,7 @@ export class EnergyChartNode extends BaseChartNode {
     if (!this.sharedXAxis) {
       const xLabelText = new Text(stringManager.positionNmStringProperty, {
         font: new PhetFont(14),
-        fill: QPPWColors.labelFillProperty,
+        fill: QuantumPotentialColors.labelFillProperty,
         centerY: this.chartHeight - 15,
       });
       // Center on the plot area (not the whole chart), and keep it centered when the locale changes.
@@ -571,7 +574,7 @@ export class EnergyChartNode extends BaseChartNode {
           this.viewState.showPotentialEnergyProperty,
           new Text(stringManager.potentialEnergyStringProperty, {
             font: "12px sans-serif",
-            fill: QPPWColors.textFillProperty,
+            fill: QuantumPotentialColors.textFillProperty,
           }),
           {
             ...PANEL_CHECKBOX_OPTIONS,
@@ -589,8 +592,8 @@ export class EnergyChartNode extends BaseChartNode {
       5,
       5,
       {
-        fill: QPPWColors.panelFillProperty,
-        stroke: QPPWColors.gridLineProperty,
+        fill: QuantumPotentialColors.panelFillProperty,
+        stroke: QuantumPotentialColors.gridLineProperty,
         lineWidth: 1,
       },
     );
@@ -787,7 +790,9 @@ export class EnergyChartNode extends BaseChartNode {
       const isSelected = index === this.model.selectedEnergyLevelIndexProperty.value;
       const isHovered = index === this.hoveredEnergyLevelIndex;
 
-      line.stroke = isSelected ? QPPWColors.energyLevelSelectedProperty : QPPWColors.energyLevelProperty;
+      line.stroke = isSelected
+        ? QuantumPotentialColors.energyLevelSelectedProperty
+        : QuantumPotentialColors.energyLevelProperty;
       line.lineWidth = isSelected ? 4 : isHovered ? 3 : 2;
       line.opacity = isHovered ? 1 : 0.7;
     });
@@ -894,7 +899,9 @@ export class EnergyChartNode extends BaseChartNode {
       const isHovered = index === this.hoveredEnergyLevelIndex;
 
       const line = new Line(x1, y, x2, y, {
-        stroke: isSelected ? QPPWColors.energyLevelSelectedProperty : QPPWColors.energyLevelProperty,
+        stroke: isSelected
+          ? QuantumPotentialColors.energyLevelSelectedProperty
+          : QuantumPotentialColors.energyLevelProperty,
         lineWidth: isSelected ? 4 : isHovered ? 3 : 2,
         cursor: "pointer",
         opacity: isHovered ? 1 : 0.7,
@@ -913,7 +920,7 @@ export class EnergyChartNode extends BaseChartNode {
         accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
         descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
           energy: energy.toFixed(3),
-          nodes: QPPWDescriber.describeNodes(index),
+          nodes: QuantumPotentialDescriber.describeNodes(index),
         }),
         focusable: true,
       });

@@ -2,7 +2,7 @@
  * Type definitions for superposition states.
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 
 /**
  * Type of superposition state
@@ -45,6 +45,6 @@ export type SuperpositionConfig = {
   relativePhase?: number;
 };
 
-qppw.register("SuperpositionType", { SuperpositionType });
+QuantumPotentialNamespace.register("SuperpositionType", { SuperpositionType });
 
 export default SuperpositionType;

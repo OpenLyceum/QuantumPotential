@@ -1,5 +1,5 @@
 /**
- * BaseScreenView is an abstract base class for all screen views in the QPPW simulation.
+ * BaseScreenView is an abstract base class for all screen views in the QuantumPotential simulation.
  * It provides common functionality including standard layout for quantum well simulations.
  */
 
@@ -13,13 +13,13 @@ import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
 import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
 import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
 import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import type { BaseModel } from "../model/BaseModel.js";
-import { FLAT_INFO_BUTTON_OPTIONS, FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
-import { QPPWAlerter } from "./accessibility/QPPWAlerter.js";
-import { QPPWDescriber } from "./accessibility/QPPWDescriber.js";
+import { FLAT_INFO_BUTTON_OPTIONS, FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
+import { QuantumPotentialAlerter } from "./accessibility/QuantumPotentialAlerter.js";
+import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { CONTROL_PANEL_WIDTH, ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
 import { EnergyChartNode } from "./EnergyChartNode.js";
 import { SimulationControlBar } from "./SimulationControlBar.js";
@@ -64,7 +64,7 @@ export abstract class BaseScreenView extends ScreenView {
   protected listBoxParent?: Node;
 
   // PDOM (Parallel DOM) structure components for accessibility
-  protected alerter?: QPPWAlerter;
+  protected alerter?: QuantumPotentialAlerter;
 
   protected constructor(
     model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
@@ -82,7 +82,7 @@ export abstract class BaseScreenView extends ScreenView {
     this.model = model;
 
     // Create the alerter for accessibility announcements using global voicing utterance queue
-    this.alerter = new QPPWAlerter(model);
+    this.alerter = new QuantumPotentialAlerter(model);
 
     // Create the reset all button in the bottom-right corner
     this.resetButton = new ResetAllButton({
@@ -127,12 +127,12 @@ export abstract class BaseScreenView extends ScreenView {
       this.infoDialog = new Dialog(this.createInfoDialogContent(), {
         title: new Text(titleStringProperty, {
           font: new PhetFont({ size: 18, weight: "bold" }),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         accessibleName: titleStringProperty,
-        fill: QPPWColors.controlPanelBackgroundColorProperty,
-        stroke: QPPWColors.controlPanelStrokeColorProperty,
-        closeButtonColor: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+        stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
+        closeButtonColor: QuantumPotentialColors.textFillProperty,
       });
     }
     return this.infoDialog;
@@ -253,13 +253,13 @@ export abstract class BaseScreenView extends ScreenView {
     const paragraph = (stringProperty: TReadOnlyProperty<string>, fontSize: number): RichText =>
       new RichText(new DerivedProperty([stringProperty], (text) => text.replace(/\n/g, "<br>")), {
         font: new PhetFont(fontSize),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
         lineWrap: INFO_DIALOG_TEXT_WIDTH,
       });
     const heading = (stringProperty: TReadOnlyProperty<string>): Text =>
       new Text(stringProperty, {
         font: new PhetFont({ size: 14, weight: "bold" }),
-        fill: QPPWColors.textFillProperty,
+        fill: QuantumPotentialColors.textFillProperty,
         maxWidth: INFO_DIALOG_TEXT_WIDTH,
       });
 
@@ -325,7 +325,7 @@ export abstract class BaseScreenView extends ScreenView {
       ],
       (potentialType, levelIndex, currentStatePattern, noStatesPattern) => {
         const energyLevels = model.getEnergyLevels();
-        const potential = QPPWDescriber.getPotentialTypeName(potentialType);
+        const potential = QuantumPotentialDescriber.getPotentialTypeName(potentialType);
 
         // The selection can briefly exceed the level count until the model clamps it on its next step
         const energy = energyLevels[levelIndex];

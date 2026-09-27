@@ -6,7 +6,7 @@ import { HBox, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { NumberSpinner } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 
 export class EnergyLevelControl extends HBox {
@@ -38,7 +38,7 @@ export class EnergyLevelControl extends HBox {
       arrowsPosition: "leftRight",
       deltaValue: 1,
       xSpacing: 5,
-      arrowButtonOptions: { baseColor: QPPWColors.controlPanelBackgroundColorProperty },
+      arrowButtonOptions: { baseColor: QuantumPotentialColors.controlPanelBackgroundColorProperty },
       numberDisplayOptions: {
         useRichText: true,
         numberFormatter: (index) => `E<sub>${index + 1}</sub>`,
@@ -58,7 +58,7 @@ export class EnergyLevelControl extends HBox {
       children: [
         new Text(stringManager.energyLevelStringProperty, {
           font: new PhetFont(13),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         spinner,
       ],

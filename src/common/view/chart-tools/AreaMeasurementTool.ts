@@ -10,7 +10,7 @@ import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Rectangle
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 import { SuperpositionType } from "../../model/SuperpositionType.js";
@@ -80,21 +80,21 @@ export class AreaMeasurementTool extends Node {
 
     // Create faint background rectangle showing the measurement region
     this.areaBackgroundRegion = new Rectangle(0, 0, 1, 1, {
-      fill: QPPWColors.areaMeasurementLightProperty,
+      fill: QuantumPotentialColors.areaMeasurementLightProperty,
       stroke: null,
     });
     this.container.addChild(this.areaBackgroundRegion);
 
     // Create shaded region between markers (follows the curve)
     this.areaRegion = new Path(null, {
-      fill: QPPWColors.areaMeasurementDarkProperty,
+      fill: QuantumPotentialColors.areaMeasurementDarkProperty,
       stroke: null,
     });
     this.container.addChild(this.areaRegion);
 
     // Create left marker line
     this.leftMarker = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [6, 4],
     });
@@ -102,7 +102,7 @@ export class AreaMeasurementTool extends Node {
 
     // Create right marker line
     this.rightMarker = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [6, 4],
     });
@@ -110,8 +110,8 @@ export class AreaMeasurementTool extends Node {
 
     // Create left marker handle (draggable circle at top)
     this.leftMarkerHandle = new Circle(8, {
-      fill: QPPWColors.energyLevelSelectedProperty,
-      stroke: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.backgroundColorProperty,
       lineWidth: 2,
       cursor: "ew-resize",
 
@@ -150,8 +150,8 @@ export class AreaMeasurementTool extends Node {
 
     // Create right marker handle (draggable circle at top)
     this.rightMarkerHandle = new Circle(8, {
-      fill: QPPWColors.energyLevelSelectedProperty,
-      stroke: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.backgroundColorProperty,
       lineWidth: 2,
       cursor: "ew-resize",
 
@@ -191,7 +191,7 @@ export class AreaMeasurementTool extends Node {
     // Create area percentage label
     this.areaLabel = new Text("", {
       font: new PhetFont({ size: 16, weight: "bold" }),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       visible: false,
     });
     this.addChild(this.areaLabel);

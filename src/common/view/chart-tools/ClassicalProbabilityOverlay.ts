@@ -7,7 +7,7 @@ import { Shape } from "scenerystack/kite";
 import { Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import { isSingleWellModel } from "../../model/ModelTypeGuards.js";
 import type { BoundStateResult } from "../../model/PotentialFunction.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
@@ -43,7 +43,7 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Create classical turning point lines
     this.leftTurningPointLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [8, 4],
       visible: false,
@@ -51,7 +51,7 @@ export class ClassicalProbabilityOverlay extends Node {
     this.addChild(this.leftTurningPointLine);
 
     this.rightTurningPointLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
       lineDash: [8, 4],
       visible: false,
@@ -60,14 +60,14 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Create faint rectangular backgrounds for classically forbidden regions
     this.leftForbiddenBackground = new Rectangle(0, 0, 1, 1, {
-      fill: QPPWColors.forbiddenRegionLightProperty,
+      fill: QuantumPotentialColors.forbiddenRegionLightProperty,
       stroke: null,
       visible: false,
     });
     this.addChild(this.leftForbiddenBackground);
 
     this.rightForbiddenBackground = new Rectangle(0, 0, 1, 1, {
-      fill: QPPWColors.forbiddenRegionLightProperty,
+      fill: QuantumPotentialColors.forbiddenRegionLightProperty,
       stroke: null,
       visible: false,
     });
@@ -75,14 +75,14 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Create classically forbidden regions (shaded areas that follow the classical probability curve)
     this.leftForbiddenRegion = new Path(null, {
-      fill: QPPWColors.forbiddenRegionDarkProperty,
+      fill: QuantumPotentialColors.forbiddenRegionDarkProperty,
       stroke: null,
       visible: false,
     });
     this.addChild(this.leftForbiddenRegion);
 
     this.rightForbiddenRegion = new Path(null, {
-      fill: QPPWColors.forbiddenRegionDarkProperty,
+      fill: QuantumPotentialColors.forbiddenRegionDarkProperty,
       stroke: null,
       visible: false,
     });
@@ -91,7 +91,7 @@ export class ClassicalProbabilityOverlay extends Node {
     // Create forbidden probability label (appears on hover)
     this.forbiddenProbabilityLabel = new Text("", {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       visible: false,
       centerX: options.chartWidth / 2,
       top: options.chartMargins.top + 30,
@@ -100,7 +100,7 @@ export class ClassicalProbabilityOverlay extends Node {
 
     // Create classical probability path
     this.classicalProbabilityPath = new Path(null, {
-      stroke: QPPWColors.classicalProbabilityProperty,
+      stroke: QuantumPotentialColors.classicalProbabilityProperty,
       lineWidth: 3,
       lineDash: [8, 4],
       visible: false,

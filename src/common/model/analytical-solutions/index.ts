@@ -7,7 +7,7 @@
  * potential's file directly if you need one on its own.
  */
 
-import qppw from "../../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../../QuantumPotentialNamespace.js";
 import { solveAsymmetricTrianglePotential } from "./asymmetric-triangle-potential.js";
 import { solveCoulomb1DPotential } from "./coulomb-1d-potential.js";
 import { solveDoubleSquareWellAnalytical } from "./double-square-well.js";
@@ -38,8 +38,8 @@ export { PoschlTellerPotentialSolution, solvePoschlTellerPotential } from "./pos
 export { RosenMorsePotentialSolution, solveRosenMorsePotential } from "./rosen-morse-potential.js";
 export { solveTriangularPotential, TriangularPotentialSolution } from "./triangular-potential.js";
 
-// Register all solutions with the QPPW namespace
-qppw.register("AnalyticalSolutions", {
+// Register all solutions with the QuantumPotential namespace
+QuantumPotentialNamespace.register("AnalyticalSolutions", {
   solveFiniteSquareWell,
   solveInfiniteWell,
   solveHarmonicOscillator,

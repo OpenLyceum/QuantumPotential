@@ -10,7 +10,7 @@ import { Circle, DragListener, HBox, KeyboardDragListener, Line, Node, Path, Tex
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
@@ -79,7 +79,7 @@ export class CurvatureTool extends Node {
 
     // Create marker line
     this.marker = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.curvatureToolStrokeProperty,
+      stroke: QuantumPotentialColors.curvatureToolStrokeProperty,
       lineWidth: 2,
       lineDash: [4, 3],
       cursor: "ew-resize", // Make it clear the line is draggable
@@ -122,15 +122,15 @@ export class CurvatureTool extends Node {
 
     // Create position tracking circle (shows position on wavefunction)
     this.positionCircle = new Circle(5, {
-      fill: QPPWColors.curvatureToolFillDarkProperty,
-      stroke: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.curvatureToolFillDarkProperty,
+      stroke: QuantumPotentialColors.backgroundColorProperty,
       lineWidth: 2,
     });
     this.container.addChild(this.positionCircle);
 
     // Create parabola path
     this.parabola = new Path(null, {
-      stroke: QPPWColors.curvatureToolFillLightProperty,
+      stroke: QuantumPotentialColors.curvatureToolFillLightProperty,
       lineWidth: 3,
       fill: null,
     });
@@ -138,7 +138,7 @@ export class CurvatureTool extends Node {
 
     // A stacked fraction keeps the second-derivative equation compact on the chart.
     const labelFont = new PhetFont({ size: 14, weight: "bold" });
-    const labelFill = QPPWColors.curvatureToolFillDarkProperty;
+    const labelFill = QuantumPotentialColors.curvatureToolFillDarkProperty;
     this.labelValue = new Text("", {
       font: labelFont,
       fill: labelFill,

@@ -2,7 +2,7 @@
  * Numerical methods for solving the Schrödinger equation
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 
 /**
  * Numerical methods for the time-independent Schrödinger equation. Numerov shooting is the sim's
@@ -17,6 +17,6 @@ export const NumericalMethod = {
 
 export type NumericalMethod = (typeof NumericalMethod)[keyof typeof NumericalMethod];
 
-qppw.register("NumericalMethod", NumericalMethod);
+QuantumPotentialNamespace.register("NumericalMethod", NumericalMethod);
 
 export default NumericalMethod;

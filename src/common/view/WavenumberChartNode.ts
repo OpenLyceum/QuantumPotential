@@ -16,7 +16,7 @@ import { StringUtils } from "scenerystack/phetcommon";
 import { Line, Node, Path, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { PotentialType } from "../model/PotentialFunction.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
@@ -116,7 +116,7 @@ export class WavenumberChartNode extends Node {
 
     // Create background using ChartRectangle
     this.backgroundRect = new ChartRectangle(this.chartTransform, {
-      fill: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.backgroundColorProperty,
       stroke: null,
       lineWidth: 1,
     });
@@ -127,7 +127,7 @@ export class WavenumberChartNode extends Node {
     // Create title label
     this.titleLabel = new Text(a11y.visible.wavenumberDistributionStringProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       centerX: this.chartWidth / 2,
       top: 5,
     });
@@ -145,7 +145,7 @@ export class WavenumberChartNode extends Node {
 
     // Create zero line
     this.zeroLine = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.gridLineProperty,
+      stroke: QuantumPotentialColors.gridLineProperty,
       lineWidth: 1,
       lineDash: [5, 5],
     });
@@ -153,9 +153,9 @@ export class WavenumberChartNode extends Node {
 
     // Create wavenumber distribution path
     this.wavenumberPath = new Path(null, {
-      stroke: QPPWColors.wavefunctionProbabilityProperty,
+      stroke: QuantumPotentialColors.wavefunctionProbabilityProperty,
       lineWidth: 2,
-      fill: QPPWColors.wavefunctionProbabilityFillProperty,
+      fill: QuantumPotentialColors.wavefunctionProbabilityFillProperty,
     });
     this.plotContentNode.addChild(this.wavenumberPath);
 
@@ -218,7 +218,7 @@ export class WavenumberChartNode extends Node {
 
     // Y-axis at the left edge of the plot, which stays put as the k range follows the data
     const yAxisLeftNode = new Line(0, 0, 0, this.plotHeight, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
     });
     yAxisLeftNode.x = this.chartMargins.left;
@@ -227,7 +227,7 @@ export class WavenumberChartNode extends Node {
 
     // Y-axis at origin using bamboo AxisLine (at k=0)
     const yAxisNode = new AxisLine(this.chartTransform, Orientation.VERTICAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: 0,
       opacity: 0.3,
@@ -238,7 +238,7 @@ export class WavenumberChartNode extends Node {
 
     // X-axis using bamboo AxisLine (at y=0)
     const xAxisNode = new AxisLine(this.chartTransform, Orientation.HORIZONTAL, {
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 2,
       value: 0,
     });
@@ -250,7 +250,7 @@ export class WavenumberChartNode extends Node {
     const xTickMarksNode = new TickMarkSet(this.chartTransform, Orientation.HORIZONTAL, this.xTickSpacing, {
       edge: "max",
       extent: 8,
-      stroke: QPPWColors.axisProperty,
+      stroke: QuantumPotentialColors.axisProperty,
       lineWidth: 1,
     });
     xTickMarksNode.x = this.chartMargins.left;
@@ -264,7 +264,7 @@ export class WavenumberChartNode extends Node {
       createLabel: (value: number) =>
         new Text(this.formatXTickLabel(value), {
           font: new PhetFont(12),
-          fill: QPPWColors.labelFillProperty,
+          fill: QuantumPotentialColors.labelFillProperty,
         }),
     });
     xTickLabelsNode.x = this.chartMargins.left;
@@ -275,7 +275,7 @@ export class WavenumberChartNode extends Node {
     // Y-axis label, hugging the plot since this axis has no tick labels
     const yAxisLabel = new Text("|φ(k)|² (nm)", {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       rotation: -Math.PI / 2,
       right: this.chartMargins.left - 8,
       centerY: this.chartMargins.top + this.plotHeight / 2,
@@ -285,7 +285,7 @@ export class WavenumberChartNode extends Node {
     // X-axis label
     const xLabelText = new Text(a11y.visible.wavenumberAxisStringProperty, {
       font: new PhetFont(14),
-      fill: QPPWColors.labelFillProperty,
+      fill: QuantumPotentialColors.labelFillProperty,
       centerX: this.chartWidth / 2,
       centerY: this.chartHeight - 15,
     });

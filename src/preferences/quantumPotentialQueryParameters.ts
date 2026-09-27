@@ -1,5 +1,5 @@
 /**
- * qppwQueryParameters.ts
+ * quantumPotentialQueryParameters.ts
  *
  * Sim-specific startup query parameters. This is the single place where every sim-specific
  * query parameter is declared and documented. Public-facing parameters (intended for end users /
@@ -11,9 +11,9 @@
 import { logGlobal } from "scenerystack/phet-core";
 import { QueryStringMachine } from "scenerystack/query-string-machine";
 import { NumericalMethod } from "../common/model/NumericalMethod.js";
-import qppw from "../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../QuantumPotentialNamespace.js";
 
-const qppwQueryParameters = QueryStringMachine.getAll({
+const quantumPotentialQueryParameters = QueryStringMachine.getAll({
   /**
    * Numerical method for the potentials without a closed-form solution (the Many Wells screen).
    * Numerov is the sim's solver; FGH is a developer cross-check.
@@ -35,9 +35,9 @@ const qppwQueryParameters = QueryStringMachine.getAll({
   },
 });
 
-qppw.register("qppwQueryParameters", qppwQueryParameters);
+QuantumPotentialNamespace.register("quantumPotentialQueryParameters", quantumPotentialQueryParameters);
 
 // Log query parameters (for the console / PhET-iO).
 logGlobal("phet.chipper.queryParameters");
 
-export default qppwQueryParameters;
+export default quantumPotentialQueryParameters;

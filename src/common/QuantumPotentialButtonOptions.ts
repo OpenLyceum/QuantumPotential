@@ -2,7 +2,7 @@
 
 import type { PlayPauseStepButtonGroupOptions } from "scenerystack/scenery-phet";
 import { ButtonNode } from "scenerystack/sun";
-import QPPWColors from "../QPPWColors.js";
+import QuantumPotentialColors from "../QuantumPotentialColors.js";
 
 export const FLAT_BUTTON_APPEARANCE_OPTIONS = {
   buttonAppearanceStrategy: ButtonNode.FlatAppearanceStrategy,
@@ -10,8 +10,8 @@ export const FLAT_BUTTON_APPEARANCE_OPTIONS = {
 
 export const FLAT_PANEL_PUSH_BUTTON_OPTIONS = {
   ...FLAT_BUTTON_APPEARANCE_OPTIONS,
-  baseColor: QPPWColors.controlPanelBackgroundColorProperty,
-  disabledColor: QPPWColors.disabledButtonColorProperty,
+  baseColor: QuantumPotentialColors.controlPanelBackgroundColorProperty,
+  disabledColor: QuantumPotentialColors.disabledButtonColorProperty,
 } as const;
 
 export const FLAT_RESET_ALL_BUTTON_OPTIONS = FLAT_BUTTON_APPEARANCE_OPTIONS;

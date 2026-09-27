@@ -3,7 +3,7 @@
  *
  * Creates each screen model inside a function boundary, disposes it, forces garbage
  * collection via global.gc (--expose-gc in vitest.config.ts), then asserts via WeakRef that
- * the model was collected. Models link to the global QPPWPreferences properties, so a model
+ * the model was collected. Models link to the global QuantumPotentialPreferences properties, so a model
  * whose dispose() forgets to unlink stays reachable and fails here.
  */
 

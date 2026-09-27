@@ -10,10 +10,13 @@ import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
 import { HSlider } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import { BaseModel } from "../model/BaseModel.js";
-import { FLAT_BUTTON_APPEARANCE_OPTIONS, FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS } from "../QPPWButtonOptions.js";
-import { PANEL_SLIDER_OPTIONS } from "../QPPWControlOptions.js";
+import {
+  FLAT_BUTTON_APPEARANCE_OPTIONS,
+  FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS,
+} from "../QuantumPotentialButtonOptions.js";
+import { PANEL_SLIDER_OPTIONS } from "../QuantumPotentialControlOptions.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -29,7 +32,7 @@ export class SimulationControlBar extends Node {
     // Time display
     const timeLabel = new Text(stringManager.timeStringProperty, {
       font: new PhetFont(14),
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
     });
 
     const formattedTimeProperty = new DerivedProperty(
@@ -38,7 +41,7 @@ export class SimulationControlBar extends Node {
     );
     this.timeText = new Text(formattedTimeProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),
-      fill: QPPWColors.textFillProperty,
+      fill: QuantumPotentialColors.textFillProperty,
       maxWidth: 130,
     });
 
@@ -125,7 +128,7 @@ export class SimulationControlBar extends Node {
     this.model.timeSpeedProperty.lazyLink(syncIndexFromSpeed);
     speedIndexProperty.lazyLink(syncSpeedFromIndex);
 
-    const tickLabelOptions = { font: new PhetFont(12), fill: QPPWColors.textFillProperty, maxWidth: 70 };
+    const tickLabelOptions = { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty, maxWidth: 70 };
     const speedSlider = new HSlider(speedIndexProperty, speedIndexProperty.range, {
       ...PANEL_SLIDER_OPTIONS,
       trackSize: new Dimension2(140, 4),
@@ -136,8 +139,8 @@ export class SimulationControlBar extends Node {
       pageKeyboardStep: 1,
       majorTickLength: 12,
       minorTickLength: 8,
-      majorTickStroke: QPPWColors.textFillProperty,
-      minorTickStroke: QPPWColors.textFillProperty,
+      majorTickStroke: QuantumPotentialColors.textFillProperty,
+      minorTickStroke: QuantumPotentialColors.textFillProperty,
       accessibleName: a11y.controls.animationSpeedStringProperty,
       pdomCreateAriaValueText: (index: number | null) => `${speeds[index ?? 0]}×`,
     });
@@ -153,7 +156,7 @@ export class SimulationControlBar extends Node {
       children: [
         new Text(a11y.controls.animationSpeedStringProperty, {
           font: new PhetFont(14),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
         }),
         speedSlider,
       ],

@@ -1,17 +1,17 @@
 /**
- * QPPWPreferencesNode — content of Preferences → Simulation: auto-pause when the tab is hidden.
+ * QuantumPotentialPreferencesNode — content of Preferences → Simulation: auto-pause when the tab is hidden.
  */
 
 import { HStrut, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
 import stringManager from "../i18n/StringManager.js";
-import QPPWPreferences from "./QPPWPreferencesModel.js";
+import QuantumPotentialPreferences from "./QuantumPotentialPreferencesModel.js";
 
 const DESCRIPTION_FONT = new PhetFont(12);
 const TEXT_MAX_WIDTH = 600;
 
-export class QPPWPreferencesNode extends VBox {
+export class QuantumPotentialPreferencesNode extends VBox {
   public constructor() {
     const preferencesLabels = stringManager.getPreferencesLabels();
 
@@ -21,7 +21,7 @@ export class QPPWPreferencesNode extends VBox {
       spacing: 8,
       children: [
         new Checkbox(
-          QPPWPreferences.autoPauseWhenTabHiddenProperty,
+          QuantumPotentialPreferences.autoPauseWhenTabHiddenProperty,
           new Text(preferencesLabels.autoPauseWhenTabHiddenStringProperty, { font: new PhetFont(16) }),
           { boxWidth: 16 },
         ),

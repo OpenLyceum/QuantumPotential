@@ -6,7 +6,7 @@
 import { Shape } from "scenerystack/kite";
 import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 
 // Dimensions
 const ICON_WIDTH = 80;
@@ -42,18 +42,18 @@ const BAND_OPACITY_DECREMENT = 0.1;
 
 export class ManyWellsScreenIcon extends ScreenIcon {
   public constructor() {
-    // Energy band colors from QPPWColors
+    // Energy band colors from QuantumPotentialColors
     const BAND_COLORS = [
-      QPPWColors.band1Property.value,
-      QPPWColors.band2Property.value,
-      QPPWColors.band3Property.value,
-      QPPWColors.band4Property.value,
+      QuantumPotentialColors.band1Property.value,
+      QuantumPotentialColors.band2Property.value,
+      QuantumPotentialColors.band3Property.value,
+      QuantumPotentialColors.band4Property.value,
     ];
 
     // Create background with gradient
     const backgroundGradient = new LinearGradient(0, 0, 0, ICON_HEIGHT)
-      .addColorStop(0, QPPWColors.iconBackgroundTopProperty.value)
-      .addColorStop(1, QPPWColors.iconBackgroundBottomProperty.value);
+      .addColorStop(0, QuantumPotentialColors.iconBackgroundTopProperty.value)
+      .addColorStop(1, QuantumPotentialColors.iconBackgroundBottomProperty.value);
 
     const background = new Rectangle(0, 0, ICON_WIDTH, ICON_HEIGHT, {
       fill: backgroundGradient,
@@ -87,7 +87,7 @@ export class ManyWellsScreenIcon extends ScreenIcon {
     }
 
     const potential = new Path(potentialShape, {
-      stroke: QPPWColors.iconWellStrokeProperty,
+      stroke: QuantumPotentialColors.iconWellStrokeProperty,
       lineWidth: POTENTIAL_LINE_WIDTH,
     });
 
@@ -97,9 +97,9 @@ export class ManyWellsScreenIcon extends ScreenIcon {
       const barrierX = startX + (i + 1) * WELL_WIDTH + i * BARRIER_WIDTH;
 
       const barrierGradient = new LinearGradient(barrierX, 0, barrierX + BARRIER_WIDTH, 0)
-        .addColorStop(0, QPPWColors.iconBarrierEdgeProperty.value)
-        .addColorStop(0.5, QPPWColors.iconBarrierCenterProperty.value)
-        .addColorStop(1, QPPWColors.iconBarrierEdgeProperty.value);
+        .addColorStop(0, QuantumPotentialColors.iconBarrierEdgeProperty.value)
+        .addColorStop(0.5, QuantumPotentialColors.iconBarrierCenterProperty.value)
+        .addColorStop(1, QuantumPotentialColors.iconBarrierEdgeProperty.value);
 
       barriers.push(
         new Rectangle(barrierX, WELL_TOP, BARRIER_WIDTH, WELL_DEPTH, {
@@ -149,7 +149,7 @@ export class ManyWellsScreenIcon extends ScreenIcon {
     }
 
     const blochWave = new Path(waveShape, {
-      stroke: QPPWColors.iconWaveFunctionProperty,
+      stroke: QuantumPotentialColors.iconWaveFunctionProperty,
       lineWidth: BLOCH_WAVE_LINE_WIDTH,
     });
 
@@ -158,7 +158,7 @@ export class ManyWellsScreenIcon extends ScreenIcon {
     });
 
     super(iconNode, {
-      fill: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.backgroundColorProperty,
     });
   }
 }

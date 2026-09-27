@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the implementation of the 1D time-independent Schrödinger equation (TISE) solver for the QPPW quantum physics simulation.
+This document describes the implementation of the 1D time-independent Schrödinger equation (TISE) solver for the QuantumPotential quantum physics simulation.
 
 ## Features
 

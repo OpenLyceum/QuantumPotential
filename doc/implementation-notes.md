@@ -11,9 +11,9 @@ Fleet-wide SceneryStack conventions (bootstrap import chain, layout, lint, CI) l
 ```
 src/
 ├── main.ts, brand.ts, splash.ts, assert.ts, init.ts   # Fleet bootstrap chain (import order matters)
-├── QPPWColors.ts, QPPWNamespace.ts
+├── QuantumPotentialColors.ts, QuantumPotentialNamespace.ts
 ├── i18n/                     # StringManager + strings_{en,fr,es}.json (a11y strings under "a11y")
-├── preferences/              # QPPWPreferencesModel, QPPWPreferencesNode, qppwQueryParameters
+├── preferences/              # QuantumPotentialPreferencesModel, QuantumPotentialPreferencesNode, quantumPotentialQueryParameters
 ├── common/
 │   ├── model/
 │   │   ├── BaseModel.ts                  # Shared Properties, lazy bound states, time evolution, queries
@@ -36,7 +36,7 @@ src/
 │   │   ├── ControlPanelNode.ts           # Energy panel + graph panel (One/Two/Many Wells)
 │   │   ├── chart-tools/                  # Area, derivative, curvature, zeros, classical overlay, phase
 │   │   ├── handles/                      # Drag handles on the potential curve
-│   │   ├── accessibility/                # QPPWDescriber, QPPWAlerter
+│   │   ├── accessibility/                # QuantumPotentialDescriber, QuantumPotentialAlerter
 │   │   └── BaseViewState.ts              # Display toggles (what is drawn), separate from the model
 │   └── utils/Logger.ts                   # The only module allowed to use console
 └── {intro,one-well,two-wells,many-wells}/  # <Screen>.ts, model/<Screen>Model.ts, view/…
@@ -127,7 +127,7 @@ closed-form coefficients for the harmonic oscillator.
   the pointer. A new potential only needs anchors (`PotentialHandlesLayer`).
 - **Info dialog.** Every screen has a half-size `InfoButton` beside the reset button (`BaseScreenView`). It
   opens a dialog, built on first use, from the screen's description, key-concepts and interactions strings.
-- **Accessibility.** `QPPWDescriber` turns model state into localized sentences; `QPPWAlerter` sends live
+- **Accessibility.** `QuantumPotentialDescriber` turns model state into localized sentences; `QuantumPotentialAlerter` sends live
   announcements. See [accessibility.md](accessibility.md).
 
 ## Adding a closed-form potential

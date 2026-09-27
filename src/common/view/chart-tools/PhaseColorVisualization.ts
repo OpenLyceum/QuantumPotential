@@ -4,7 +4,7 @@
  */
 
 import { Node, Rectangle } from "scenerystack/scenery";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import { phaseToReversedTwilight } from "./PhaseColormap.js";
 
@@ -55,7 +55,7 @@ export class PhaseColorVisualization extends Node {
     // Ensure we have enough rectangles in the pool
     while (this.phaseColorStrips.length < numStrips) {
       const rect = new Rectangle(0, 0, 1, 1, {
-        fill: QPPWColors.phaseIndicatorProperty,
+        fill: QuantumPotentialColors.phaseIndicatorProperty,
         stroke: null,
       });
       this.phaseColorStrips.push(rect);
@@ -112,7 +112,7 @@ export class PhaseColorVisualization extends Node {
     // Ensure we have enough rectangles in the pool
     while (this.phaseColorStrips.length < numStrips) {
       const rect = new Rectangle(0, 0, 1, 1, {
-        fill: QPPWColors.phaseIndicatorProperty,
+        fill: QuantumPotentialColors.phaseIndicatorProperty,
         stroke: null,
       });
       this.phaseColorStrips.push(rect);

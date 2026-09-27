@@ -2,7 +2,7 @@
  * Type definitions and interfaces for potential energy functions.
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 
 /**
  * Type of potential well for analytical solution selection
@@ -125,6 +125,6 @@ export type EnergyOnlyResult = {
   method: SolverMethod;
 };
 
-qppw.register("PotentialFunction", { PotentialType });
+QuantumPotentialNamespace.register("PotentialFunction", { PotentialType });
 
 export type { PotentialFunction as default };

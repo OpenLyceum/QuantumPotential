@@ -7,7 +7,7 @@
 import { NumberProperty, PatternStringProperty, type TReadOnlyProperty } from "scenerystack/axon";
 import { Line, type Node, Path, RichText, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import { createDoubleArrowShape } from "./RMSIndicatorUtils.js";
 
 export type StatisticsIndicatorOptions = {
@@ -45,7 +45,7 @@ export class StatisticsIndicator {
   public constructor(plotLayer: Node, labelLayer: Node, options: StatisticsIndicatorOptions) {
     this.averageLine = options.showAverageLine
       ? new Line(0, 0, 0, 0, {
-          stroke: QPPWColors.energyLevelSelectedProperty,
+          stroke: QuantumPotentialColors.energyLevelSelectedProperty,
           lineWidth: 2,
           lineDash: [8, 4],
           pickable: false,
@@ -56,9 +56,9 @@ export class StatisticsIndicator {
     }
 
     this.spreadArrow = new Path(null, {
-      stroke: QPPWColors.energyLevelSelectedProperty,
+      stroke: QuantumPotentialColors.energyLevelSelectedProperty,
       lineWidth: 2,
-      fill: QPPWColors.energyLevelSelectedProperty,
+      fill: QuantumPotentialColors.energyLevelSelectedProperty,
       pickable: false,
     });
     plotLayer.addChild(this.spreadArrow);
@@ -71,7 +71,7 @@ export class StatisticsIndicator {
       ),
       {
         font: new PhetFont(12),
-        fill: QPPWColors.labelFillProperty,
+        fill: QuantumPotentialColors.labelFillProperty,
         left: options.labelLeft,
         top: options.labelTop,
         pickable: false,
@@ -87,7 +87,7 @@ export class StatisticsIndicator {
       ),
       {
         font: new PhetFont(12),
-        fill: QPPWColors.labelFillProperty,
+        fill: QuantumPotentialColors.labelFillProperty,
         left: options.labelLeft,
         top: options.labelTop + 20,
         pickable: false,

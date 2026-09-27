@@ -1,5 +1,5 @@
 /**
- * QPPWNumberControl is a titled ◀ value ▶ control for a parameter that is not a geometric feature of the
+ * QuantumPotentialNumberControl is a titled ◀ value ▶ control for a parameter that is not a geometric feature of the
  * potential (particle mass, number of wells, electric field), so it cannot have a handle on the energy chart.
  * It is a sun NumberSpinner (an accessible spin button: arrow keys, Home/End) with no slider track.
  */
@@ -8,9 +8,9 @@ import { type NumberProperty, Property, type TReadOnlyProperty } from "sceneryst
 import { Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { NumberSpinner } from "scenerystack/sun";
-import QPPWColors from "../../QPPWColors.js";
+import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 
-export type QPPWNumberControlOptions = {
+export type QuantumPotentialNumberControlOptions = {
   deltaValue: number;
   decimalPlaces: number;
   valuePattern?: TReadOnlyProperty<string>; // e.g. "{{value}} mₑ"; defaults to the bare value
@@ -21,11 +21,11 @@ export type QPPWNumberControlOptions = {
   decrementFunction?: (value: number) => number;
 };
 
-export class QPPWNumberControl extends VBox {
+export class QuantumPotentialNumberControl extends VBox {
   public constructor(
     titleStringProperty: TReadOnlyProperty<string>,
     numberProperty: NumberProperty,
-    options: QPPWNumberControlOptions,
+    options: QuantumPotentialNumberControlOptions,
   ) {
     const spinner = new NumberSpinner(numberProperty, new Property(numberProperty.range), {
       arrowsPosition: "leftRight",
@@ -34,7 +34,7 @@ export class QPPWNumberControl extends VBox {
       ...(options.decrementFunction ? { decrementFunction: options.decrementFunction } : {}),
       xSpacing: 6,
       arrowButtonOptions: {
-        baseColor: QPPWColors.controlPanelBackgroundColorProperty,
+        baseColor: QuantumPotentialColors.controlPanelBackgroundColorProperty,
       },
       numberDisplayOptions: {
         decimalPlaces: options.decimalPlaces,
@@ -54,7 +54,7 @@ export class QPPWNumberControl extends VBox {
       children: [
         new Text(titleStringProperty, {
           font: new PhetFont(13),
-          fill: QPPWColors.textFillProperty,
+          fill: QuantumPotentialColors.textFillProperty,
           maxWidth: 200,
         }),
         spinner,
@@ -76,4 +76,4 @@ export const PARTICLE_MASS_STEP_OPTIONS = {
   incrementFunction: (mass: number): number => roundToTenth(mass + particleMassStep(mass)),
   // Step by the size of the band below, so increment and decrement retrace the same values
   decrementFunction: (mass: number): number => roundToTenth(mass - particleMassStep(mass - 1e-9)),
-} satisfies Partial<QPPWNumberControlOptions>;
+} satisfies Partial<QuantumPotentialNumberControlOptions>;

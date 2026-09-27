@@ -1,5 +1,5 @@
 /**
- * Union type for all screen view states used in QPPW.
+ * Union type for all screen view states used in QuantumPotential.
  * This type allows components to accept any of the screen-specific view states.
  */
 

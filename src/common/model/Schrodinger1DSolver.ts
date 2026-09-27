@@ -8,7 +8,7 @@
  *   const numeric = solver.solveNumerical(potential, mass, numStates, gridConfig);
  */
 
-import qppw from "../../QPPWNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 import Logger from "../utils/Logger.js";
 import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
@@ -332,6 +332,6 @@ export class Schrodinger1DSolver {
   }
 }
 
-qppw.register("Schrodinger1DSolver", Schrodinger1DSolver);
+QuantumPotentialNamespace.register("Schrodinger1DSolver", Schrodinger1DSolver);
 
 export default Schrodinger1DSolver;

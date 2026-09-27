@@ -23,13 +23,13 @@ fleet-wide).
 - **Chart tools:** the area, derivative and curvature markers use `KeyboardDragListener` (arrows, with
   Shift for fine steps).
 - **Combo boxes, radio buttons, checkboxes and dialogs** use the accessible sun components.
-- The keyboard-help dialog (`QPPWKeyboardHelpContent`) lists all of the above.
+- The keyboard-help dialog (`QuantumPotentialKeyboardHelpContent`) lists all of the above.
 
 ### Descriptions and announcements
 
-- `QPPWDescriber` builds accessible names, help text and chart descriptions from `*Pattern` strings, so
+- `QuantumPotentialDescriber` builds accessible names, help text and chart descriptions from `*Pattern` strings, so
   they follow the locale.
-- `QPPWAlerter` announces level selection, potential changes, playback and reset through the utterance
+- `QuantumPotentialAlerter` announces level selection, potential changes, playback and reset through the utterance
   queue, with parameter-change alerts debounced.
 - All accessible text lives under the `a11y` group of `src/i18n/strings_*.json`
   (`StringManager.getA11yStrings()`).
@@ -44,5 +44,5 @@ fleet-wide).
 1. Give it an `accessibleName` (and `accessibleHelpText` if its purpose is not obvious), with the strings
    added to the `a11y` group of all three locale files.
 2. Make it keyboard-operable: a sun component, an `AccessibleSlider`, or a `KeyboardDragListener`.
-3. If a change it makes is not otherwise perceivable, announce it through `QPPWAlerter`.
-4. Add it to `QPPWKeyboardHelpContent` if it has non-standard keys.
+3. If a change it makes is not otherwise perceivable, announce it through `QuantumPotentialAlerter`.
+4. Add it to `QuantumPotentialKeyboardHelpContent` if it has non-standard keys.

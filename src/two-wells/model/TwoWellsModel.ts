@@ -13,7 +13,7 @@ import { type GridConfig, PotentialType } from "../../common/model/PotentialFunc
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import Logger from "../../common/utils/Logger.js";
-import qppwQueryParameters from "../../preferences/qppwQueryParameters.js";
+import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 
 export class TwoWellsModel extends BaseModel {
   // ==================== CONSTANTS ====================
@@ -155,7 +155,7 @@ export class TwoWellsModel extends BaseModel {
         (this.wellWidthProperty.value + this.wellSeparationProperty.value) / 2 + (5 * this.wellWidthProperty.value) / 2,
       );
       const scaledPoints = Math.round(
-        (qppwQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
+        (quantumPotentialQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
       );
       gridConfig = {
         xMin: -halfSpanNm * QuantumConstants.NM_TO_M,
@@ -166,7 +166,7 @@ export class TwoWellsModel extends BaseModel {
       gridConfig = {
         xMin: -BaseModel.CHART_HALF_RANGE_NM * QuantumConstants.NM_TO_M,
         xMax: BaseModel.CHART_HALF_RANGE_NM * QuantumConstants.NM_TO_M,
-        numPoints: qppwQueryParameters.numberOfPoints,
+        numPoints: quantumPotentialQueryParameters.numberOfPoints,
       };
     }
 

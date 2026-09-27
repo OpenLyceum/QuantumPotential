@@ -4,8 +4,8 @@
 
 import { type EmptySelfOptions, optionize } from "scenerystack/phet-core";
 import { Screen, type ScreenOptions } from "scenerystack/sim";
-import { QPPWKeyboardHelpContent } from "../common/view/QPPWKeyboardHelpContent.js";
-import QPPWColors from "../QPPWColors.js";
+import { QuantumPotentialKeyboardHelpContent } from "../common/view/QuantumPotentialKeyboardHelpContent.js";
+import QuantumPotentialColors from "../QuantumPotentialColors.js";
 import { TwoWellsModel } from "./model/TwoWellsModel.js";
 import { TwoWellsScreenIcon } from "./view/TwoWellsScreenIcon.js";
 import { TwoWellsScreenView } from "./view/TwoWellsScreenView.js";
@@ -19,10 +19,10 @@ export class TwoWellsScreen extends Screen<TwoWellsModel, TwoWellsScreenView> {
       (model: TwoWellsModel) => new TwoWellsScreenView(model),
       optionize<TwoWellsScreenOptions, EmptySelfOptions, ScreenOptions>()(
         {
-          backgroundColorProperty: QPPWColors.backgroundColorProperty,
+          backgroundColorProperty: QuantumPotentialColors.backgroundColorProperty,
           homeScreenIcon: new TwoWellsScreenIcon(),
           navigationBarIcon: new TwoWellsScreenIcon(),
-          createKeyboardHelpNode: () => new QPPWKeyboardHelpContent(),
+          createKeyboardHelpNode: () => new QuantumPotentialKeyboardHelpContent(),
         },
         options,
       ),

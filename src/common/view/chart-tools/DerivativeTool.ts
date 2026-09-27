@@ -10,7 +10,7 @@ import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } fr
 import { PhetFont } from "scenerystack/scenery-phet";
 import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utterance-queue";
 import stringManager from "../../../i18n/StringManager.js";
-import QPPWColors from "../../../QPPWColors.js";
+import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
@@ -74,7 +74,7 @@ export class DerivativeTool extends Node {
 
     // Create marker line
     this.marker = new Line(0, 0, 0, 0, {
-      stroke: QPPWColors.derivativeToolStrokeProperty,
+      stroke: QuantumPotentialColors.derivativeToolStrokeProperty,
       lineWidth: 2,
       lineDash: [4, 3],
       cursor: "ew-resize", // Make it clear the line is draggable
@@ -117,15 +117,15 @@ export class DerivativeTool extends Node {
 
     // Create position tracking circle (shows position on wavefunction)
     this.positionCircle = new Circle(5, {
-      fill: QPPWColors.derivativeToolFillDarkProperty,
-      stroke: QPPWColors.backgroundColorProperty,
+      fill: QuantumPotentialColors.derivativeToolFillDarkProperty,
+      stroke: QuantumPotentialColors.backgroundColorProperty,
       lineWidth: 2,
     });
     this.container.addChild(this.positionCircle);
 
     // Create tangent line path
     this.tangentLine = new Path(null, {
-      stroke: QPPWColors.derivativeToolFillLightProperty,
+      stroke: QuantumPotentialColors.derivativeToolFillLightProperty,
       lineWidth: 3,
       fill: null,
     });
@@ -134,7 +134,7 @@ export class DerivativeTool extends Node {
     // Create derivative label
     this.label = new Text("", {
       font: new PhetFont({ size: 14, weight: "bold" }),
-      fill: QPPWColors.derivativeToolFillDarkProperty,
+      fill: QuantumPotentialColors.derivativeToolFillDarkProperty,
     });
     this.container.addChild(this.label);
 

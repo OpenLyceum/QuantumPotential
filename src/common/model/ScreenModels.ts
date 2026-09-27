@@ -1,5 +1,5 @@
 /**
- * Union type for all screen models used in QPPW.
+ * Union type for all screen models used in QuantumPotential.
  * This type allows components to accept any of the screen-specific models.
  */
 
