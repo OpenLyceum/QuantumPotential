@@ -4,6 +4,6 @@
     "noEmit": true,
     "types": ["node", "vite/client", "vitest/globals"]
   },
-  "include": ["tests"],
+  "include": ["tests", "src/**/*.d.ts"],
   "exclude": ["tests/accuracy"]
 }
