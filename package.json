@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Interactive quantum mechanics simulation exploring bound states in potential wells with real-time solutions to the 1D Schrödinger equation.",
+  "description": "Explore bound states of a quantum particle in potential wells with real-time solutions of the 1D Schrödinger equation.",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
