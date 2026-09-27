@@ -1,6 +1,6 @@
 /** Control for choosing one of the bound-state energy levels. */
 
-import { Property } from "scenerystack/axon";
+import { BooleanProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import { HBox, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
@@ -15,6 +15,25 @@ export class EnergyLevelControl extends HBox {
     const rangeProperty = new Property(
       new Range(0, Math.min(maximumIndex, Math.max(0, (model.getBoundStates()?.energies.length ?? 0) - 1))),
     );
+    const enabledProperty = new BooleanProperty(false);
+    const updateRange = () => {
+      const count = model.getBoundStates()?.energies.length ?? 0;
+      // A potential change can leave a stale selection until the model's next step.
+      // Keep that value in range while preventing the spinner from advancing farther.
+      rangeProperty.value = new Range(
+        0,
+        Math.min(maximumIndex, Math.max(0, count - 1, model.selectedEnergyLevelIndexProperty.value)),
+      );
+      enabledProperty.value = count > 0;
+    };
+    // Registered before the spinner exists, so a new selection widens the range before
+    // NumberSpinner's own listener asserts the value is inside it (a chart click can select
+    // a level beyond the range computed for the previous spectrum). Any parameter change
+    // that alters the spectrum bumps potentialRevisionProperty.
+    model.selectedEnergyLevelIndexProperty.lazyLink(updateRange);
+    model.potentialRevisionProperty.lazyLink(updateRange);
+    updateRange();
+
     const spinner = new NumberSpinner(model.selectedEnergyLevelIndexProperty, rangeProperty, {
       arrowsPosition: "leftRight",
       deltaValue: 1,
@@ -30,6 +49,7 @@ export class EnergyLevelControl extends HBox {
         textOptions: { font: new PhetFont(13) },
       },
       accessibleName: stringManager.energyLevelStringProperty,
+      enabledProperty,
     });
 
     super({
@@ -43,20 +63,5 @@ export class EnergyLevelControl extends HBox {
         spinner,
       ],
     });
-
-    const updateRange = () => {
-      const count = model.getBoundStates()?.energies.length ?? 0;
-      // A potential change can leave a stale selection until the model's next step.
-      // Keep that value in range while preventing the spinner from advancing farther.
-      rangeProperty.value = new Range(
-        0,
-        Math.min(maximumIndex, Math.max(0, count - 1, model.selectedEnergyLevelIndexProperty.value)),
-      );
-      spinner.enabled = count > 0;
-    };
-    // Any parameter change that alters the spectrum bumps potentialRevisionProperty
-    model.selectedEnergyLevelIndexProperty.lazyLink(updateRange);
-    model.potentialRevisionProperty.lazyLink(updateRange);
-    updateRange();
   }
 }
