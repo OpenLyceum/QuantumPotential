@@ -72,7 +72,7 @@ globalThis.Range = class Range {
   }
 };
 
-// matchMedia mock (used by QPPWPreferences for reduced motion detection)
+// matchMedia mock (used by QuantumPotentialPreferences for reduced motion detection)
 globalThis.matchMedia =
   globalThis.matchMedia ||
   ((query) => ({
