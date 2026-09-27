@@ -23,7 +23,7 @@
  */
 
 import NumerovConstants from "./NumerovConstants.js";
-import type XGrid from "./XGrid.js";
+import type { XGrid } from "./XGrid.js";
 
 const HBAR = NumerovConstants.HBAR;
 
@@ -44,7 +44,7 @@ const RESCALE_TARGET = 1e50;
 // amplitude to zero and collapse the recurrence.
 const MAX_FORBIDDEN_SEED_EXPONENT = 50;
 
-export default class NumerovIntegrator {
+export class NumerovIntegrator {
   private constructor() {
     // Not intended for instantiation.
   }

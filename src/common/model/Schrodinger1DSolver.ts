@@ -15,8 +15,8 @@ import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.j
 import type { solveFGH } from "./FGHSolver.js";
 import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.js";
 import { NumericalMethod } from "./NumericalMethod.js";
-import NumerovSolver from "./numerov/NumerovSolver.js";
-import XGrid from "./numerov/XGrid.js";
+import { NumerovSolver } from "./numerov/NumerovSolver.js";
+import { XGrid } from "./numerov/XGrid.js";
 import { PotentialFactory } from "./PotentialFactory.js";
 import {
   type BoundStateResult,

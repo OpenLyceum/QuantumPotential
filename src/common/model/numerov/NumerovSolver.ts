@@ -50,12 +50,12 @@
 
 import type { StrictOmit } from "scenerystack/phet-core";
 import { optionize } from "scenerystack/phet-core";
-import EnergyRefiner, { type EnergyRefinerOptions } from "./EnergyRefiner.js";
+import { EnergyRefiner, type EnergyRefinerOptions } from "./EnergyRefiner.js";
 import NumerovConstants from "./NumerovConstants.js";
-import NumerovIntegrator from "./NumerovIntegrator.js";
+import { NumerovIntegrator } from "./NumerovIntegrator.js";
 import type { PotentialEnergyFunction, TimeIndependentSolution } from "./TimeIndependentSolution.js";
-import WaveFunctionNormalizer from "./WaveFunctionNormalizer.js";
-import type XGrid from "./XGrid.js";
+import { WaveFunctionNormalizer } from "./WaveFunctionNormalizer.js";
+import type { XGrid } from "./XGrid.js";
 
 // Configuration options for the solver.
 type SelfOptions = {
@@ -65,7 +65,7 @@ type SelfOptions = {
 
 type NumerovSolverOptions = SelfOptions;
 
-export default class NumerovSolver {
+export class NumerovSolver {
   // Positive barriers above this are effectively infinite for the energy ranges in this sim.
   // Keeping them finite avoids overflow in Numerov factors for steep potentials.
   // Since Numerov is currently only used for finite potentials (Finite Square, Pöschl-Teller) this is something

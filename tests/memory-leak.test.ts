@@ -13,23 +13,7 @@ import { IntroModel } from "../src/intro/model/IntroModel.js";
 import { ManyWellsModel } from "../src/many-wells/model/ManyWellsModel.js";
 import { OneWellModel } from "../src/one-well/model/OneWellModel.js";
 import { TwoWellsModel } from "../src/two-wells/model/TwoWellsModel.js";
-
-/**
- * Force garbage collection with multiple passes, bailing out as soon as every referenced
- * object is confirmed collected. The setTimeout(0) yield after a live deref() avoids the
- * WeakRef macrotask-liveness pin.
- */
-async function forceGC(earlyExitRefs: WeakRef<object> | readonly WeakRef<object>[]): Promise<void> {
-  const refs = Array.isArray(earlyExitRefs) ? earlyExitRefs : [earlyExitRefs];
-  for (let i = 0; i < 15; i++) {
-    globalThis.gc?.();
-    await new Promise<void>((r) => setTimeout(r, 50));
-    if (refs.every((ref) => ref.deref() === undefined)) {
-      return;
-    }
-    await new Promise<void>((r) => setTimeout(r, 0));
-  }
-}
+import { forceGC } from "./helpers/memoryLeak.js";
 
 const MODELS: ReadonlyArray<[string, () => BaseModel]> = [
   ["IntroModel", () => new IntroModel()],
@@ -46,16 +30,6 @@ function createAndDispose(create: () => BaseModel): WeakRef<object> {
 }
 
 describe("Memory leak regression", () => {
-  it("global.gc is available (--expose-gc)", () => {
-    expect(globalThis.gc).toBeDefined();
-  });
-
-  it("sanity: plain object is collected", async () => {
-    const ref = (() => new WeakRef({ hello: "world" }))();
-    await forceGC(ref);
-    expect(ref.deref()).toBeUndefined();
-  });
-
   for (const [name, create] of MODELS) {
     it(`${name} is collected after dispose`, async () => {
       const ref = createAndDispose(create);

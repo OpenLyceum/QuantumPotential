@@ -37,7 +37,7 @@ type SelfOptions = {
 
 export type EnergyRefinerOptions = SelfOptions;
 
-export default class EnergyRefiner {
+export class EnergyRefiner {
   // See SelfOptions for documentation.
   private readonly tolerance: number;
   private readonly isRelative: boolean;

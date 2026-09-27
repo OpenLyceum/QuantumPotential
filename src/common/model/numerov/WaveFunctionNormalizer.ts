@@ -13,7 +13,7 @@
  * @author Martin Veillette
  */
 
-export default class WaveFunctionNormalizer {
+export class WaveFunctionNormalizer {
   private constructor() {
     // Not intended for instantiation.
   }

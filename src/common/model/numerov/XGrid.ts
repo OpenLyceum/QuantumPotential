@@ -7,7 +7,7 @@
  * @author Martin Veillette
  */
 
-export default class XGrid {
+export class XGrid {
   public readonly xMin: number; // nm
   public readonly xMax: number; // nm
   public readonly numberOfPoints: number;
