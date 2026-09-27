@@ -11,7 +11,7 @@ drags and reshapes the well. Inspired by PhET's *Quantum Bound States*. The clas
 are `QuantumPotential` / `quantum-potential`.
 
 Educator physics: [`doc/model.md`](doc/model.md). Architecture: [`doc/implementation-notes.md`](doc/implementation-notes.md).
-Solver details: [`doc/SOLVER_DOCUMENTATION.md`](doc/SOLVER_DOCUMENTATION.md).
+Solver details: [`doc/solver.md`](doc/solver.md).
 
 ## Key files
 
@@ -132,6 +132,9 @@ deferred fleet-wide). Full convention:
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
   by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
   `exactOptionalPropertyTypes`. All pass.
+- **Template drift (Baton `check-template-drift.sh`):** `check` adds a fourth pass over
+  `tsconfig.accuracy.json`; `tsconfig.test.json` excludes `tests/accuracy`; `biome.json` turns off
+  `noNonNullAssertion` (above) and `noConsole` for the accuracy scripts, which print their reports.
 
 ### `package.json` overrides
 

@@ -1,4 +1,5 @@
 import { init, madeWithSceneryStackSplashDataURI } from "scenerystack/init";
+import { version } from "../package.json";
 
 // Initialize values that will be used at import-time by other modules.
 // This needs to happen first, so we have init.ts => assert.ts => splash.ts => brand.ts => everything else (in main.ts)
@@ -7,7 +8,7 @@ init({
   name: "quantum-potential",
 
   // Version (will be shown in the About dialog)
-  version: "1.0.0",
+  version,
 
   // The brand name used (should be the same as in brand.ts)
   brand: "made-with-scenerystack",

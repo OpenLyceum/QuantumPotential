@@ -1,7 +1,7 @@
 # Accessibility helpers
 
 What the sim implements, and the checklist for new controls, are in
-[`doc/ACCESSIBILITY.md`](../../../../doc/ACCESSIBILITY.md). This directory holds the two helpers that turn
+[`doc/accessibility.md`](../../../../doc/accessibility.md). This directory holds the two helpers that turn
 model state into text.
 
 ## `QPPWDescriber.ts`

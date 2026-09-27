@@ -43,7 +43,7 @@ typed `WellParameters` by `../PotentialFactory.ts`. The screen models evaluate t
 on a fixed ±4 nm grid of about 1000 points, independent of `?numberOfPoints`, which only sizes the
 numerical solver's grid.
 
-**Note on Multi-Well Potentials**: While `multi-square-well.ts` is located in this directory for organizational convenience, it builds a potential function that are **solved numerically** by `Schrodinger1DSolver.solveNumerical` (Numerov shooting; see `doc/SOLVER_DOCUMENTATION.md`), not by analytical formulas.
+**Note on Multi-Well Potentials**: While `multi-square-well.ts` is located in this directory for organizational convenience, it builds a potential function that are **solved numerically** by `Schrodinger1DSolver.solveNumerical` (Numerov shooting; see `doc/solver.md`), not by analytical formulas.
 
 ---
 
@@ -761,7 +761,7 @@ For symmetric arrangements, wavefunctions have definite parity.
 
 The Numerov solver brackets each state by its node count, which resolves the closely spaced levels of a
 band, and matches log-derivatives when an electric field tilts the wells. `?numericalMethod=fgh` switches
-to a Fourier Grid Hamiltonian cross-check. See `doc/SOLVER_DOCUMENTATION.md`.
+to a Fourier Grid Hamiltonian cross-check. See `doc/solver.md`.
 
 ### Physical Significance
 

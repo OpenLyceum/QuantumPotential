@@ -109,19 +109,25 @@ function trialFailure(model: BaseModel, potentials: PotentialType[], random: () 
 }
 
 describe("solver robustness", () => {
-  it.each(MODELS)("%s gives finite bound states for random settings", (_name, create, potentials) => {
-    const model = create();
-    const random = makeRandom(20260922);
-    const failures: string[] = [];
+  it.each(MODELS)(
+    "%s gives finite bound states for random settings",
+    (_name, create, potentials) => {
+      const model = create();
+      const random = makeRandom(20260922);
+      const failures: string[] = [];
 
-    for (let trial = 0; trial < TRIALS; trial++) {
-      const failure = trialFailure(model, potentials, random);
-      if (failure) {
-        failures.push(failure);
+      for (let trial = 0; trial < TRIALS; trial++) {
+        const failure = trialFailure(model, potentials, random);
+        if (failure) {
+          failures.push(failure);
+        }
       }
-    }
 
-    expect(failures).toEqual([]);
-    model.dispose();
-  });
+      expect(failures).toEqual([]);
+      model.dispose();
+      // 60 full re-solves per screen: ~20 s alone, well past the 30 s default when
+      // other suites (or other sims) share the CPU.
+    },
+    240_000,
+  );
 });
