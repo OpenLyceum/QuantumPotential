@@ -1,8 +1,8 @@
 /**
  * main.ts
  *
- * Entry point for the simulation. Creates the four screens and the preferences dialog content,
- * then starts the sim.
+ * Entry point for the simulation. Initializes SceneryStack, creates the
+ * screens, and starts the main event loop.
  *
  * !! CRITICAL IMPORT ORDER !!
  * brand.js MUST be the first import. Each module imports the next, so the import nesting is
@@ -37,37 +37,34 @@ function launch(): void {
 
   const screens = [
     new IntroScreen({
+      // The screen name Property updates automatically when the locale changes
       name: screenNames.introStringProperty,
       tandem: Tandem.ROOT.createTandem("introScreen"),
     }),
     new OneWellScreen({
+      // The screen name Property updates automatically when the locale changes
       name: screenNames.oneWellStringProperty,
       tandem: Tandem.ROOT.createTandem("oneWellScreen"),
     }),
     new TwoWellsScreen({
+      // The screen name Property updates automatically when the locale changes
       name: screenNames.twoWellsStringProperty,
       tandem: Tandem.ROOT.createTandem("twoWellsScreen"),
     }),
     new ManyWellsScreen({
+      // The screen name Property updates automatically when the locale changes
       name: screenNames.manyWellsStringProperty,
       tandem: Tandem.ROOT.createTandem("manyWellsScreen"),
     }),
   ];
 
   const sim = new Sim(stringManager.getTitleStringProperty(), screens, {
-    webgl: true,
     preferencesModel: new PreferencesModel({
       visualOptions: {
         // Adds a "Projector Mode" toggle in Preferences → Visual
         supportsProjectorMode: true,
         // Enables keyboard-navigation highlight outlines
         supportsInteractiveHighlights: true,
-      },
-      audioOptions: {
-        // Initializes tambo and the Audio preferences. Pair with supportsSound in src/init.ts.
-        // Stock UI sounds only. Voicing is deferred fleet-wide (Baton/ACCESSIBILITY.md) and this sim
-        // has no voicing responses, so the Voicing toolbar is not offered.
-        supportsSound: true,
       },
       simulationOptions: {
         customPreferences: [{ createContent: () => new QuantumPotentialPreferencesNode() }],
@@ -76,7 +73,14 @@ function launch(): void {
         // Adds a language picker in Preferences → Language
         supportsDynamicLocale: true,
       },
+      audioOptions: {
+        // Initializes tambo and the Audio preferences. Pair with supportsSound in src/init.ts.
+        // Stock UI sounds only. Voicing is deferred fleet-wide (Baton/ACCESSIBILITY.md) and this sim
+        // has no voicing responses, so the Voicing toolbar is not offered.
+        supportsSound: true,
+      },
     }),
+    webgl: true,
   });
   sim.start();
 }
