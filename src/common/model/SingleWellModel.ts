@@ -6,6 +6,7 @@
 
 import { NumberProperty } from "scenerystack/axon";
 import { clamp, Range } from "scenerystack/dot";
+import { defined } from "../utils/defined.js";
 import Logger from "../utils/Logger.js";
 import { BaseModel, type BaseModelOptions } from "./BaseModel.js";
 import { NoBoundStatesError } from "./NoBoundStatesError.js";
@@ -218,7 +219,7 @@ export abstract class SingleWellModel extends BaseModel {
       return null;
     }
 
-    const energy = states.energies[energyIndex]!;
+    const energy = defined(states.energies[energyIndex]);
     const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
     const analyticalSolution = this.solver.getAnalyticalSolution();
     if (analyticalSolution) {
@@ -240,7 +241,7 @@ export abstract class SingleWellModel extends BaseModel {
     if (!states || energyLevel < 0 || energyLevel >= states.energies.length) {
       return null;
     }
-    const energy = states.energies[energyLevel]!;
+    const energy = defined(states.energies[energyLevel]);
     const clampToChart = (xNm: number) => clamp(xNm, -BaseModel.CHART_HALF_RANGE_NM, BaseModel.CHART_HALF_RANGE_NM);
 
     const analyticalSolution = this.solver.getAnalyticalSolution();
@@ -265,11 +266,12 @@ export abstract class SingleWellModel extends BaseModel {
     let left: number | null = null;
     let right: number | null = null;
     for (let i = 0; i < xGrid.length - 1; i++) {
-      const v = potential[i]!;
-      const vNext = potential[i + 1]!;
+      const v = defined(potential[i]);
+      const vNext = defined(potential[i + 1]);
       if (v !== vNext && (v - energy) * (vNext - energy) <= 0) {
         const t = (energy - v) / (vNext - v);
-        const crossingNm = (xGrid[i]! + t * (xGrid[i + 1]! - xGrid[i]!)) * QuantumConstants.M_TO_NM;
+        const crossingNm =
+          (defined(xGrid[i]) + t * (defined(xGrid[i + 1]) - defined(xGrid[i]))) * QuantumConstants.M_TO_NM;
         if (left === null) {
           left = crossingNm;
         } else {
@@ -288,16 +290,16 @@ export abstract class SingleWellModel extends BaseModel {
       return 0;
     }
 
-    const wavefunction = states.wavefunctions[energyLevel]!;
+    const wavefunction = defined(states.wavefunctions[energyLevel]);
     const xNm = states.xGrid.map((x) => x * QuantumConstants.M_TO_NM);
     let forbiddenProbability = 0;
     let totalProbability = 0;
     for (let i = 0; i < xNm.length; i++) {
       // Trapezoidal weight: half the distance between the neighbouring samples
-      const dx = (xNm[Math.min(i + 1, xNm.length - 1)]! - xNm[Math.max(i - 1, 0)]!) / 2;
-      const weight = wavefunction[i]! * wavefunction[i]! * dx;
+      const dx = (defined(xNm[Math.min(i + 1, xNm.length - 1)]) - defined(xNm[Math.max(i - 1, 0)])) / 2;
+      const weight = defined(wavefunction[i]) * defined(wavefunction[i]) * dx;
       totalProbability += weight;
-      if (xNm[i]! < turningPoints.left || xNm[i]! > turningPoints.right) {
+      if (defined(xNm[i]) < turningPoints.left || defined(xNm[i]) > turningPoints.right) {
         forbiddenProbability += weight;
       }
     }

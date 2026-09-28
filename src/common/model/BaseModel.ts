@@ -6,6 +6,7 @@
 import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
+import { defined } from "../utils/defined.js";
 import { calculateClassicalProbabilityDensity } from "./ClassicalProbability.js";
 import { calculateRMSStatistics } from "./DistributionStatistics.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWavePacket.js";
@@ -494,7 +495,7 @@ export abstract class BaseModel {
 
     // Return energy for quantum number n (1-indexed)
     if (this.boundStateResult && n > 0 && n <= this.boundStateResult.energies.length) {
-      const energyJoules = this.boundStateResult.energies[n - 1]!;
+      const energyJoules = defined(this.boundStateResult.energies[n - 1]);
       return energyJoules * QuantumConstants.JOULES_TO_EV;
     }
 
@@ -530,7 +531,7 @@ export abstract class BaseModel {
     }
 
     if (this.boundStateResult && n > 0 && n <= this.boundStateResult.wavefunctions.length) {
-      return this.boundStateResult.wavefunctions[n - 1]!;
+      return defined(this.boundStateResult.wavefunctions[n - 1]);
     }
 
     return null;
@@ -724,15 +725,15 @@ export abstract class BaseModel {
     const probabilityDensity = new Array<number>(numPoints);
 
     for (let n = 0; n < config.amplitudes.length; n++) {
-      const amplitude = config.amplitudes[n]!;
-      const initialPhase = config.phases[n]!;
+      const amplitude = defined(config.amplitudes[n]);
+      const initialPhase = defined(config.phases[n]);
 
       if (amplitude === 0 || n >= boundStates.wavefunctions.length) {
         continue;
       }
 
-      const eigenfunction = boundStates.wavefunctions[n]!;
-      const energy = boundStates.energies[n]!;
+      const eigenfunction = defined(boundStates.wavefunctions[n]);
+      const energy = defined(boundStates.energies[n]);
 
       // Total phase: initial phase φ_n plus the time evolution phase −E_n t/ℏ
       const totalPhase = initialPhase - (energy * timeInSeconds) / QuantumConstants.HBAR;
@@ -742,17 +743,17 @@ export abstract class BaseModel {
       const imagCoeff = amplitude * Math.sin(totalPhase);
 
       for (let i = 0; i < numPoints; i++) {
-        realPart[i]! += realCoeff * eigenfunction[i]!;
-        imagPart[i]! += imagCoeff * eigenfunction[i]!;
+        realPart[i] = defined(realPart[i]) + realCoeff * defined(eigenfunction[i]);
+        imagPart[i] = defined(imagPart[i]) + imagCoeff * defined(eigenfunction[i]);
       }
     }
 
     let maxMagnitude = 0;
     for (let i = 0; i < numPoints; i++) {
-      const density = realPart[i]! * realPart[i]! + imagPart[i]! * imagPart[i]!;
+      const density = defined(realPart[i]) * defined(realPart[i]) + defined(imagPart[i]) * defined(imagPart[i]);
       probabilityDensity[i] = density;
       magnitude[i] = Math.sqrt(density);
-      maxMagnitude = Math.max(maxMagnitude, magnitude[i]!);
+      maxMagnitude = Math.max(maxMagnitude, defined(magnitude[i]));
     }
 
     const si: TimeEvolvedSuperposition = { realPart, imagPart, magnitude, probabilityDensity, maxMagnitude };
@@ -772,7 +773,7 @@ export abstract class BaseModel {
     if (!si) {
       return null;
     }
-    const cache = this.superpositionCache!;
+    const cache = defined(this.superpositionCache);
     if (cache.nm) {
       return cache.nm;
     }
@@ -830,7 +831,7 @@ export abstract class BaseModel {
         return null;
       }
 
-      const wavefunction = boundStates.wavefunctions[energyIndex]!;
+      const wavefunction = defined(boundStates.wavefunctions[energyIndex]);
       probabilityDensity = wavefunction.map((psi) => psi * psi);
     }
 
@@ -839,8 +840,8 @@ export abstract class BaseModel {
     let probability = 0;
 
     for (let i = 0; i < xGrid.length - 1; i++) {
-      const x1 = xGrid[i]! * QuantumConstants.M_TO_NM; // Convert to nm
-      const x2 = xGrid[i + 1]! * QuantumConstants.M_TO_NM;
+      const x1 = defined(xGrid[i]) * QuantumConstants.M_TO_NM; // Convert to nm
+      const x2 = defined(xGrid[i + 1]) * QuantumConstants.M_TO_NM;
 
       // Check if this segment overlaps with our region
       if (x2 >= xStartNm && x1 <= xEndNm) {
@@ -853,8 +854,8 @@ export abstract class BaseModel {
           const t1 = (segmentStart - x1) / (x2 - x1);
           const t2 = (segmentEnd - x1) / (x2 - x1);
 
-          const p1 = probabilityDensity[i]! * (1 - t1) + probabilityDensity[i + 1]! * t1;
-          const p2 = probabilityDensity[i]! * (1 - t2) + probabilityDensity[i + 1]! * t2;
+          const p1 = defined(probabilityDensity[i]) * (1 - t1) + defined(probabilityDensity[i + 1]) * t1;
+          const p2 = defined(probabilityDensity[i]) * (1 - t2) + defined(probabilityDensity[i + 1]) * t2;
 
           // Trapezoidal rule
           const dx = segmentEnd - segmentStart;
@@ -900,10 +901,10 @@ export abstract class BaseModel {
     // Prefer the analytical derivatives (more accurate) when the solution has them
     const analyticalSolution = this.solver.getAnalyticalSolution();
     const firstDerivativeInM = analyticalSolution
-      ? analyticalSolution.calculateWavefunctionFirstDerivative(energyIndex, [xInM])[0]!
+      ? defined(analyticalSolution.calculateWavefunctionFirstDerivative(energyIndex, [xInM])[0])
       : sample.first;
     const secondDerivativeInM = analyticalSolution
-      ? analyticalSolution.calculateWavefunctionSecondDerivative(energyIndex, [xInM])[0]!
+      ? defined(analyticalSolution.calculateWavefunctionSecondDerivative(energyIndex, [xInM])[0])
       : sample.second;
 
     // m → nm: ψ → ψ / M_TO_NM^(1/2), dψ/dx → (dψ/dx) / M_TO_NM^(3/2), d²ψ/dx² → (d²ψ/dx²) / M_TO_NM^(5/2)
@@ -934,16 +935,16 @@ function sampleOnGrid(
   if (count < 4) {
     return null;
   }
-  const h = xGrid[1]! - xGrid[0]!;
-  const i1 = Math.floor((x - xGrid[0]!) / h);
+  const h = defined(xGrid[1]) - defined(xGrid[0]);
+  const i1 = Math.floor((x - defined(xGrid[0])) / h);
   if (!(i1 >= 1 && i1 <= count - 3)) {
     return null;
   }
-  const t = (x - xGrid[i1]!) / h;
-  const firstAt = (i: number) => (psi[i + 1]! - psi[i - 1]!) / (2 * h);
-  const secondAt = (i: number) => (psi[i - 1]! - 2 * psi[i]! + psi[i + 1]!) / (h * h);
+  const t = (x - defined(xGrid[i1])) / h;
+  const firstAt = (i: number) => (defined(psi[i + 1]) - defined(psi[i - 1])) / (2 * h);
+  const secondAt = (i: number) => (defined(psi[i - 1]) - 2 * defined(psi[i]) + defined(psi[i + 1])) / (h * h);
   return {
-    value: psi[i1]! * (1 - t) + psi[i1 + 1]! * t,
+    value: defined(psi[i1]) * (1 - t) + defined(psi[i1 + 1]) * t,
     first: firstAt(i1) * (1 - t) + firstAt(i1 + 1) * t,
     second: secondAt(i1) * (1 - t) + secondAt(i1 + 1) * t,
   };
@@ -966,25 +967,25 @@ function findGridExtrema(
   let max = -Infinity;
   let maxAbs = 0;
   for (let i = 0; i < psi.length; i++) {
-    maxAbs = Math.max(maxAbs, Math.abs(psi[i]!));
-    if (xGrid[i]! >= xMin && xGrid[i]! <= xMax) {
-      min = Math.min(min, psi[i]!);
-      max = Math.max(max, psi[i]!);
+    maxAbs = Math.max(maxAbs, Math.abs(defined(psi[i])));
+    if (defined(xGrid[i]) >= xMin && defined(xGrid[i]) <= xMax) {
+      min = Math.min(min, defined(psi[i]));
+      max = Math.max(max, defined(psi[i]));
     }
   }
 
   const extremaPositions: number[] = [];
   for (let i = 1; i < psi.length - 1; i++) {
-    const x = xGrid[i]!;
-    if (x < xMin || x > xMax || Math.abs(psi[i]!) < GRID_EXTREMUM_RELATIVE_THRESHOLD * maxAbs) {
+    const x = defined(xGrid[i]);
+    if (x < xMin || x > xMax || Math.abs(defined(psi[i])) < GRID_EXTREMUM_RELATIVE_THRESHOLD * maxAbs) {
       continue;
     }
-    const left = psi[i]! - psi[i - 1]!;
-    const right = psi[i + 1]! - psi[i]!;
+    const left = defined(psi[i]) - defined(psi[i - 1]);
+    const right = defined(psi[i + 1]) - defined(psi[i]);
     if (left * right < 0) {
-      const h = xGrid[i + 1]! - x;
-      const curvature = psi[i - 1]! - 2 * psi[i]! + psi[i + 1]!;
-      const offset = curvature === 0 ? 0 : (h * (psi[i - 1]! - psi[i + 1]!)) / (2 * curvature);
+      const h = defined(xGrid[i + 1]) - x;
+      const curvature = defined(psi[i - 1]) - 2 * defined(psi[i]) + defined(psi[i + 1]);
+      const offset = curvature === 0 ? 0 : (h * (defined(psi[i - 1]) - defined(psi[i + 1]))) / (2 * curvature);
       extremaPositions.push((x + offset) * QuantumConstants.M_TO_NM);
     }
   }

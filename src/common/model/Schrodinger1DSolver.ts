@@ -9,6 +9,7 @@
  */
 
 import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
+import { defined } from "../utils/defined.js";
 import Logger from "../utils/Logger.js";
 import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
 import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
@@ -263,7 +264,7 @@ export class Schrodinger1DSolver {
     const values = xGrid.xCoordinates.map(potentialEv);
     const [energyMinEv, energyMaxEv] = energyRange
       ? [energyRange[0] * QuantumConstants.JOULES_TO_EV, energyRange[1] * QuantumConstants.JOULES_TO_EV]
-      : [Math.min(...values), Math.min(values[0]!, values[values.length - 1]!)];
+      : [Math.min(...values), Math.min(defined(values[0]), defined(values[values.length - 1]))];
 
     const empty: BoundStateResult = {
       energies: [],
@@ -289,7 +290,7 @@ export class Schrodinger1DSolver {
     const energies: number[] = [];
     const wavefunctions: number[][] = [];
     solution.eigenvalues.forEach((energyEv, n) => {
-      const psi = solution.waveFunctionSolutions[n]!;
+      const psi = defined(solution.waveFunctionSolutions[n]);
       if (energies.length < numStates && psi.every(Number.isFinite) && psi.some((value) => value !== 0)) {
         energies.push(energyEv * QuantumConstants.EV_TO_JOULES);
         wavefunctions.push(psi.map((value) => value * NM_TO_M_WAVEFUNCTION_SCALE));
@@ -322,8 +323,8 @@ export class Schrodinger1DSolver {
     const scale = Math.max(...values.map((v) => (Number.isFinite(v) ? Math.abs(v) : 0)), 1e-12);
     const n = values.length;
     for (let i = 0; i < n / 2; i++) {
-      const left = values[i]!;
-      const right = values[n - 1 - i]!;
+      const left = defined(values[i]);
+      const right = defined(values[n - 1 - i]);
       if (left !== right && !(Math.abs(left - right) <= SYMMETRY_RELATIVE_TOLERANCE * scale)) {
         return false;
       }

@@ -35,6 +35,7 @@
  * The derivation follows from requiring wavefunction and derivative continuity at x = ±L/2.
  */
 
+import { defined } from "../../utils/defined.js";
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
@@ -674,7 +675,7 @@ export function solveFiniteSquareWell(
 
   for (let n = 0; n < actualNumStates; n++) {
     const wavefunction: number[] = [];
-    const E = energies[n]!;
+    const E = defined(energies[n]);
     const parity = parities[n];
 
     // Wave numbers

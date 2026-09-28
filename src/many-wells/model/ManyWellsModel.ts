@@ -13,6 +13,7 @@ import type { WellParameters } from "../../common/model/PotentialFunction.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
+import { defined } from "../../common/utils/defined.js";
 import Logger from "../../common/utils/Logger.js";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 
@@ -272,7 +273,7 @@ export class ManyWellsModel extends BaseModel {
       return null;
     }
 
-    const energy = this.boundStateResult.energies[energyIndex]!;
+    const energy = defined(this.boundStateResult.energies[energyIndex]);
     const xGrid = this.boundStateResult.xGrid;
     const mass = this.particleMassProperty.value * QuantumConstants.ELECTRON_MASS;
 

@@ -50,6 +50,7 @@
 
 import type { StrictOmit } from "scenerystack/phet-core";
 import { optionize } from "scenerystack/phet-core";
+import { defined } from "../../utils/defined.js";
 import { EnergyRefiner, type EnergyRefinerOptions } from "./EnergyRefiner.js";
 import NumerovConstants from "./NumerovConstants.js";
 import { NumerovIntegrator } from "./NumerovIntegrator.js";
@@ -432,7 +433,7 @@ export class NumerovSolver {
     const potentialEnergyValuesCopy = potentialEnergyValues.slice();
     for (let k = 1; centerIndex + k < potentialEnergyValues.length; k++) {
       if (centerIndex - k >= 0) {
-        potentialEnergyValuesCopy[centerIndex + k] = potentialEnergyValues[centerIndex - k]!;
+        potentialEnergyValuesCopy[centerIndex + k] = defined(potentialEnergyValues[centerIndex - k]);
       }
     }
     return potentialEnergyValuesCopy;
@@ -478,16 +479,16 @@ export class NumerovSolver {
 
       if (parity === "odd") {
         // Odd eigenfunction: ψ(0) must be zero.
-        return psiL[centerIndex]! / peak;
+        return defined(psiL[centerIndex]) / peak;
       } else {
         // Even eigenfunction: ψ'(0) must be zero.
         // 5-point O(dx⁴) centered-difference stencil for the first derivative.
         const centerGridIndex = centerIndex;
         return (
-          (-psiL[centerGridIndex + 2]! +
-            8 * psiL[centerGridIndex + 1]! -
-            8 * psiL[centerGridIndex - 1]! +
-            psiL[centerGridIndex - 2]!) /
+          (-defined(psiL[centerGridIndex + 2]) +
+            8 * defined(psiL[centerGridIndex + 1]) -
+            8 * defined(psiL[centerGridIndex - 1]) +
+            defined(psiL[centerGridIndex - 2])) /
           (12 * xGrid.dx * peak)
         );
       }
@@ -532,7 +533,7 @@ export class NumerovSolver {
 
     // Copy left half (including center).
     for (let i = 0; i <= centerIndex; i++) {
-      psi[i] = psiL[i]!;
+      psi[i] = defined(psiL[i]);
     }
 
     // Enforce exact zero at center for odd states.
@@ -546,7 +547,7 @@ export class NumerovSolver {
       const mirrorIndex = 2 * centerIndex - i;
 
       // mirrorIndex can be negative for even-N grids at the far boundary (where ψ = 0 anyway).
-      psi[i] = mirrorIndex >= 0 ? sign * psiL[mirrorIndex]! : 0;
+      psi[i] = mirrorIndex >= 0 ? sign * defined(psiL[mirrorIndex]) : 0;
     }
 
     return WaveFunctionNormalizer.normalize(psi, xGrid.dx);
@@ -595,21 +596,21 @@ export class NumerovSolver {
       const peakLeft = NumerovSolver.getPeak(psiLeft);
       const peakRight = NumerovSolver.getPeak(psiRight);
 
-      const valueLeft = psiLeft[meetingIndex]! / peakLeft;
-      const valueRight = psiRight[meetingIndex]! / peakRight;
+      const valueLeft = defined(psiLeft[meetingIndex]) / peakLeft;
+      const valueRight = defined(psiRight[meetingIndex]) / peakRight;
 
       // 5-point O(dx⁴) centered-difference stencil for the first derivative.
       const slopeLeft =
-        (-psiLeft[meetingIndex + 2]! +
-          8 * psiLeft[meetingIndex + 1]! -
-          8 * psiLeft[meetingIndex - 1]! +
-          psiLeft[meetingIndex - 2]!) /
+        (-defined(psiLeft[meetingIndex + 2]) +
+          8 * defined(psiLeft[meetingIndex + 1]) -
+          8 * defined(psiLeft[meetingIndex - 1]) +
+          defined(psiLeft[meetingIndex - 2])) /
         (12 * xGrid.dx * peakLeft);
       const slopeRight =
-        (-psiRight[meetingIndex + 2]! +
-          8 * psiRight[meetingIndex + 1]! -
-          8 * psiRight[meetingIndex - 1]! +
-          psiRight[meetingIndex - 2]!) /
+        (-defined(psiRight[meetingIndex + 2]) +
+          8 * defined(psiRight[meetingIndex + 1]) -
+          8 * defined(psiRight[meetingIndex - 1]) +
+          defined(psiRight[meetingIndex - 2])) /
         (12 * xGrid.dx * peakRight);
 
       // Zero when log-derivatives match at the meeting point (eigenvalue condition).
@@ -669,7 +670,7 @@ export class NumerovSolver {
     let prevSign = 0;
 
     for (let i = 1; i < psi.length - 1; i++) {
-      const value = psi[i]!;
+      const value = defined(psi[i]);
       if (value === 0 || !Number.isFinite(value)) {
         continue;
       }
@@ -738,7 +739,7 @@ export class NumerovSolver {
     // Restrict to interior indices where the 5-point slope stencil (m±2) and the stitch neighbors
     // (m±1) are all in range.
     for (let i = 2; i < psiL.length - 2; i++) {
-      const overlap = Math.abs(psiL[i]! / peakL) * Math.abs(psiR[i]! / peakR);
+      const overlap = Math.abs(defined(psiL[i]) / peakL) * Math.abs(defined(psiR[i]) / peakR);
       if (overlap > bestOverlap) {
         bestOverlap = overlap;
         bestIndex = i;
@@ -757,8 +758,8 @@ export class NumerovSolver {
    * @returns boolean
    */
   private static hasNodeAtIndex(psi: number[], index: number): boolean {
-    const neighborMax = Math.max(Math.abs(psi[index - 1]!), Math.abs(psi[index + 1]!));
-    return neighborMax === 0 || Math.abs(psi[index]!) < NumerovSolver.RELATIVE_NODE_TOLERANCE * neighborMax;
+    const neighborMax = Math.max(Math.abs(defined(psi[index - 1])), Math.abs(defined(psi[index + 1])));
+    return neighborMax === 0 || Math.abs(defined(psi[index])) < NumerovSolver.RELATIVE_NODE_TOLERANCE * neighborMax;
   }
 
   /**
@@ -780,8 +781,8 @@ export class NumerovSolver {
     const threshL = NumerovSolver.SCALE_REFERENCE_TOLERANCE * psiLMaxAbs;
 
     for (let offset = 1; meetingPointIndex - offset >= 0 && meetingPointIndex + offset < N; offset++) {
-      const leftValue = psiL[meetingPointIndex - offset]!;
-      const rightValue = psiR[meetingPointIndex + offset]!;
+      const leftValue = defined(psiL[meetingPointIndex - offset]);
+      const rightValue = defined(psiR[meetingPointIndex + offset]);
       if (Math.abs(leftValue) > threshL && Math.abs(rightValue) > threshR) {
         return -leftValue / rightValue;
       }
@@ -789,8 +790,8 @@ export class NumerovSolver {
 
     // Fall back to sign matching if no stable derivative reference was found.
     for (let referenceIndex = meetingPointIndex - 1; referenceIndex > 0; referenceIndex--) {
-      const leftValue = psiL[referenceIndex]!;
-      const rightValue = psiR[referenceIndex]!;
+      const leftValue = defined(psiL[referenceIndex]);
+      const rightValue = defined(psiR[referenceIndex]);
       if (Math.abs(leftValue) > threshL && Math.abs(rightValue) > threshR) {
         return Math.sign(leftValue) !== Math.sign(rightValue) ? -1 : 1;
       }
@@ -818,18 +819,18 @@ export class NumerovSolver {
     const stitched = new Array<number>(N);
 
     for (let i = 0; i <= meetingPointIndex; i++) {
-      stitched[i] = psiL[i]!;
+      stitched[i] = defined(psiL[i]);
     }
 
     const psiLHasNodeAtMatch = NumerovSolver.hasNodeAtIndex(psiL, meetingPointIndex);
     const psiRHasNodeAtMatch = NumerovSolver.hasNodeAtIndex(psiR, meetingPointIndex);
-    const psiRatMatch = psiR[meetingPointIndex]!;
+    const psiRatMatch = defined(psiR[meetingPointIndex]);
 
     if (!(psiLHasNodeAtMatch || psiRHasNodeAtMatch)) {
       // scale may be negative, flipping psiR's sign to match psiL at the junction.
-      const scale = psiL[meetingPointIndex]! / psiRatMatch;
+      const scale = defined(psiL[meetingPointIndex]) / psiRatMatch;
       for (let i = meetingPointIndex + 1; i < N; i++) {
-        stitched[i] = psiR[i]! * scale;
+        stitched[i] = defined(psiR[i]) * scale;
       }
     } else {
       // The stitch point is a node. Force it to zero and use the local slope to determine the
@@ -837,7 +838,7 @@ export class NumerovSolver {
       stitched[meetingPointIndex] = 0;
       const scale = NumerovSolver.getNodeMatchScale(psiL, psiR, meetingPointIndex);
       for (let i = meetingPointIndex + 1; i < N; i++) {
-        stitched[i] = psiR[i]! * scale;
+        stitched[i] = defined(psiR[i]) * scale;
       }
     }
 
@@ -896,9 +897,9 @@ export class NumerovSolver {
     const diag = new Array<number>(N);
     const upper = new Array<number>(N);
     for (let j = 1; j < N - 1; j++) {
-      lower[j] = potentialEnergyValues[j - 1]! - invC - energy;
-      diag[j] = 2 * invC + 10 * (potentialEnergyValues[j]! - energy);
-      upper[j] = potentialEnergyValues[j + 1]! - invC - energy;
+      lower[j] = defined(potentialEnergyValues[j - 1]) - invC - energy;
+      diag[j] = 2 * invC + 10 * (defined(potentialEnergyValues[j]) - energy);
+      upper[j] = defined(potentialEnergyValues[j + 1]) - invC - energy;
     }
 
     let psi = seed.slice();
@@ -910,21 +911,21 @@ export class NumerovSolver {
       // Right-hand side d = B ψ over the interior (ψ_0 = ψ_{N−1} = 0).
       const d = new Array<number>(N);
       for (let j = 1; j < N - 1; j++) {
-        d[j] = psi[j + 1]! + 10 * psi[j]! + psi[j - 1]!;
+        d[j] = defined(psi[j + 1]) + 10 * defined(psi[j]) + defined(psi[j - 1]);
       }
 
       // Thomas algorithm: solve M ψ_new = d for the interior. The result overwrites `next`.
       const next = new Array<number>(N).fill(0);
-      let beta = NumerovSolver.guardPivot(diag[1]!);
-      cp[1] = upper[1]! / beta;
-      next[1] = d[1]! / beta;
+      let beta = NumerovSolver.guardPivot(defined(diag[1]));
+      cp[1] = defined(upper[1]) / beta;
+      next[1] = defined(d[1]) / beta;
       for (let j = 2; j < N - 1; j++) {
-        beta = NumerovSolver.guardPivot(diag[j]! - lower[j]! * cp[j - 1]!);
-        cp[j] = upper[j]! / beta;
-        next[j] = (d[j]! - lower[j]! * next[j - 1]!) / beta;
+        beta = NumerovSolver.guardPivot(defined(diag[j]) - defined(lower[j]) * defined(cp[j - 1]));
+        cp[j] = defined(upper[j]) / beta;
+        next[j] = (defined(d[j]) - defined(lower[j]) * defined(next[j - 1])) / beta;
       }
       for (let j = N - 3; j >= 1; j--) {
-        next[j]! -= cp[j]! * next[j + 1]!;
+        next[j] = defined(next[j]) - defined(cp[j]) * defined(next[j + 1]);
       }
 
       // A non-finite result means E landed essentially on a singular pivot; keep the prior iterate
@@ -961,7 +962,7 @@ export class NumerovSolver {
     for (let i = 0; i < N; i++) {
       const mirror = 2 * centerIndex - i;
       if (mirror >= 0 && mirror < N) {
-        out[i] = 0.5 * (psi[i]! + sign * psi[mirror]!);
+        out[i] = 0.5 * (defined(psi[i]) + sign * defined(psi[mirror]));
       }
     }
     return out;
@@ -989,7 +990,7 @@ export class NumerovSolver {
   private static scaleToUnitPeak(psi: number[]): void {
     const peak = NumerovSolver.getPeak(psi);
     for (let i = 0; i < psi.length; i++) {
-      psi[i]! /= peak;
+      psi[i] = defined(psi[i]) / peak;
     }
   }
 

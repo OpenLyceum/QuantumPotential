@@ -93,7 +93,7 @@
           }
         },
         "useSpreadOverApply": "warn",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "error"
       },
       "suspicious": {
         "preset": "recommended",

@@ -40,6 +40,7 @@
  * Boundary condition: ψ(0) = 0 leads to Ai(-αx_n) = 0, giving αx_n = -z_n.
  */
 
+import { defined } from "../../utils/defined.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
 import {
@@ -143,7 +144,7 @@ export function solveAsymmetricTrianglePotential(
   const wavefunctions: number[][] = [];
 
   for (let n = 0; n < actualNumStates; n++) {
-    const E = energies[n]!;
+    const E = defined(energies[n]);
 
     // Classical turning point: x_0 = E/F (where V(x_0) = F·x_0 = E)
     const x0 = E / F;
@@ -278,8 +279,8 @@ export function calculateAsymmetricTriangleWavefunctionFirstDerivative(
   const x0 = energy / F;
 
   // Compute normalization to match the wavefunction normalization
-  const xMin = xGrid[0]!;
-  const xMax = xGrid[xGrid.length - 1]!;
+  const xMin = defined(xGrid[0]);
+  const xMax = defined(xGrid[xGrid.length - 1]);
   const normalization = computeAsymmetricTriangleNormalization(alpha, x0, xMin, xMax);
 
   const firstDerivative: number[] = [];
@@ -331,8 +332,8 @@ export function calculateAsymmetricTriangleWavefunctionSecondDerivative(
   const x0 = energy / F;
 
   // Compute normalization to match the wavefunction normalization
-  const xMin = xGrid[0]!;
-  const xMax = xGrid[xGrid.length - 1]!;
+  const xMin = defined(xGrid[0]);
+  const xMax = defined(xGrid[xGrid.length - 1]);
   const normalization = computeAsymmetricTriangleNormalization(alpha, x0, xMin, xMax);
 
   const secondDerivative: number[] = [];

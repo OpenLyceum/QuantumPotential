@@ -20,6 +20,7 @@ import { type BoundStateResult, PotentialType } from "../model/PotentialFunction
 import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
+import { defined } from "../utils/defined.js";
 import isDevMode from "../utils/isDevMode.js";
 import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { BaseChartNode, type ChartOptions } from "./BaseChartNode.js";
@@ -296,7 +297,7 @@ export class EnergyChartNode extends BaseChartNode {
 
     const numLevels = boundStates.energies.length;
     const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
-    const groundEnergy = energies[0]!;
+    const groundEnergy = defined(energies[0]);
 
     const well = [
       StringUtils.fillIn(strings.wellPatternStringProperty, {
@@ -314,7 +315,7 @@ export class EnergyChartNode extends BaseChartNode {
       StringUtils.fillIn(strings.groundStatePatternStringProperty, { energy: groundEnergy.toFixed(3) }),
     ];
     if (numLevels > 1) {
-      const firstExcited = energies[1]!;
+      const firstExcited = defined(energies[1]);
       levels.push(
         StringUtils.fillIn(strings.firstExcitedPatternStringProperty, {
           energy: firstExcited.toFixed(3),
@@ -768,9 +769,9 @@ export class EnergyChartNode extends BaseChartNode {
     const yLow = yMin - (yMax - yMin);
     const yHigh = yMax + (yMax - yMin);
     for (let i = 0; i < numPoints; i++) {
-      const energyEv = potentialJ[i]! * QuantumConstants.JOULES_TO_EV;
+      const energyEv = defined(potentialJ[i]) * QuantumConstants.JOULES_TO_EV;
       const V = Number.isNaN(energyEv) ? yHigh : Math.min(yHigh, Math.max(yLow, energyEv));
-      const viewX = this.dataToViewX(xGridM[i]! * QuantumConstants.M_TO_NM);
+      const viewX = this.dataToViewX(defined(xGridM[i]) * QuantumConstants.M_TO_NM);
       const viewY = this.dataToViewY(V);
       if (i === 0) {
         shape.moveTo(viewX, viewY);

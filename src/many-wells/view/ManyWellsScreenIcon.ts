@@ -6,6 +6,7 @@
 import { Shape } from "scenerystack/kite";
 import { LinearGradient, Node, Path, Rectangle } from "scenerystack/scenery";
 import { ScreenIcon } from "scenerystack/sim";
+import { defined } from "../../common/utils/defined.js";
 import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 
 // Dimensions
@@ -118,8 +119,8 @@ export class ManyWellsScreenIcon extends ScreenIcon {
       for (let i = 0; i < NUM_WELLS; i++) {
         const wellX = startX + i * (WELL_WIDTH + BARRIER_WIDTH);
         energyBands.push(
-          new Rectangle(wellX + WELL_INNER_PADDING, BAND_Y_POSITIONS[band]!, bandInnerWidth, BAND_HEIGHT, {
-            fill: BAND_COLORS[band]!,
+          new Rectangle(wellX + WELL_INNER_PADDING, defined(BAND_Y_POSITIONS[band]), bandInnerWidth, BAND_HEIGHT, {
+            fill: defined(BAND_COLORS[band]),
             opacity: BASE_BAND_OPACITY - band * BAND_OPACITY_DECREMENT,
           }),
         );

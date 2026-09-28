@@ -12,6 +12,7 @@ import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utter
 import stringManager from "../../../i18n/StringManager.js";
 import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
+import { defined } from "../../utils/defined.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
 // Using AriaLiveAnnouncer for screen reader support via aria-live regions
@@ -427,9 +428,9 @@ export class CurvatureTool extends Node {
     }
 
     if (points.length > 0) {
-      shape.moveTo(points[0]!.x, points[0]!.y);
+      shape.moveTo(defined(points[0]).x, defined(points[0]).y);
       for (let i = 1; i < points.length; i++) {
-        shape.lineTo(points[i]!.x, points[i]!.y);
+        shape.lineTo(defined(points[i]).x, defined(points[i]).y);
       }
     }
 

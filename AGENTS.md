@@ -91,6 +91,9 @@ Solver details: [`doc/solver.md`](doc/solver.md).
   classical density is unusable for the same reason.
 - **Normalize numerically.** For Pöschl–Teller the analytic Gamma-function
   normalization was off by 2–5×; trapezoidal ∫|ψ|² dx is the reliable path.
+- **Indexed reads use `defined()`.** `noUncheckedIndexedAccess` makes `array[i]` be `T | undefined`.
+  `src/common/utils/defined.ts` throws when the value is missing. Non-null assertions are lint errors
+  in `src/`; `tests/**` keeps the template override that allows them.
 
 ## Parameter controls
 
@@ -127,15 +130,12 @@ deferred fleet-wide). Full convention:
   `src/common/model/QuantumConstants.ts`; the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`
   (used by the models and `BaseChartNode`); chart margins are in `BaseChartNode`; per-model ranges are
   `static readonly` on `BaseModel` and the screen models.
-- **Biome `style.noNonNullAssertion: off`:** the solvers and charts index dense numeric arrays in
-  tight loops; under `noUncheckedIndexedAccess` those reads carry intentional `!` assertions
-  (same carve-out as OscillationsAndChaos).
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
   by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
   `exactOptionalPropertyTypes`. All pass.
 - **Template drift (Baton `check-template-drift.sh`):** `check` adds a fourth pass over
-  `tsconfig.accuracy.json`; `tsconfig.test.json` excludes `tests/accuracy`; `biome.json` turns off
-  `noNonNullAssertion` (above) and `noConsole` for the accuracy scripts, which print their reports.
+  `tsconfig.accuracy.json`; `tsconfig.test.json` excludes `tests/accuracy`; `biome.json` sets
+  `noNonNullAssertion` to error and turns off `noConsole` for the accuracy scripts, which print their reports.
 
 ### `package.json` overrides
 

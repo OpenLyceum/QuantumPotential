@@ -1,5 +1,6 @@
 /** Project position-space wave packets onto the available bound eigenstates. */
 
+import { defined } from "../utils/defined.js";
 import type { BoundStateResult } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
 import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType.js";
@@ -26,10 +27,15 @@ function projectTarget(
     let real = 0;
     let imaginary = 0;
     for (let i = 1; i < xGrid.length; i++) {
-      const dx = xGrid[i]! - xGrid[i - 1]!;
-      real += (dx / 2) * (wavefunction[i - 1]! * values[i - 1]!.real + wavefunction[i]! * values[i]!.real);
+      const dx = defined(xGrid[i]) - defined(xGrid[i - 1]);
+      real +=
+        (dx / 2) *
+        (defined(wavefunction[i - 1]) * defined(values[i - 1]).real +
+          defined(wavefunction[i]) * defined(values[i]).real);
       imaginary +=
-        (dx / 2) * (wavefunction[i - 1]! * values[i - 1]!.imaginary + wavefunction[i]! * values[i]!.imaginary);
+        (dx / 2) *
+        (defined(wavefunction[i - 1]) * defined(values[i - 1]).imaginary +
+          defined(wavefunction[i]) * defined(values[i]).imaginary);
     }
     return { real, imaginary };
   });

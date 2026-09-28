@@ -14,6 +14,7 @@ import QuantumPotentialColors from "../../../QuantumPotentialColors.js";
 import QuantumConstants from "../../model/QuantumConstants.js";
 import type { ScreenModel } from "../../model/ScreenModels.js";
 import { SuperpositionType } from "../../model/SuperpositionType.js";
+import { defined } from "../../utils/defined.js";
 
 // Create a global utteranceQueue instance for accessibility announcements
 // Using AriaLiveAnnouncer for screen reader support via aria-live regions
@@ -491,11 +492,11 @@ export class AreaMeasurementTool extends Node {
 
     // Add points within the region
     for (let i = 0; i < xGrid.length; i++) {
-      const xData = xGrid[i]! * QuantumConstants.M_TO_NM; // Convert to nm
+      const xData = defined(xGrid[i]) * QuantumConstants.M_TO_NM; // Convert to nm
 
       if (xData >= xStart && xData <= xEnd) {
         const x = dataToViewX(xData);
-        const y = dataToViewY(probabilityDensity[i]!);
+        const y = dataToViewY(defined(probabilityDensity[i]));
         points.push({ x, y });
       }
     }
@@ -512,7 +513,7 @@ export class AreaMeasurementTool extends Node {
     shape.moveTo(leftViewX, y0);
 
     // Draw line up to the first point's y-coordinate
-    shape.lineTo(leftViewX, points[0]!.y);
+    shape.lineTo(leftViewX, defined(points[0]).y);
 
     // Trace along the curve
     for (const point of points) {
@@ -520,7 +521,7 @@ export class AreaMeasurementTool extends Node {
     }
 
     // Draw line down from last point to baseline
-    shape.lineTo(rightViewX, points[points.length - 1]!.y);
+    shape.lineTo(rightViewX, defined(points[points.length - 1]).y);
     shape.lineTo(rightViewX, y0);
 
     // Close the shape back to starting point

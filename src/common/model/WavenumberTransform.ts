@@ -1,3 +1,5 @@
+import { defined } from "../utils/defined.js";
+
 /**
  * Wavenumber-space wavefunction of a solved bound state, by direct quadrature of
  *
@@ -37,12 +39,12 @@ export function computeWavenumberTransform(
   if (n < 3 || psi.length !== n) {
     return null;
   }
-  const dx = xGrid[1]! - xGrid[0]!;
+  const dx = defined(xGrid[1]) - defined(xGrid[0]);
 
   // ⟨k²⟩ = ∫ |ψ'|² dx, from forward differences
   let meanKSquared = 0;
   for (let j = 0; j < n - 1; j++) {
-    const slope = (psi[j + 1]! - psi[j]!) / dx;
+    const slope = (defined(psi[j + 1]) - defined(psi[j])) / dx;
     meanKSquared += slope * slope * dx;
   }
   const kMax = K_WINDOW_IN_RMS * Math.sqrt(meanKSquared);
@@ -53,7 +55,7 @@ export function computeWavenumberTransform(
   const dk = (2 * kMax) / (NUMBER_OF_K_POINTS - 1);
   const kGrid: number[] = [];
   const density: number[] = [];
-  const x0 = xGrid[0]!;
+  const x0 = defined(xGrid[0]);
 
   for (let i = 0; i < NUMBER_OF_K_POINTS; i++) {
     const k = -kMax + i * dk;
@@ -66,7 +68,7 @@ export function computeWavenumberTransform(
     let sumReal = 0;
     let sumImaginary = 0;
     for (let j = 0; j < n; j++) {
-      const weight = j === 0 || j === n - 1 ? 0.5 * psi[j]! : psi[j]!;
+      const weight = j === 0 || j === n - 1 ? 0.5 * defined(psi[j]) : defined(psi[j]);
       sumReal += weight * phaseReal;
       sumImaginary += weight * phaseImaginary;
       const nextReal = phaseReal * stepReal - phaseImaginary * stepImaginary;

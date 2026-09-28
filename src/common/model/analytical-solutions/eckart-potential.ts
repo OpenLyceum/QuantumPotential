@@ -23,6 +23,7 @@
  * not the spectrum of this potential; it reported bound states below the minimum of V.)
  */
 
+import { defined } from "../../utils/defined.js";
 import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
@@ -165,7 +166,7 @@ export function calculateEckartPotentialTurningPoints(
   energy: number,
 ): { left: number; right: number } {
   const solution = new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, 1);
-  return solution.calculateTurningPoints(energy)[0]!;
+  return defined(solution.calculateTurningPoints(energy)[0]);
 }
 
 /**

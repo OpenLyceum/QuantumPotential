@@ -63,6 +63,7 @@
  * These equations have no closed-form solution and must be solved numerically using root-finding.
  */
 
+import { defined } from "../../utils/defined.js";
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
@@ -79,7 +80,7 @@ function countNodes(wavefunction: number[]): number {
 
   for (let i = 0; i < wavefunction.length - 1; i++) {
     // Check for sign change (node/zero crossing)
-    if (wavefunction[i]! * wavefunction[i + 1]! < 0) {
+    if (defined(wavefunction[i]) * defined(wavefunction[i + 1]) < 0) {
       nodeCount++;
     }
   }
@@ -131,7 +132,7 @@ function searchForMissingEigenvalues(
   }> = [];
 
   for (let n = 0; n < Math.min(currentStates.length, numStates); n++) {
-    const state = currentStates[n]!;
+    const state = defined(currentStates[n]);
     const wf = computeDoubleWellWavefunction(state.energy, state.parity, Linner, Louter, V0, mass, xGrid);
     const nodeCount = countNodes(wf);
 
@@ -153,7 +154,7 @@ function searchForMissingEigenvalues(
   }> = [];
 
   for (let i = 0; i < statesWithNodes.length; i++) {
-    const current = statesWithNodes[i]!;
+    const current = defined(statesWithNodes[i]);
 
     if (current.nodeCount > current.expectedNodes) {
       // Missing state(s) detected!
@@ -165,7 +166,7 @@ function searchForMissingEigenvalues(
       );
 
       // Determine where to search: between previous state and current state
-      const energyMin = i > 0 ? statesWithNodes[i - 1]!.energy : V0 * 1e-6;
+      const energyMin = i > 0 ? defined(statesWithNodes[i - 1]).energy : V0 * 1e-6;
       const energyMax = current.energy;
 
       // Determine expected parity of missing state(s)
@@ -444,15 +445,15 @@ export function solveDoubleSquareWellAnalytical(
 
   for (let n = 0; n < Math.min(selectedStates.length, numStates); n++) {
     const expectedNodes = n;
-    const actualNodes = countNodes(wavefunctions[n]!);
+    const actualNodes = countNodes(defined(wavefunctions[n]));
 
     if (actualNodes !== expectedNodes) {
       missingStates.push(n);
       Logger.warn(
         `WARNING: State ${n} has ${actualNodes} nodes but should have ${expectedNodes} nodes!\n` +
           `  This indicates a missing eigenvalue before this state.\n` +
-          `  Energy = ${energies[n]!.toExponential(6)} J\n` +
-          `  Parity = ${selectedStates[n]!.parity}\n` +
+          `  Energy = ${defined(energies[n]).toExponential(6)} J\n` +
+          `  Parity = ${defined(selectedStates[n]).parity}\n` +
           `  Expected sequence: n=0 (even, 0 nodes), n=1 (odd, 1 node), n=2 (even, 2 nodes), ...`,
       );
     }
@@ -461,34 +462,34 @@ export function solveDoubleSquareWellAnalytical(
   // Special check for doublet (first two states)
   if (selectedStates.length >= 2) {
     // Ground state MUST be even parity with 0 nodes
-    if (selectedStates[0]!.parity !== "even") {
+    if (defined(selectedStates[0]).parity !== "even") {
       Logger.warn(
-        `CRITICAL: Ground state has ${selectedStates[0]!.parity} parity but MUST be even!\n` +
+        `CRITICAL: Ground state has ${defined(selectedStates[0]).parity} parity but MUST be even!\n` +
           `  This indicates the true ground state is missing.\n` +
-          `  Current ground state energy: ${energies[0]!.toExponential(6)} J`,
+          `  Current ground state energy: ${defined(energies[0]).toExponential(6)} J`,
       );
       missingStates.push(0);
     }
 
     // First excited state MUST be odd parity with 1 node
-    if (selectedStates[1]!.parity !== "odd") {
+    if (defined(selectedStates[1]).parity !== "odd") {
       Logger.warn(
-        `CRITICAL: First excited state has ${selectedStates[1]!.parity} parity but MUST be odd!\n` +
+        `CRITICAL: First excited state has ${defined(selectedStates[1]).parity} parity but MUST be odd!\n` +
           `  This indicates the doublet partner is missing.\n` +
-          `  Current first excited state energy: ${energies[1]!.toExponential(6)} J`,
+          `  Current first excited state energy: ${defined(energies[1]).toExponential(6)} J`,
       );
       missingStates.push(1);
     }
 
     // Check doublet energy splitting
-    const splitting = energies[1]! - energies[0]!;
+    const splitting = defined(energies[1]) - defined(energies[0]);
     const splittingPercent = (splitting / V0) * 100;
 
     if (splitting < 0) {
       Logger.error(
         `CRITICAL ERROR: First excited state energy is LOWER than ground state!\n` +
-          `  Ground state: ${energies[0]!.toExponential(6)} J (${selectedStates[0]!.parity})\n` +
-          `  First excited: ${energies[1]!.toExponential(6)} J (${selectedStates[1]!.parity})\n` +
+          `  Ground state: ${defined(energies[0]).toExponential(6)} J (${defined(selectedStates[0]).parity})\n` +
+          `  First excited: ${defined(energies[1]).toExponential(6)} J (${defined(selectedStates[1]).parity})\n` +
           `  This violates the variational principle and indicates missing states.`,
       );
     } else if (splittingPercent > 50) {
@@ -616,23 +617,23 @@ function detectEnergyGaps(energies: number[], V0: number): Array<{ start: number
   // Calculate typical energy spacing
   const spacings: number[] = [];
   for (let i = 1; i < energies.length; i++) {
-    spacings.push(energies[i]! - energies[i - 1]!);
+    spacings.push(defined(energies[i]) - defined(energies[i - 1]));
   }
 
   // Use median spacing as reference (more robust than mean)
   spacings.sort((a, b) => a - b);
-  const medianSpacing = spacings[Math.floor(spacings.length / 2)]!;
+  const medianSpacing = defined(spacings[Math.floor(spacings.length / 2)]);
 
   // Flag gaps that are significantly larger than median (3x threshold)
   const gapThreshold = 3.0 * medianSpacing;
 
   for (let i = 1; i < energies.length; i++) {
-    const gap = energies[i]! - energies[i - 1]!;
+    const gap = defined(energies[i]) - defined(energies[i - 1]);
     if (gap > gapThreshold && gap > V0 * 0.01) {
       // Also must be > 1% of V0
       gaps.push({
-        start: energies[i - 1]!,
-        end: energies[i]!,
+        start: defined(energies[i - 1]),
+        end: defined(energies[i]),
       });
     }
   }
@@ -1078,7 +1079,7 @@ function computeDoubleWellWavefunction(
   }
 
   // Normalize using trapezoidal rule
-  const dx = xGrid[1]! - xGrid[0]!;
+  const dx = defined(xGrid[1]) - defined(xGrid[0]);
   const normSq = psi.reduce((sum, val) => sum + val * val, 0) * dx;
   const norm = Math.sqrt(normSq);
 

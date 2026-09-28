@@ -1,3 +1,5 @@
+import { defined } from "../../utils/defined.js";
+
 /**
  * Maps wavefunction phase to a reversed version of the cyclic "twilight" colormap used by PhET's
  * Quantum Bound States simulation. Reversing the phase direction preserves the seam at zero while
@@ -38,8 +40,8 @@ export function phaseToReversedTwilight(radians: number): string {
   const scaled = (degrees / 360) * (TWILIGHT_PALETTE.length - 1);
   const index = Math.floor(scaled);
   const fraction = scaled - index;
-  const color0 = TWILIGHT_PALETTE[index]!;
-  const color1 = TWILIGHT_PALETTE[Math.min(index + 1, TWILIGHT_PALETTE.length - 1)]!;
+  const color0 = defined(TWILIGHT_PALETTE[index]);
+  const color1 = defined(TWILIGHT_PALETTE[Math.min(index + 1, TWILIGHT_PALETTE.length - 1)]);
 
   const red = interpolateColorComponent(color0[0], color1[0], fraction);
   const green = interpolateColorComponent(color0[1], color1[1], fraction);

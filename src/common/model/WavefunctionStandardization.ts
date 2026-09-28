@@ -1,3 +1,4 @@
+import { defined } from "../utils/defined.js";
 /**
  * Utilities for standardizing wavefunction parity/sign across different solvers.
  *
@@ -20,7 +21,7 @@ export function detectParity(psi: number[]): "even" | "odd" {
   // Count sign changes (zero-crossings)
   for (let i = 1; i < psi.length; i++) {
     // Check for sign change between consecutive points
-    if (psi[i - 1]! * psi[i]! < 0) {
+    if (defined(psi[i - 1]) * defined(psi[i]) < 0) {
       nodeCount++;
     }
   }
@@ -53,14 +54,17 @@ export function standardizeWavefunctionSign(psi: number[], xGrid: number[], pari
 
   if (detectedParity === "even") {
     // Even states: Ensure ψ(center) > 0
-    if (psi[centerIndex]! < 0) {
+    if (defined(psi[centerIndex]) < 0) {
       return psi.map((val) => -val);
     }
     // If ψ(center) ≈ 0 (shouldn't happen for even states, but handle edge case)
-    if (Math.abs(psi[centerIndex]!) < 1e-10) {
+    if (Math.abs(defined(psi[centerIndex])) < 1e-10) {
       // Find the maximum absolute value and use its sign
-      const maxAbsIndex = psi.reduce((iMax, val, i, arr) => (Math.abs(val) > Math.abs(arr[iMax]!) ? i : iMax), 0);
-      if (psi[maxAbsIndex]! < 0) {
+      const maxAbsIndex = psi.reduce(
+        (iMax, val, i, arr) => (Math.abs(val) > Math.abs(defined(arr[iMax])) ? i : iMax),
+        0,
+      );
+      if (defined(psi[maxAbsIndex]) < 0) {
         return psi.map((val) => -val);
       }
     }
@@ -70,19 +74,20 @@ export function standardizeWavefunctionSign(psi: number[], xGrid: number[], pari
 
     // Find first significant point to the right of center
     let rightIndex = centerIndex + 1;
-    while (rightIndex < psi.length && Math.abs(psi[rightIndex]!) < 1e-10) {
+    while (rightIndex < psi.length && Math.abs(defined(psi[rightIndex])) < 1e-10) {
       rightIndex++;
     }
 
     if (rightIndex < psi.length) {
       // Ensure ψ(x>0) > 0
-      if (psi[rightIndex]! < 0) {
+      if (defined(psi[rightIndex]) < 0) {
         return psi.map((val) => -val);
       }
     } else if (centerIndex > 0 && centerIndex < psi.length - 1) {
       // Fallback: check slope at center using finite difference
       const slope =
-        (psi[centerIndex + 1]! - psi[centerIndex - 1]!) / (xGrid[centerIndex + 1]! - xGrid[centerIndex - 1]!);
+        (defined(psi[centerIndex + 1]) - defined(psi[centerIndex - 1])) /
+        (defined(xGrid[centerIndex + 1]) - defined(xGrid[centerIndex - 1]));
 
       // We want slope < 0 at center (negative slope)
       if (slope > 0) {

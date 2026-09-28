@@ -1,3 +1,4 @@
+import { defined } from "../../utils/defined.js";
 /**
  * Mathematical utility functions for analytical solutions.
  * These are used by various potential solvers for special functions and polynomials.
@@ -169,9 +170,9 @@ export function gamma(n: number): number {
   }
 
   const x = n - 1;
-  let a = coefficients[0]!;
+  let a = defined(coefficients[0]);
   for (let i = 1; i < coefficients.length; i++) {
-    a += coefficients[i]! / (x + i);
+    a += defined(coefficients[i]) / (x + i);
   }
 
   const t = x + g + 0.5;

@@ -22,6 +22,7 @@
  * @author Martin Veillette
  */
 
+import { defined } from "../../utils/defined.js";
 import NumerovConstants from "./NumerovConstants.js";
 import type { XGrid } from "./XGrid.js";
 
@@ -175,13 +176,13 @@ function setBoundaryConditions(
     let i = 0;
     psi[i] = 0;
     i++;
-    psi[i] = getInitialPsi(calculateK2(E, V[i]!, mass), dx, psiScale);
+    psi[i] = getInitialPsi(calculateK2(E, defined(V[i]), mass), dx, psiScale);
   } else {
     // Adjust 2 points at the end of the psi array.
     let i = N - 1;
     psi[i] = 0;
     i--;
-    psi[i] = getInitialPsi(calculateK2(E, V[i]!, mass), dx, psiScale);
+    psi[i] = getInitialPsi(calculateK2(E, defined(V[i]), mass), dx, psiScale);
   }
 }
 
@@ -191,18 +192,18 @@ function setBoundaryConditions(
  */
 function integrateForwardOnGrid(psi: number[], f: Float64Array): void {
   const N = psi.length;
-  let previous = psi[0]!;
-  let current = psi[1]!;
+  let previous = defined(psi[0]);
+  let current = defined(psi[1]);
 
   for (let j = 1; j < N - 1; j++) {
-    let next = numerovStepForward(current, previous, f[j]!, f[j - 1]!, f[j + 1]!);
+    let next = numerovStepForward(current, previous, defined(f[j]), defined(f[j - 1]), defined(f[j + 1]));
     psi[j + 1] = next;
 
     if (Math.abs(next) > RESCALE_TRIGGER) {
       const scale = RESCALE_TARGET / Math.abs(next);
       rescaleWaveFunction(psi, 0, j + 1, scale);
       current *= scale;
-      next = psi[j + 1]!;
+      next = defined(psi[j + 1]);
     }
     previous = current;
     current = next;
@@ -217,10 +218,16 @@ function integrateBackwardOnGrid(psi: number[], f: Float64Array): void {
   const N = psi.length;
 
   for (let j = N - 2; j > 0; j--) {
-    psi[j - 1] = numerovStepBackward(psi[j]!, psi[j + 1]!, f[j - 1]!, f[j]!, f[j + 1]!);
+    psi[j - 1] = numerovStepBackward(
+      defined(psi[j]),
+      defined(psi[j + 1]),
+      defined(f[j - 1]),
+      defined(f[j]),
+      defined(f[j + 1]),
+    );
 
-    if (Math.abs(psi[j - 1]!) > RESCALE_TRIGGER) {
-      rescaleWaveFunction(psi, j - 1, N - 1, RESCALE_TARGET / Math.abs(psi[j - 1]!));
+    if (Math.abs(defined(psi[j - 1])) > RESCALE_TRIGGER) {
+      rescaleWaveFunction(psi, j - 1, N - 1, RESCALE_TARGET / Math.abs(defined(psi[j - 1])));
     }
   }
 }
@@ -249,7 +256,7 @@ function calculateNumerovFactors(E: number, V: readonly number[], mass: number, 
   const factor = ((dx * dx) / 12) * ((2 * mass) / (HBAR * HBAR));
   const f = new Float64Array(V.length);
   for (let j = 0; j < V.length; j++) {
-    f[j] = factor * (E - V[j]!);
+    f[j] = factor * (E - defined(V[j]));
   }
   return f;
 }
@@ -278,6 +285,6 @@ function numerovStepForward(psiJ: number, psiJMinus1: number, fJ: number, fJMinu
  */
 function rescaleWaveFunction(psi: number[], startIndex: number, endIndex: number, scale: number): void {
   for (let k = startIndex; k <= endIndex; k++) {
-    psi[k]! *= scale;
+    psi[k] = defined(psi[k]) * scale;
   }
 }

@@ -13,6 +13,7 @@
  */
 
 import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
+import { defined } from "../utils/defined.js";
 import {
   type Complex,
   cubicSplineInterpolation,
@@ -105,8 +106,8 @@ export function solveFGH(
   const VBoundary = Math.max(potential(xMin), potential(xMax));
 
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i]!;
-    const energy = eigen.eigenvalues[idx]!;
+    const idx = defined(sortedIndices[i]);
+    const energy = defined(eigen.eigenvalues[idx]);
 
     // Only include bound states (energy < V at boundaries)
     if (energy < VBoundary) {
@@ -125,13 +126,13 @@ export function solveFGH(
   // Compute wavefunctions
   const wavefunctions: number[][] = [];
   for (let i = 0; i < Math.min(numStates, N); i++) {
-    const idx = sortedIndices[i]!;
-    const energy = eigen.eigenvalues[idx]!;
+    const idx = defined(sortedIndices[i]);
+    const energy = defined(eigen.eigenvalues[idx]);
 
     // Only include bound states (energy < V at boundaries)
     if (energy < VBoundary) {
       // Normalize wavefunction
-      const wavefunction = eigen.eigenvectors[idx]!;
+      const wavefunction = defined(eigen.eigenvectors[idx]);
       const normalizedPsi = normalizeWavefunction(wavefunction, dx);
       // Standardize sign for consistency across solvers
       const standardizedPsi = standardizeWavefunction(normalizedPsi, xGrid);
@@ -150,7 +151,7 @@ export function solveFGH(
   }
 
   const upsampleFactor = 8;
-  const { fineXGrid } = cubicSplineInterpolation(xGrid, wavefunctions[0]!, upsampleFactor);
+  const { fineXGrid } = cubicSplineInterpolation(xGrid, defined(wavefunctions[0]), upsampleFactor);
 
   const fineWavefunctions: number[][] = [];
   for (const wavefunction of wavefunctions) {
@@ -195,8 +196,8 @@ function buildFGHHamiltonian(N: number, Tk: number[], Vx: number[]): DotMatrix {
     // Apply kinetic energy in momentum space
     for (let i = 0; i < N; i++) {
       psiK[i] = {
-        real: psiK[i]!.real * Tk[i]!,
-        imaginary: psiK[i]!.imaginary * Tk[i]!,
+        real: defined(psiK[i]).real * defined(Tk[i]),
+        imaginary: defined(psiK[i]).imaginary * defined(Tk[i]),
       };
     }
 
@@ -205,13 +206,13 @@ function buildFGHHamiltonian(N: number, Tk: number[], Vx: number[]): DotMatrix {
 
     // Store in kinetic energy contribution to H
     for (let i = 0; i < N; i++) {
-      H.set(i, j, TPsiX[i]!.real);
+      H.set(i, j, defined(TPsiX[i]).real);
     }
   }
 
   // Add potential energy (diagonal)
   for (let i = 0; i < N; i++) {
-    H.set(i, i, H.get(i, i) + Vx[i]!);
+    H.set(i, i, H.get(i, i) + defined(Vx[i]));
   }
 
   return H;

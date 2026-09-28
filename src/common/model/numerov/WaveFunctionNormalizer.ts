@@ -1,3 +1,4 @@
+import { defined } from "../../utils/defined.js";
 /**
  * WaveFunctionNormalizer normalizes wave functions using the trapezoidal rule for numerical integration.
  * It ensures that the probability density integrates to unity: that is ∫|ψ|² dx = 1
@@ -34,7 +35,7 @@ export class WaveFunctionNormalizer {
     let integral = 0;
 
     for (let i = 0; i < psi.length - 1; i++) {
-      const term = (psi[i]! * psi[i]! + psi[i + 1]! * psi[i + 1]!) / 2;
+      const term = (defined(psi[i]) * defined(psi[i]) + defined(psi[i + 1]) * defined(psi[i + 1])) / 2;
       integral += term;
     }
 

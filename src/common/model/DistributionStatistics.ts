@@ -1,3 +1,4 @@
+import { defined } from "../utils/defined.js";
 /** Probability-distribution moments used by model queries and chart descriptions. */
 
 /**
@@ -18,17 +19,17 @@ export function calculateRMSStatistics(
   // Normalize the distribution first using trapezoidal integration
   let totalProbability = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1]! - grid[i]!;
-    const avgDensity = (density[i]! + density[i + 1]!) / 2;
+    const dx = defined(grid[i + 1]) - defined(grid[i]);
+    const avgDensity = (defined(density[i]) + defined(density[i + 1])) / 2;
     totalProbability += avgDensity * dx;
   }
 
   // Calculate average: <x> = ∫ x * ρ(x) dx
   let avg = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1]! - grid[i]!;
-    const avgDensity = (density[i]! + density[i + 1]!) / 2;
-    const avgX = (grid[i]! + grid[i + 1]!) / 2;
+    const dx = defined(grid[i + 1]) - defined(grid[i]);
+    const avgDensity = (defined(density[i]) + defined(density[i + 1])) / 2;
+    const avgX = (defined(grid[i]) + defined(grid[i + 1])) / 2;
     avg += avgX * avgDensity * dx;
   }
   // An empty (or non-finite) distribution has no mean or spread
@@ -40,9 +41,9 @@ export function calculateRMSStatistics(
   // Calculate RMS: sqrt(<x²> - <x>²) where <x²> = ∫ x² * ρ(x) dx
   let avgSquared = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    const dx = grid[i + 1]! - grid[i]!;
-    const avgDensity = (density[i]! + density[i + 1]!) / 2;
-    const avgX = (grid[i]! + grid[i + 1]!) / 2;
+    const dx = defined(grid[i + 1]) - defined(grid[i]);
+    const avgDensity = (defined(density[i]) + defined(density[i + 1])) / 2;
+    const avgX = (defined(grid[i]) + defined(grid[i + 1])) / 2;
     avgSquared += avgX * avgX * avgDensity * dx;
   }
   avgSquared /= totalProbability;

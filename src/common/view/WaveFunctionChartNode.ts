@@ -20,6 +20,7 @@ import QuantumConstants from "../model/QuantumConstants.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
+import { defined } from "../utils/defined.js";
 import Logger from "../utils/Logger.js";
 import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
@@ -1054,7 +1055,7 @@ export class WaveFunctionChartNode extends Node {
     const xGrid = boundStates.xGrid;
     const wavefunctionNm = nmData.wavefunction;
     const probabilityDensityNm = nmData.probabilityDensity;
-    const wavefunctionSI = boundStates.wavefunctions[selectedIndex]!;
+    const wavefunctionSI = defined(boundStates.wavefunctions[selectedIndex]);
     const displayMode = this.getEffectiveDisplayMode();
 
     if (displayMode === "probabilityDensity") {
@@ -1144,19 +1145,19 @@ export class WaveFunctionChartNode extends Node {
     const magnitudePoints: { x: number; y: number }[] = [];
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = this.dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
+      const x = this.dataToViewX(defined(xGrid[i]) * QuantumConstants.M_TO_NM);
 
-      realPoints.push({ x, y: this.dataToViewY(realPart[i]!) });
-      imagPoints.push({ x, y: this.dataToViewY(imagPart[i]!) });
-      magnitudePoints.push({ x, y: this.dataToViewY(Math.abs(wavefunction[i]!)) });
+      realPoints.push({ x, y: this.dataToViewY(defined(realPart[i])) });
+      imagPoints.push({ x, y: this.dataToViewY(defined(imagPart[i])) });
+      magnitudePoints.push({ x, y: this.dataToViewY(Math.abs(defined(wavefunction[i]))) });
     }
 
     // Plot real part
     const realShape = new Shape();
     if (realPoints.length > 0) {
-      realShape.moveTo(realPoints[0]!.x, realPoints[0]!.y);
+      realShape.moveTo(defined(realPoints[0]).x, defined(realPoints[0]).y);
       for (let i = 1; i < realPoints.length; i++) {
-        realShape.lineTo(realPoints[i]!.x, realPoints[i]!.y);
+        realShape.lineTo(defined(realPoints[i]).x, defined(realPoints[i]).y);
       }
     }
     this.realPartPath.shape = realShape;
@@ -1165,9 +1166,9 @@ export class WaveFunctionChartNode extends Node {
     // Plot imaginary part
     const imagShape = new Shape();
     if (imagPoints.length > 0) {
-      imagShape.moveTo(imagPoints[0]!.x, imagPoints[0]!.y);
+      imagShape.moveTo(defined(imagPoints[0]).x, defined(imagPoints[0]).y);
       for (let i = 1; i < imagPoints.length; i++) {
-        imagShape.lineTo(imagPoints[i]!.x, imagPoints[i]!.y);
+        imagShape.lineTo(defined(imagPoints[i]).x, defined(imagPoints[i]).y);
       }
     }
     this.imaginaryPartPath.shape = imagShape;
@@ -1176,9 +1177,9 @@ export class WaveFunctionChartNode extends Node {
     // Plot magnitude
     const magnitudeShape = new Shape();
     if (magnitudePoints.length > 0) {
-      magnitudeShape.moveTo(magnitudePoints[0]!.x, magnitudePoints[0]!.y);
+      magnitudeShape.moveTo(defined(magnitudePoints[0]).x, defined(magnitudePoints[0]).y);
       for (let i = 1; i < magnitudePoints.length; i++) {
-        magnitudeShape.lineTo(magnitudePoints[i]!.x, magnitudePoints[i]!.y);
+        magnitudeShape.lineTo(defined(magnitudePoints[i]).x, defined(magnitudePoints[i]).y);
       }
     }
     this.magnitudePath.shape = magnitudeShape;
@@ -1194,8 +1195,8 @@ export class WaveFunctionChartNode extends Node {
     // Build points array
     const points: { x: number; y: number }[] = [];
     for (let i = 0; i < xGrid.length; i++) {
-      const x = this.dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
-      const y = this.dataToViewY(probabilityDensity[i]!);
+      const x = this.dataToViewX(defined(xGrid[i]) * QuantumConstants.M_TO_NM);
+      const y = this.dataToViewY(defined(probabilityDensity[i]));
       points.push({ x, y });
     }
 
@@ -1208,17 +1209,17 @@ export class WaveFunctionChartNode extends Node {
     const y0 = this.dataToViewY(0); // baseline
 
     // Start at bottom-left
-    shape.moveTo(points[0]!.x, y0);
-    shape.lineTo(points[0]!.x, points[0]!.y);
+    shape.moveTo(defined(points[0]).x, y0);
+    shape.lineTo(defined(points[0]).x, defined(points[0]).y);
 
     // Trace the curve
     for (let i = 0; i < points.length - 1; i++) {
-      shape.lineTo(points[i]!.x, points[i]!.y);
+      shape.lineTo(defined(points[i]).x, defined(points[i]).y);
     }
 
     // Close the shape back to baseline
-    shape.lineTo(points[points.length - 1]!.x, points[points.length - 1]!.y);
-    shape.lineTo(points[points.length - 1]!.x, y0);
+    shape.lineTo(defined(points[points.length - 1]).x, defined(points[points.length - 1]).y);
+    shape.lineTo(defined(points[points.length - 1]).x, y0);
     shape.close();
 
     this.probabilityDensityPath.shape = shape;
@@ -1239,18 +1240,18 @@ export class WaveFunctionChartNode extends Node {
     const magnitudePoints: { x: number; y: number }[] = [];
 
     for (let i = 0; i < xGrid.length; i++) {
-      const x = this.dataToViewX(xGrid[i]! * QuantumConstants.M_TO_NM);
-      realPoints.push({ x, y: this.dataToViewY(realPart[i]!) });
-      imagPoints.push({ x, y: this.dataToViewY(imagPart[i]!) });
-      magnitudePoints.push({ x, y: this.dataToViewY(magnitude[i]!) });
+      const x = this.dataToViewX(defined(xGrid[i]) * QuantumConstants.M_TO_NM);
+      realPoints.push({ x, y: this.dataToViewY(defined(realPart[i])) });
+      imagPoints.push({ x, y: this.dataToViewY(defined(imagPart[i])) });
+      magnitudePoints.push({ x, y: this.dataToViewY(defined(magnitude[i])) });
     }
 
     // Plot real part
     const realShape = new Shape();
     if (realPoints.length > 0) {
-      realShape.moveTo(realPoints[0]!.x, realPoints[0]!.y);
+      realShape.moveTo(defined(realPoints[0]).x, defined(realPoints[0]).y);
       for (let i = 1; i < realPoints.length; i++) {
-        realShape.lineTo(realPoints[i]!.x, realPoints[i]!.y);
+        realShape.lineTo(defined(realPoints[i]).x, defined(realPoints[i]).y);
       }
     }
     this.realPartPath.shape = realShape;
@@ -1259,9 +1260,9 @@ export class WaveFunctionChartNode extends Node {
     // Plot imaginary part
     const imagShape = new Shape();
     if (imagPoints.length > 0) {
-      imagShape.moveTo(imagPoints[0]!.x, imagPoints[0]!.y);
+      imagShape.moveTo(defined(imagPoints[0]).x, defined(imagPoints[0]).y);
       for (let i = 1; i < imagPoints.length; i++) {
-        imagShape.lineTo(imagPoints[i]!.x, imagPoints[i]!.y);
+        imagShape.lineTo(defined(imagPoints[i]).x, defined(imagPoints[i]).y);
       }
     }
     this.imaginaryPartPath.shape = imagShape;
@@ -1270,9 +1271,9 @@ export class WaveFunctionChartNode extends Node {
     // Plot magnitude
     const magnitudeShape = new Shape();
     if (magnitudePoints.length > 0) {
-      magnitudeShape.moveTo(magnitudePoints[0]!.x, magnitudePoints[0]!.y);
+      magnitudeShape.moveTo(defined(magnitudePoints[0]).x, defined(magnitudePoints[0]).y);
       for (let i = 1; i < magnitudePoints.length; i++) {
-        magnitudeShape.lineTo(magnitudePoints[i]!.x, magnitudePoints[i]!.y);
+        magnitudeShape.lineTo(defined(magnitudePoints[i]).x, defined(magnitudePoints[i]).y);
       }
     }
     this.magnitudePath.shape = magnitudeShape;

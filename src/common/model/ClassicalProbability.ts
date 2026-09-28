@@ -1,3 +1,5 @@
+import { defined } from "../utils/defined.js";
+
 /**
  * Classical probability density of a particle of energy E moving in V(x): P(x) ∝ 1/v(x) = 1/√(2(E − V)/m)
  * inside the classically allowed region, and 0 outside it, normalized so that ∫P dx = 1.
@@ -42,7 +44,7 @@ export function calculateClassicalProbabilityDensity(
   // Normalize with the trapezoidal rule
   let integral = 0;
   for (let i = 1; i < density.length; i++) {
-    integral += ((density[i]! + density[i - 1]!) * (xGrid[i]! - xGrid[i - 1]!)) / 2;
+    integral += ((defined(density[i]) + defined(density[i - 1])) * (defined(xGrid[i]) - defined(xGrid[i - 1]))) / 2;
   }
   return integral > 0 ? density.map((p) => p / integral) : density;
 }

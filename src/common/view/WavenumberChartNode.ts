@@ -19,6 +19,7 @@ import stringManager from "../../i18n/StringManager.js";
 import QuantumPotentialColors from "../../QuantumPotentialColors.js";
 import type { PotentialType } from "../model/PotentialFunction.js";
 import type { ScreenModel } from "../model/ScreenModels.js";
+import { defined } from "../utils/defined.js";
 import { computeTickSpacing, getTickDecimals } from "./ChartTickSpacing.js";
 import { CoalescedUpdate } from "./CoalescedUpdate.js";
 import type { ScreenViewState } from "./ScreenViewStates.js";
@@ -375,28 +376,28 @@ export class WavenumberChartNode extends Node {
     }
     const threshold = maxValue * 0.01;
 
-    let minK = kGrid[0]!;
-    let maxK = kGrid[kGrid.length - 1]!;
+    let minK = defined(kGrid[0]);
+    let maxK = defined(kGrid[kGrid.length - 1]);
 
     // Find first significant point
     for (let i = 0; i < kGrid.length; i++) {
-      if (phiKSquared[i]! > threshold) {
-        minK = kGrid[i]!;
+      if (defined(phiKSquared[i]) > threshold) {
+        minK = defined(kGrid[i]);
         break;
       }
     }
 
     // Find last significant point
     for (let i = kGrid.length - 1; i >= 0; i--) {
-      if (phiKSquared[i]! > threshold) {
-        maxK = kGrid[i]!;
+      if (defined(phiKSquared[i]) > threshold) {
+        maxK = defined(kGrid[i]);
         break;
       }
     }
 
     // Add 20% margin (a single significant point still gets a non-degenerate range)
     const range = maxK - minK;
-    const margin = range > 0 ? range * 0.2 : Math.abs(kGrid[1]! - kGrid[0]!) || 1;
+    const margin = range > 0 ? range * 0.2 : Math.abs(defined(kGrid[1]) - defined(kGrid[0])) || 1;
     this.kMinProperty.value = minK - margin;
     this.kMaxProperty.value = maxK + margin;
 
@@ -443,25 +444,25 @@ export class WavenumberChartNode extends Node {
     const shape = new Shape();
 
     // Start at zero on the left
-    const x0 = this.dataToViewX(kGrid[0]!);
+    const x0 = this.dataToViewX(defined(kGrid[0]));
     const y0 = this.dataToViewY(0);
     shape.moveTo(x0, y0);
 
     // Build points array
     const points: { x: number; y: number }[] = [];
     for (let i = 0; i < kGrid.length; i++) {
-      const x = this.dataToViewX(kGrid[i]!);
-      const y = this.dataToViewY(phiKSquared[i]!);
+      const x = this.dataToViewX(defined(kGrid[i]));
+      const y = this.dataToViewY(defined(phiKSquared[i]));
       points.push({ x, y });
     }
 
     // Draw smooth curve using quadratic bezier curves
     if (points.length > 0) {
-      shape.lineTo(points[0]!.x, points[0]!.y);
+      shape.lineTo(defined(points[0]).x, defined(points[0]).y);
 
       for (let i = 0; i < points.length - 1; i++) {
-        const p0 = points[i]!;
-        const p1 = points[i + 1]!;
+        const p0 = defined(points[i]);
+        const p1 = defined(points[i + 1]);
 
         // Control point is midpoint for simple smoothing
         const cpX = (p0.x + p1.x) / 2;
@@ -472,7 +473,7 @@ export class WavenumberChartNode extends Node {
     }
 
     // Close at zero on the right
-    const xEnd = this.dataToViewX(kGrid[kGrid.length - 1]!);
+    const xEnd = this.dataToViewX(defined(kGrid[kGrid.length - 1]));
     shape.lineTo(xEnd, y0);
     shape.close();
 

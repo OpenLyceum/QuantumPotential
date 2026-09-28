@@ -17,6 +17,7 @@ import {
   FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS,
 } from "../QuantumPotentialButtonOptions.js";
 import { PANEL_SLIDER_OPTIONS } from "../QuantumPotentialControlOptions.js";
+import { defined } from "../utils/defined.js";
 
 const a11y = stringManager.getA11yStrings();
 
@@ -123,7 +124,7 @@ export class SimulationControlBar extends Node {
       }
     };
     const syncSpeedFromIndex = (index: number) => {
-      this.model.timeSpeedProperty.value = speeds[index]!;
+      this.model.timeSpeedProperty.value = defined(speeds[index]);
     };
     this.model.timeSpeedProperty.lazyLink(syncIndexFromSpeed);
     speedIndexProperty.lazyLink(syncSpeedFromIndex);

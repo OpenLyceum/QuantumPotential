@@ -3,6 +3,7 @@
  * Used by asymmetric-triangle-potential and triangular-potential solvers.
  */
 
+import { defined } from "../../utils/defined.js";
 import type { GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { airyAi } from "./math-utilities.js";
@@ -99,7 +100,7 @@ function refineAiryZero(initialGuess: number, maxIterations: number = 10, tolera
  */
 export function getAiryZero(n: number): number {
   if (n < AIRY_ZEROS.length) {
-    return AIRY_ZEROS[n]!;
+    return defined(AIRY_ZEROS[n]);
   }
   // Use asymptotic approximation for states beyond the pre-computed ones
   const initialGuess = getApproximateAiryZero(n + 1); // n+1 because zeros are 1-indexed
@@ -172,8 +173,8 @@ export function applySignConvention(wavefunction: number[], stateIndex: number):
   let maxAbsIndex = 0;
   let maxAbsValue = 0;
   for (let i = 0; i < wavefunction.length; i++) {
-    if (Math.abs(wavefunction[i]!) > maxAbsValue) {
-      maxAbsValue = Math.abs(wavefunction[i]!);
+    if (Math.abs(defined(wavefunction[i])) > maxAbsValue) {
+      maxAbsValue = Math.abs(defined(wavefunction[i]));
       maxAbsIndex = i;
     }
   }
@@ -181,7 +182,7 @@ export function applySignConvention(wavefunction: number[], stateIndex: number):
   // For ground state (n=0), ensure it's positive
   // For excited states, use alternating convention based on state index
   const shouldBePositive = stateIndex % 2 === 0;
-  if (wavefunction[maxAbsIndex]! > 0 !== shouldBePositive) {
+  if (defined(wavefunction[maxAbsIndex]) > 0 !== shouldBePositive) {
     return wavefunction.map((psi) => -psi);
   }
 

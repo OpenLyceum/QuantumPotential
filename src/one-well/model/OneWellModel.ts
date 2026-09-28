@@ -13,6 +13,7 @@ import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
 import { SingleWellModel } from "../../common/model/SingleWellModel.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
+import { defined } from "../../common/utils/defined.js";
 
 export class OneWellModel extends SingleWellModel {
   // ==================== CONSTANTS ====================
@@ -161,7 +162,7 @@ export class OneWellModel extends SingleWellModel {
 
           for (let n = 0; n < numStates; n++) {
             if (n < boundStates.wavefunctions.length) {
-              const psiNAtX = boundStates.wavefunctions[n]![clampedIndex]!;
+              const psiNAtX = defined(defined(boundStates.wavefunctions[n])[clampedIndex]);
 
               // Gaussian envelope in eigenstate space
               const gaussianWeight = Math.exp(-((n - n0) ** 2) / (2 * sigma * sigma));

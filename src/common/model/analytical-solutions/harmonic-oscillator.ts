@@ -31,6 +31,7 @@
  *   where H_n are the Hermite polynomials
  */
 
+import { defined } from "../../utils/defined.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
@@ -97,7 +98,7 @@ export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
   for (const x of xGrid) {
     const xi = alpha * x;
     const phi = hermiteFunctions(n + 1, xi);
-    const current = phi[n]!;
+    const current = defined(phi[n]);
     const previous = phi[n - 1] ?? 0;
     // ψ_n(x) = √α φ_n(αx), and φ'_n(ξ) = √(2n) φ_(n−1)(ξ) − ξ φ_n(ξ)
     firstDerivative.push(alpha ** 1.5 * (Math.sqrt(2 * n) * previous - xi * current));
@@ -133,7 +134,7 @@ export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
   for (const x of xGrid) {
     const xi = alpha * x;
     // From the Schrödinger equation: φ''_n(ξ) = (ξ² − 2n − 1) φ_n(ξ), and d²/dx² = α² d²/dξ²
-    secondDerivative.push(alpha ** 2.5 * (xi * xi - 2 * n - 1) * hermiteFunctions(n + 1, xi)[n]!);
+    secondDerivative.push(alpha ** 2.5 * (xi * xi - 2 * n - 1) * defined(hermiteFunctions(n + 1, xi)[n]));
   }
 
   return secondDerivative;
@@ -177,7 +178,7 @@ export function calculateHarmonicOscillatorWavefunctionMinMax(
 
     const xi = alpha * x;
     const phi = hermiteFunctions(n + 1, xi);
-    const current = phi[n]!;
+    const current = defined(phi[n]);
     const previous = phi[n - 1] ?? 0;
     const psi = Math.sqrt(alpha) * current;
     // The sign of ψ'_n(x) is that of φ'_n(ξ) = √(2n) φ_(n−1)(ξ) − ξ φ_n(ξ)
@@ -304,7 +305,7 @@ export function solveHarmonicOscillator(
     // ψ_n(x) = √α φ_n(αx), with φ_n the normalized Hermite function; one recurrence gives every state
     const phi = hermiteFunctions(numStates, alpha * x);
     for (let n = 0; n < numStates; n++) {
-      wavefunctions[n]!.push(Math.sqrt(alpha) * phi[n]!);
+      defined(wavefunctions[n]).push(Math.sqrt(alpha) * defined(phi[n]));
     }
   }
 
@@ -366,7 +367,7 @@ export function calculateCoherentStateCoefficients(
   // Normalize over the states kept (the truncated Poisson distribution)
   const norm = Math.sqrt(amplitudes.reduce((sum, a) => sum + a * a, 0));
   for (let i = 0; i < amplitudes.length; i++) {
-    amplitudes[i]! /= norm;
+    amplitudes[i] = defined(amplitudes[i]) / norm;
   }
 
   // All phases are zero for a real coherent state (pure displacement)

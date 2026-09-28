@@ -48,6 +48,7 @@
  * that determines allowed energies. Must be solved numerically.
  */
 
+import { defined } from "../../utils/defined.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.js";
@@ -95,11 +96,11 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
     // Need energy to calculate first derivative
     // Solve if not already done
     const result = this.solve(stateIndex + 1, {
-      xMin: xGrid[0]!,
-      xMax: xGrid[xGrid.length - 1]!,
+      xMin: defined(xGrid[0]),
+      xMax: defined(xGrid[xGrid.length - 1]),
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex]!;
+    const energy = defined(result.energies[stateIndex]);
 
     return calculateTriangularPotentialWavefunctionFirstDerivative(
       this.height,
@@ -115,11 +116,11 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
     // Need energy to calculate second derivative
     // Solve if not already done
     const result = this.solve(stateIndex + 1, {
-      xMin: xGrid[0]!,
-      xMax: xGrid[xGrid.length - 1]!,
+      xMin: defined(xGrid[0]),
+      xMax: defined(xGrid[xGrid.length - 1]),
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex]!;
+    const energy = defined(result.energies[stateIndex]);
 
     return calculateTriangularPotentialWavefunctionSecondDerivative(
       this.height,
@@ -144,7 +145,7 @@ export class TriangularPotentialSolution extends AnalyticalSolution {
       xMax,
       numPoints: 100,
     });
-    const energy = result.energies[stateIndex]!;
+    const energy = defined(result.energies[stateIndex]);
 
     return calculateTriangularPotentialWavefunctionMinMax(
       this.height,
@@ -285,7 +286,7 @@ export function solveTriangularPotential(
   const wavefunctions: number[][] = [];
 
   for (let n = 0; n < actualNumStates; n++) {
-    const E = energies[n]!;
+    const E = defined(energies[n]);
 
     // Decay constant
     const kappa = Math.sqrt(2 * mass * (V0 - E)) / HBAR;

@@ -31,6 +31,7 @@ import QuantumConstants from "../model/QuantumConstants.js";
 import type { SuperpositionConfig } from "../model/SuperpositionType.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
 import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
+import { defined } from "../utils/defined.js";
 
 type SuperpositionModel = OneWellModel | TwoWellsModel | ManyWellsModel;
 
@@ -176,13 +177,13 @@ export class SuperpositionDialog {
 
       rows.push([
         new RichText(`ψ<sub>${i}</sub>`, { font: new PhetFont(13), fill: QuantumPotentialColors.textFillProperty }),
-        new HSlider(amplitudeProperty, amplitudeProperty.range!, {
+        new HSlider(amplitudeProperty, defined(amplitudeProperty.range), {
           trackSize: new Dimension2(145, 4),
           thumbSize: new Dimension2(13, 24),
           accessibleName: `ψ${i} ${stringManager.amplitudeStringProperty.value}`,
         }),
         amplitudeText,
-        new HSlider(phaseProperty, phaseProperty.range!, {
+        new HSlider(phaseProperty, defined(phaseProperty.range), {
           trackSize: new Dimension2(100, 4),
           thumbSize: new Dimension2(13, 24),
           accessibleName: `ψ${i} ${stringManager.phaseStringProperty.value}`,
@@ -196,8 +197,8 @@ export class SuperpositionDialog {
       for (let i = 0; i < numStates; i++) {
         const coefficient = preset.amplitudes[i] ?? 0;
         const phase = (preset.phases[i] ?? 0) + (coefficient < 0 ? Math.PI : 0);
-        this.amplitudeProperties[i]!.value = Math.abs(coefficient);
-        this.phaseProperties[i]!.value = Math.atan2(Math.sin(phase), Math.cos(phase));
+        defined(this.amplitudeProperties[i]).value = Math.abs(coefficient);
+        defined(this.phaseProperties[i]).value = Math.atan2(Math.sin(phase), Math.cos(phase));
       }
       syncingCoefficients = false;
     };
@@ -334,7 +335,7 @@ export class SuperpositionDialog {
           new HBox({
             spacing: 6,
             children: [
-              new HSlider(property, property.range!, {
+              new HSlider(property, defined(property.range), {
                 trackSize: new Dimension2(140, 4),
                 accessibleName: label,
               }),
@@ -439,7 +440,7 @@ export class SuperpositionDialog {
         new HBox({
           spacing: 10,
           children: [
-            new HSlider(displacementProperty, displacementProperty.range!, {
+            new HSlider(displacementProperty, defined(displacementProperty.range), {
               trackSize: new Dimension2(245, 4),
               accessibleName: stringManager.positionStringProperty,
             }),
@@ -633,7 +634,7 @@ export class SuperpositionDialog {
           new HBox({
             spacing: 6,
             children: [
-              new HSlider(property, property.range!, {
+              new HSlider(property, defined(property.range), {
                 trackSize: new Dimension2(180, 4),
                 constrainValue: Math.round,
                 keyboardStep: 1,
@@ -770,12 +771,12 @@ export class SuperpositionDialog {
         const count = Math.min(values.length, boundStates.xGrid.length);
         let hasPoint = false;
         for (let i = 0; i < count; i++) {
-          const positionNm = boundStates.xGrid[i]! * QuantumConstants.M_TO_NM;
+          const positionNm = defined(boundStates.xGrid[i]) * QuantumConstants.M_TO_NM;
           if (positionNm < xMinNm || positionNm > xMaxNm) {
             continue;
           }
           const x = ((positionNm - xMinNm) / (xMaxNm - xMinNm)) * width;
-          const y = height / 2 - (values[i]! / max) * (height * 0.42);
+          const y = height / 2 - (defined(values[i]) / max) * (height * 0.42);
           if (!hasPoint) {
             shape.moveTo(x, y);
             hasPoint = true;

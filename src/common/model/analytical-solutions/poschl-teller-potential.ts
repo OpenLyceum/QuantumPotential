@@ -33,6 +33,7 @@
  *   where α = λ - n - 1/2 and P_n^(α,α) are Jacobi polynomials
  */
 
+import { defined } from "../../utils/defined.js";
 import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
@@ -332,8 +333,8 @@ export function calculatePoschlTellerWavefunctionFirstDerivative(
   const alpha = poschlTellerS(lambda) - n;
 
   // Use numerical normalization to match the wavefunction normalization
-  const xMin = xGrid[0]!;
-  const xMax = xGrid[xGrid.length - 1]!;
+  const xMin = defined(xGrid[0]);
+  const xMax = defined(xGrid[xGrid.length - 1]);
   const normalization = computePoschlTellerNormalization(a, lambda, n, xMin, xMax);
 
   const firstDerivative: number[] = [];
@@ -401,8 +402,8 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
   const alpha = poschlTellerS(lambda) - n;
 
   // Use numerical normalization to match the wavefunction normalization
-  const xMin = xGrid[0]!;
-  const xMax = xGrid[xGrid.length - 1]!;
+  const xMin = defined(xGrid[0]);
+  const xMax = defined(xGrid[xGrid.length - 1]);
   const normalization = computePoschlTellerNormalization(a, lambda, n, xMin, xMax);
 
   // Calculate energy for this state: E_n = -V_0 * [(λ - n - 1/2)/λ]²

@@ -6,6 +6,7 @@
 import type { TReadOnlyProperty } from "scenerystack/axon";
 import { Node } from "scenerystack/scenery";
 import type { ScreenViewOptions } from "scenerystack/sim";
+import { defined } from "../../common/utils/defined.js";
 import { BaseScreenView, type ScreenStringProperties } from "../../common/view/BaseScreenView.js";
 import { EnergyChartNode } from "../../common/view/EnergyChartNode.js";
 import { WaveFunctionChartNode } from "../../common/view/WaveFunctionChartNode.js";
@@ -113,7 +114,7 @@ export class IntroScreenView extends BaseScreenView {
     // Set PDOM navigation order for play area and control area
     this.setupPDOMStructure(
       // Play area children
-      [this.energyChart!, this.probabilityChart, this.waveFunctionChart!, this.wavenumberChart],
+      [defined(this.energyChart), this.probabilityChart, defined(this.waveFunctionChart), this.wavenumberChart],
       // Control area children
       [this.introControlPanel],
     );

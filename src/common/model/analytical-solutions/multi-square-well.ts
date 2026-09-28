@@ -18,6 +18,7 @@
  * Center well (if N odd) or center barrier (if N even) at x = 0
  */
 
+import { defined } from "../../utils/defined.js";
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
@@ -63,7 +64,7 @@ export function createMultiSquareWellPotential(
     }
 
     // Check if x is between wells (barrier region)
-    if (x > wellBoundaries[0]!.left && x < wellBoundaries[numberOfWells - 1]!.right) {
+    if (x > defined(wellBoundaries[0]).left && x < defined(wellBoundaries[numberOfWells - 1]).right) {
       return wellDepth; // Inside barrier
     }
 

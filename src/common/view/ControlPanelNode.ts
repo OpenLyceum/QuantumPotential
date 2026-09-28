@@ -31,6 +31,7 @@ import { PotentialType } from "../model/PotentialFunction.js";
 import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
 import { QuantumPotentialPanel } from "../QuantumPotentialPanel.js";
+import { defined } from "../utils/defined.js";
 import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { EnergyLevelControl } from "./EnergyLevelControl.js";
@@ -318,7 +319,7 @@ export class ControlPanelNode {
 
     // Filter potential types if specified in options
     const potentialItems = this.options.allowedPotentialTypes
-      ? allPotentialItems.filter((item) => this.options.allowedPotentialTypes!.includes(item.value))
+      ? allPotentialItems.filter((item) => defined(this.options.allowedPotentialTypes).includes(item.value))
       : allPotentialItems;
 
     const potentialComboBox = new ComboBox(this.model.potentialTypeProperty, potentialItems, listBoxParent, {

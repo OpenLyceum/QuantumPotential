@@ -25,6 +25,7 @@
  * see eckart-potential.ts.
  */
 
+import { defined } from "../../utils/defined.js";
 import { NoBoundStatesError } from "../NoBoundStatesError.js";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.js";
@@ -394,8 +395,8 @@ export function calculateRosenMorsePotentialWavefunctionMinMax(
 
   const extremaPositions: number[] = [];
   for (let i = 1; i < numPoints - 1; i++) {
-    const rising = values[i]! - values[i - 1]!;
-    const falling = values[i + 1]! - values[i]!;
+    const rising = defined(values[i]) - defined(values[i - 1]);
+    const falling = defined(values[i + 1]) - defined(values[i]);
     if (rising * falling < 0) {
       extremaPositions.push(xMin + i * dx);
     }
