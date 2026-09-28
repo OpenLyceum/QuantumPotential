@@ -1,7 +1,7 @@
 # Quantum Potential — Implementation Notes
 
 For developers who want to understand, maintain or extend the sim. The physics for educators is in
-[model.md](model.md), the solver in [solver.md](solver.md), and the
+[model.md](model.md), and the
 conventions and gotchas that AI assistants and humans both need are in [`AGENTS.md`](../AGENTS.md).
 Fleet-wide SceneryStack conventions (bootstrap import chain, layout, lint, CI) live in
 `OpenLyceum/.github/AGENTS.md` and are not repeated here.
@@ -86,7 +86,7 @@ turning points, derivatives, V(x) and the momentum-space transform (`getAnalytic
 `solveNumerical` is a strategy switch between Numerov (default) and FGH, chosen once from
 `?numericalMethod`. FGH is imported dynamically: `main.ts` awaits `Schrodinger1DSolver.loadFGH()` before
 launching when `?numericalMethod=fgh` is set (tests call it in `beforeAll`), and an FGH solver used before
-the load resolves falls back to Numerov. See [solver.md](solver.md).
+the load resolves falls back to Numerov.
 
 Derivatives and extrema (`getWavefunctionAtPosition`, `getWavefunction{First,Second}Derivative`,
 `getWavefunctionMinMax`) come from the `AnalyticalSolution` when there is one. Otherwise they use central
@@ -128,7 +128,7 @@ closed-form coefficients for the harmonic oscillator.
 - **Info dialog.** Every screen has a half-size `InfoButton` beside the reset button (`BaseScreenView`). It
   opens a dialog, built on first use, from the screen's description, key-concepts and interactions strings.
 - **Accessibility.** `QuantumPotentialDescriber` turns model state into localized sentences; `QuantumPotentialAlerter` sends live
-  announcements. See [accessibility.md](accessibility.md).
+  announcements.
 
 ## Adding a closed-form potential
 

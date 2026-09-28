@@ -1,7 +1,7 @@
 # Accessibility helpers
 
 What the sim implements, and the checklist for new controls, are in
-[`doc/accessibility.md`](../../../../doc/accessibility.md). This directory holds the two helpers that turn
+[`doc/implementation-notes.md`](../../../../doc/implementation-notes.md) and `AGENTS.md`. This directory holds the two helpers that turn
 model state into text.
 
 ## `QuantumPotentialDescriber.ts`

@@ -11,7 +11,6 @@ drags and reshapes the well. Inspired by PhET's *Quantum Bound States*. The clas
 are `QuantumPotential` / `quantum-potential`.
 
 Educator physics: [`doc/model.md`](doc/model.md). Architecture: [`doc/implementation-notes.md`](doc/implementation-notes.md).
-Solver details: [`doc/solver.md`](doc/solver.md).
 
 ## Key files
 
@@ -95,7 +94,7 @@ Solver details: [`doc/solver.md`](doc/solver.md).
   `src/common/utils/defined.ts` throws when the value is missing. Non-null assertions are lint errors
   in `src/`; `tests/**` keeps the template override that allows them.
 
-## Parameter controls
+### Parameter controls
 
 - **Geometric parameters are dragged on the potential.** Width, depth, barrier height, offset and
   separation each have a double-headed arrow handle on the energy chart's curve (`handles/`). A handle is
@@ -181,3 +180,7 @@ npm run lint && npm run check && npm run build && npm test
 | `npm test` | Vitest unit tests |
 | `npm run test:accuracy` | Manual solver accuracy suite (see `tests/accuracy/README.md`) |
 | `npm run icons` | Regenerate PWA icons |
+
+## Development notes
+
+Architecture and design decisions: `doc/implementation-notes.md`.
