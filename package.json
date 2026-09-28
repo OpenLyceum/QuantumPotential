@@ -13,12 +13,13 @@
     "quantum-physics",
     "quantum-mechanics",
     "schrodinger-equation",
-    "physics-simulation",
-    "educational-software",
-    "interactive-visualization",
+    "simulation",
+    "physics",
+    "education",
+    "interactive",
     "bound-states",
     "wavefunction",
-    "scenerystack",
+    "SceneryStack",
     "pwa"
   ],
   "scripts": {
