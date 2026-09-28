@@ -64,6 +64,7 @@ function launch(): void {
         supportsInteractiveHighlights: true,
       },
       audioOptions: {
+        // Initializes tambo and the Audio preferences. Pair with supportsSound in src/init.ts.
         // Stock UI sounds only. Voicing is deferred fleet-wide (Baton/ACCESSIBILITY.md) and this sim
         // has no voicing responses, so the Voicing toolbar is not offered.
         supportsSound: true,

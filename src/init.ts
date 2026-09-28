@@ -25,6 +25,9 @@ init({
 
   allowLocaleSwitching: true,
 
+  // Unmutes tambo at startup. Pair with audioOptions.supportsSound in src/main.ts.
+  supportsSound: true,
+
   // Color profiles supported by this simulation
   colorProfiles: ["default", "projector"],
 });
