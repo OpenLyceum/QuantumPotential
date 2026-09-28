@@ -1,24 +1,32 @@
 /**
- * QuantumPotentialPreferencesModel — user-editable preferences for the Quantum Potential Wells sim.
- * Startup values come from quantumPotentialQueryParameters.
+ * QuantumPotentialPreferencesModel.ts
+ *
+ * Model for the simulation-specific preferences shown in Preferences →
+ * Simulation. Each preference Property takes its initial value from the
+ * corresponding query parameter in quantumPotentialQueryParameters.
  */
 
 import { BooleanProperty } from "scenerystack/axon";
-import { Tandem } from "scenerystack/tandem";
+import type { Tandem } from "scenerystack/tandem";
 import QuantumPotentialNamespace from "../QuantumPotentialNamespace.js";
+import quantumPotentialQueryParameters from "./quantumPotentialQueryParameters.js";
 
-const QuantumPotentialPreferences = {
-  // Simulation Preferences
-
+export class QuantumPotentialPreferencesModel {
   /**
-   * Whether to automatically pause the simulation when the browser tab is hidden
+   * Whether to automatically pause the simulation when the browser tab is hidden.
    */
-  autoPauseWhenTabHiddenProperty: new BooleanProperty(true, {
-    tandem: Tandem.PREFERENCES.createTandem("autoPauseWhenTabHiddenProperty"),
-    phetioFeatured: true,
-  }),
-};
+  public readonly autoPauseWhenTabHiddenProperty: BooleanProperty;
 
-QuantumPotentialNamespace.register("QuantumPotentialPreferences", QuantumPotentialPreferences);
+  public constructor(tandem?: Tandem) {
+    this.autoPauseWhenTabHiddenProperty = new BooleanProperty(quantumPotentialQueryParameters.autoPauseWhenTabHidden, {
+      phetioFeatured: true,
+      ...(tandem && { tandem: tandem.createTandem("autoPauseWhenTabHiddenProperty") }),
+    });
+  }
 
-export default QuantumPotentialPreferences;
+  public reset(): void {
+    this.autoPauseWhenTabHiddenProperty.reset();
+  }
+}
+
+QuantumPotentialNamespace.register("QuantumPotentialPreferencesModel", QuantumPotentialPreferencesModel);

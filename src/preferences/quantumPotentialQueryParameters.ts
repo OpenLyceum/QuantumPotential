@@ -39,6 +39,15 @@ const quantumPotentialQueryParameters = QueryStringMachine.getAll({
     defaultValue: 1001,
     isValidValue: (value: number) => Number.isInteger(value) && value % 2 === 1 && value >= 501 && value <= 10001,
   },
+
+  /**
+   * Whether the simulation pauses when the browser tab is hidden.
+   */
+  autoPauseWhenTabHidden: {
+    type: "boolean",
+    defaultValue: true,
+    public: true,
+  },
 });
 
 QuantumPotentialNamespace.register("quantumPotentialQueryParameters", quantumPotentialQueryParameters);

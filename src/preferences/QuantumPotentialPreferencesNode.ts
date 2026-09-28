@@ -6,13 +6,13 @@ import { HStrut, Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { Checkbox } from "scenerystack/sun";
 import stringManager from "../i18n/StringManager.js";
-import QuantumPotentialPreferences from "./QuantumPotentialPreferencesModel.js";
+import type { QuantumPotentialPreferencesModel } from "./QuantumPotentialPreferencesModel.js";
 
 const DESCRIPTION_FONT = new PhetFont(12);
 const TEXT_MAX_WIDTH = 600;
 
 export class QuantumPotentialPreferencesNode extends VBox {
-  public constructor() {
+  public constructor(preferencesModel: QuantumPotentialPreferencesModel) {
     const preferencesLabels = stringManager.getPreferencesLabels();
 
     // Auto-pause preference
@@ -21,7 +21,7 @@ export class QuantumPotentialPreferencesNode extends VBox {
       spacing: 8,
       children: [
         new Checkbox(
-          QuantumPotentialPreferences.autoPauseWhenTabHiddenProperty,
+          preferencesModel.autoPauseWhenTabHiddenProperty,
           new Text(preferencesLabels.autoPauseWhenTabHiddenStringProperty, { font: new PhetFont(16) }),
           { boxWidth: 16 },
         ),

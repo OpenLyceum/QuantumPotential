@@ -28,12 +28,14 @@ import stringManager from "./i18n/StringManager.js";
 import { IntroScreen } from "./intro/IntroScreen.js";
 import { ManyWellsScreen } from "./many-wells/ManyWellsScreen.js";
 import { OneWellScreen } from "./one-well/OneWellScreen.js";
+import { QuantumPotentialPreferencesModel } from "./preferences/QuantumPotentialPreferencesModel.js";
 import { QuantumPotentialPreferencesNode } from "./preferences/QuantumPotentialPreferencesNode.js";
 import quantumPotentialQueryParameters from "./preferences/quantumPotentialQueryParameters.js";
 import { TwoWellsScreen } from "./two-wells/TwoWellsScreen.js";
 
 function launch(): void {
   const screenNames = stringManager.getScreenNames();
+  const quantumPotentialPreferences = new QuantumPotentialPreferencesModel(Tandem.ROOT.createTandem("preferences"));
 
   const screens = [
     new IntroScreen({
@@ -67,7 +69,7 @@ function launch(): void {
         supportsInteractiveHighlights: true,
       },
       simulationOptions: {
-        customPreferences: [{ createContent: () => new QuantumPotentialPreferencesNode() }],
+        customPreferences: [{ createContent: () => new QuantumPotentialPreferencesNode(quantumPotentialPreferences) }],
       },
       localizationOptions: {
         // Adds a language picker in Preferences → Language
