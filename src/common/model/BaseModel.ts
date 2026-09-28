@@ -5,6 +5,7 @@
 
 import { NumberProperty, Property } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
+import type { TModel } from "scenerystack/joist";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 import { defined } from "../utils/defined.js";
 import { calculateClassicalProbabilityDensity } from "./ClassicalProbability.js";
@@ -42,7 +43,7 @@ export type TimeEvolvedSuperposition = {
 /** Divides a wave function in m^-1/2 by this to get nm^-1/2, preserving ∫|ψ|² dx = 1. */
 const WAVEFUNCTION_M_TO_NM_DIVISOR = Math.sqrt(QuantumConstants.M_TO_NM);
 
-export abstract class BaseModel {
+export abstract class BaseModel implements TModel {
   public readonly screenKind: BaseModelOptions["screenKind"];
   // ==================== CONSTANTS ====================
 
