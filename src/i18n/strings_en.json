@@ -129,6 +129,7 @@
   "configureSuperposition": "Configure Superposition",
   "amplitude": "Amplitude",
   "superpositionDialogTitle": "Superposition Configuration",
+  "selectedPresetMark": "●",
   "close": "Close",
   "displacement": "Displacement",
   "keyConcepts": "Key Concepts:",

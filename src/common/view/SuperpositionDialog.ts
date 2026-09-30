@@ -1,7 +1,7 @@
 /** Configure a superposition and preview its time-zero wave function. */
 
 import { NumberProperty, type TReadOnlyProperty } from "scenerystack/axon";
-import { Dimension2, Range } from "scenerystack/dot";
+import { Dimension2, Range, toFixed } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import {
   type Color,
@@ -122,7 +122,7 @@ export class SuperpositionDialog {
       });
     };
     const presetButton = (label: TReadOnlyProperty<string>, type: SuperpositionType | "all", listener: () => void) => {
-      const indicator = new Text("●", {
+      const indicator = new Text(stringManager.selectedPresetMarkStringProperty, {
         font: new PhetFont(12),
         fill: QuantumPotentialColors.energyLevelSelectedProperty,
       });
@@ -167,10 +167,10 @@ export class SuperpositionDialog {
       const amplitudeText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       const phaseText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
       amplitudeProperty.link((value) => {
-        amplitudeText.string = value.toFixed(2);
+        amplitudeText.string = toFixed(value, 2);
       });
       phaseProperty.link((value) => {
-        phaseText.string = `${(value / Math.PI).toFixed(2)}π`;
+        phaseText.string = `${toFixed(value / Math.PI, 2)}π`;
       });
       amplitudeProperty.lazyLink(updateConfig);
       phaseProperty.lazyLink(updateConfig);
@@ -266,7 +266,7 @@ export class SuperpositionDialog {
     const normalizationText = new Text("", { font: new PhetFont(12), fill: QuantumPotentialColors.textFillProperty });
     const updateNormalization = () => {
       const sum = this.amplitudeProperties.reduce((total, property) => total + property.value ** 2, 0);
-      normalizationText.string = stringManager.normalizationSumStringProperty.value + sum.toFixed(3);
+      normalizationText.string = stringManager.normalizationSumStringProperty.value + toFixed(sum, 3);
       normalizationText.fill =
         Math.abs(sum - 1) > 0.01
           ? QuantumPotentialColors.warningColorProperty.value
@@ -356,14 +356,14 @@ export class SuperpositionDialog {
       spacing: 14,
       visible: isSpatialPresetType(model.superpositionTypeProperty.value),
       children: [
-        sliderControl(stringManager.positionNmStringProperty, locationProperty, (value) => `${value.toFixed(2)} nm`),
-        sliderControl(stringManager.packetWidthStringProperty, widthProperty, (value) => `${value.toFixed(2)} nm`),
+        sliderControl(stringManager.positionNmStringProperty, locationProperty, (value) => `${toFixed(value, 2)} nm`),
+        sliderControl(stringManager.packetWidthStringProperty, widthProperty, (value) => `${toFixed(value, 2)} nm`),
       ],
     });
     const movingRow = new HBox({
       visible: model.superpositionTypeProperty.value === SuperpositionType.MOVING_LOCALIZED,
       children: [
-        sliderControl(stringManager.momentumStringProperty, momentumProperty, (value) => `${value.toFixed(2)} ℏ/nm`),
+        sliderControl(stringManager.momentumStringProperty, momentumProperty, (value) => `${toFixed(value, 2)} ℏ/nm`),
       ],
     });
     const twoLobedRow = new HBox({
@@ -373,12 +373,12 @@ export class SuperpositionDialog {
         sliderControl(
           stringManager.secondPositionStringProperty,
           secondPositionProperty,
-          (value) => `${value.toFixed(2)} nm`,
+          (value) => `${toFixed(value, 2)} nm`,
         ),
         sliderControl(
           stringManager.relativePhaseStringProperty,
           relativePhaseProperty,
-          (value) => `${(value / Math.PI).toFixed(2)}π`,
+          (value) => `${toFixed(value / Math.PI, 2)}π`,
         ),
       ],
     });
@@ -425,7 +425,7 @@ export class SuperpositionDialog {
         range: model.coherentDisplacementProperty.range,
       });
       displacementProperty.link((value) => {
-        displacementValue.string = `${value.toFixed(2)} nm`;
+        displacementValue.string = `${toFixed(value, 2)} nm`;
         model.coherentDisplacementProperty.value = value;
         if (model.superpositionTypeProperty.value === SuperpositionType.COHERENT) {
           syncSliders(model.superpositionConfigProperty.value);

@@ -75,12 +75,8 @@ function launch(): void {
         // Adds a language picker in Preferences → Language
         supportsDynamicLocale: true,
       },
-      audioOptions: {
-        // Initializes tambo and the Audio preferences. Pair with supportsSound in src/init.ts.
-        // Stock UI sounds only. Voicing is deferred fleet-wide (Baton/ACCESSIBILITY.md) and this sim
-        // has no voicing responses, so the Voicing toolbar is not offered.
-        supportsSound: true,
-      },
+      // No audio generators are registered, so the sound feature stays off and the
+      // Audio preferences tab is not offered. Voicing is deferred fleet-wide.
     }),
     webgl: true,
   });

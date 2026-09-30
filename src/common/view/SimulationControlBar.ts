@@ -4,7 +4,7 @@
  */
 
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
-import { Dimension2, Range } from "scenerystack/dot";
+import { Dimension2, Range, toFixed } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
@@ -38,7 +38,7 @@ export class SimulationControlBar extends Node {
 
     const formattedTimeProperty = new DerivedProperty(
       [this.model.timeProperty, stringManager.timeFormatStringProperty],
-      (time, format) => StringUtils.fillIn(format, { time: time.toFixed(2) }),
+      (time, format) => StringUtils.fillIn(format, { time: toFixed(time, 2) }),
     );
     this.timeText = new Text(formattedTimeProperty, {
       font: new PhetFont({ size: 16, weight: "bold" }),

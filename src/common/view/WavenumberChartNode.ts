@@ -8,7 +8,7 @@
 
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
 import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
-import { Range } from "scenerystack/dot";
+import { Range, toFixed } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
@@ -192,8 +192,8 @@ export class WavenumberChartNode extends Node {
     const paragraphs = [
       strings.introductionStringProperty.value,
       StringUtils.fillIn(strings.statisticsPatternStringProperty, {
-        average: distribution.average.toFixed(3),
-        rms: distribution.spread.toFixed(3),
+        average: toFixed(distribution.average, 3),
+        rms: toFixed(distribution.spread, 3),
       }),
       StringUtils.fillIn(strings.momentumPatternStringProperty, {
         momentum: distribution.averageMomentum.toExponential(2),
@@ -203,7 +203,7 @@ export class WavenumberChartNode extends Node {
     if (distribution.uncertaintyProduct !== null) {
       paragraphs.push(
         StringUtils.fillIn(strings.uncertaintyPatternStringProperty, {
-          product: distribution.uncertaintyProduct.toFixed(2),
+          product: toFixed(distribution.uncertaintyProduct, 2),
         }),
       );
     }
@@ -423,7 +423,7 @@ export class WavenumberChartNode extends Node {
    */
   private formatXTickLabel(value: number): string {
     const decimals = getTickDecimals(this.xTickSpacing);
-    return Math.abs(value) < this.xTickSpacing * 1e-6 ? (0).toFixed(decimals) : value.toFixed(decimals);
+    return Math.abs(value) < this.xTickSpacing * 1e-6 ? toFixed(0, decimals) : toFixed(value, decimals);
   }
 
   /**

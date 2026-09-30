@@ -4,6 +4,7 @@
  */
 
 import { BooleanProperty, DerivedProperty, Property } from "scenerystack/axon";
+import { toFixed } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, Node } from "scenerystack/scenery";
 import stringManager from "../../../i18n/StringManager.js";
@@ -46,7 +47,7 @@ export class ZerosVisualization extends Node {
         if (!show || zeros.length === 0) {
           return "";
         }
-        const positions = zeros.map((z) => z.toFixed(2)).join(", ");
+        const positions = zeros.map((z) => toFixed(z, 2)).join(", ");
         return zeros.length === 1
           ? StringUtils.fillIn(tools.zerosOnePatternStringProperty, { positions: positions })
           : StringUtils.fillIn(tools.zerosPatternStringProperty, { count: zeros.length, positions: positions });

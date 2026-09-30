@@ -3,6 +3,7 @@
  * and highlights the classically forbidden regions where quantum tunneling occurs.
  */
 
+import { toFixed } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
@@ -115,7 +116,7 @@ export class ClassicalProbabilityOverlay extends Node {
         const percentage = this.model.getClassicallyForbiddenProbability(selectedIndex);
         this.forbiddenProbabilityLabel.string = stringManager.classicallyForbiddenLabelStringProperty.value.replace(
           "{{percentage}}",
-          percentage.toFixed(1),
+          toFixed(percentage, 1),
         );
         this.forbiddenProbabilityLabel.visible = true;
       }

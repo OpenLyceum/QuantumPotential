@@ -494,6 +494,10 @@ export class StringManager {
     return this.stringProperties.superpositionDialogTitleStringProperty;
   }
 
+  get selectedPresetMarkStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.selectedPresetMarkStringProperty;
+  }
+
   get closeStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.closeStringProperty;
   }

@@ -8,6 +8,7 @@
  *   const numeric = solver.solveNumerical(potential, mass, numStates, gridConfig);
  */
 
+import { toFixed } from "scenerystack/dot";
 import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
 import { defined } from "../utils/defined.js";
 import Logger from "../utils/Logger.js";
@@ -295,7 +296,7 @@ export class Schrodinger1DSolver {
         energies.push(energyEv * QuantumConstants.EV_TO_JOULES);
         wavefunctions.push(psi.map((value) => value * NM_TO_M_WAVEFUNCTION_SCALE));
       } else if (energies.length < numStates) {
-        Logger.debug(`Numerov: dropped unnormalizable state at ${energyEv.toFixed(3)} eV`);
+        Logger.debug(`Numerov: dropped unnormalizable state at ${toFixed(energyEv, 3)} eV`);
       }
     });
     return { ...empty, energies, wavefunctions };

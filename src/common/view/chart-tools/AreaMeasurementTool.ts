@@ -4,6 +4,7 @@
  */
 
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
+import { toFixed } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Rectangle, Text } from "scenerystack/scenery";
@@ -127,12 +128,12 @@ export class AreaMeasurementTool extends Node {
         { attribute: "aria-valuemax", value: 5 },
         {
           attribute: "aria-valuenow",
-          value: this.leftMarkerXProperty.value.toFixed(2),
+          value: toFixed(this.leftMarkerXProperty.value, 2),
         },
         {
           attribute: "aria-valuetext",
           value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
-            position: this.leftMarkerXProperty.value.toFixed(2),
+            position: toFixed(this.leftMarkerXProperty.value, 2),
           }),
         },
       ],
@@ -142,10 +143,10 @@ export class AreaMeasurementTool extends Node {
 
     // Update aria-valuetext when left marker position changes
     this.leftMarkerXProperty.link((position) => {
-      this.leftMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
+      this.leftMarkerHandle.setPDOMAttribute("aria-valuenow", toFixed(position, 2));
       this.leftMarkerHandle.setPDOMAttribute(
         "aria-valuetext",
-        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: toFixed(position, 2) }),
       );
     });
 
@@ -167,12 +168,12 @@ export class AreaMeasurementTool extends Node {
         { attribute: "aria-valuemax", value: 5 },
         {
           attribute: "aria-valuenow",
-          value: this.rightMarkerXProperty.value.toFixed(2),
+          value: toFixed(this.rightMarkerXProperty.value, 2),
         },
         {
           attribute: "aria-valuetext",
           value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
-            position: this.rightMarkerXProperty.value.toFixed(2),
+            position: toFixed(this.rightMarkerXProperty.value, 2),
           }),
         },
       ],
@@ -182,10 +183,10 @@ export class AreaMeasurementTool extends Node {
 
     // Update aria-valuetext when right marker position changes
     this.rightMarkerXProperty.link((position) => {
-      this.rightMarkerHandle.setPDOMAttribute("aria-valuenow", position.toFixed(2));
+      this.rightMarkerHandle.setPDOMAttribute("aria-valuenow", toFixed(position, 2));
       this.rightMarkerHandle.setPDOMAttribute(
         "aria-valuetext",
-        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: toFixed(position, 2) }),
       );
     });
 
@@ -212,9 +213,9 @@ export class AreaMeasurementTool extends Node {
           const probability = this.calculateProbabilityInRegion(left, right, displayMode);
           if (probability !== null) {
             return StringUtils.fillIn(tools.measuringPatternStringProperty, {
-              left: left.toFixed(2),
-              right: right.toFixed(2),
-              probability: probability.toFixed(1),
+              left: toFixed(left, 2),
+              right: toFixed(right, 2),
+              probability: toFixed(probability, 1),
             });
           }
           return "";
@@ -304,11 +305,11 @@ export class AreaMeasurementTool extends Node {
 
           this.alertTimeout = setTimeout(() => {
             let message = StringUtils.fillIn(tools.leftMarkerMovedPatternStringProperty, {
-              position: position.toFixed(2),
+              position: toFixed(position, 2),
             });
             if (probability !== null) {
               // getProbabilityInRegion already returns a percentage (0–100)
-              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: probability.toFixed(1) })}`;
+              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: toFixed(probability, 1) })}`;
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;
@@ -363,11 +364,11 @@ export class AreaMeasurementTool extends Node {
 
           this.alertTimeout = setTimeout(() => {
             let message = StringUtils.fillIn(tools.rightMarkerMovedPatternStringProperty, {
-              position: position.toFixed(2),
+              position: toFixed(position, 2),
             });
             if (probability !== null) {
               // getProbabilityInRegion already returns a percentage (0–100)
-              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: probability.toFixed(1) })}`;
+              message += ` ${StringUtils.fillIn(tools.integratedProbabilityPatternStringProperty, { probability: toFixed(probability, 1) })}`;
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;
@@ -422,7 +423,7 @@ export class AreaMeasurementTool extends Node {
     if (probability !== null) {
       this.areaLabel.string = stringManager.percentageValueStringProperty.value.replace(
         "{{value}}",
-        probability.toFixed(1),
+        toFixed(probability, 1),
       );
       // Position label at the center between markers, near the top
       this.areaLabel.centerX = (leftViewX + rightViewX) / 2;

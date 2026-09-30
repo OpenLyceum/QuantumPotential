@@ -10,7 +10,7 @@
  */
 
 import { type NumberProperty, Property, type TReadOnlyProperty } from "scenerystack/axon";
-import type { Vector2 } from "scenerystack/dot";
+import { toFixed, type Vector2 } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { StringUtils } from "scenerystack/phetcommon";
 import { DragListener, Node, type NodeOptions, type SceneryEvent, Text } from "scenerystack/scenery";
@@ -92,7 +92,7 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
       startDrag: pause,
       endDrag: resume,
       pdomCreateAriaValueText: (value: number) =>
-        StringUtils.fillIn(spec.valuePattern, { value: value.toFixed(spec.decimalPlaces) }),
+        StringUtils.fillIn(spec.valuePattern, { value: toFixed(value, spec.decimalPlaces) }),
       cursor: "pointer",
 
       // PDOM
@@ -145,7 +145,7 @@ export class PotentialHandleNode extends AccessibleSlider(Node, 0) {
     const parameterNameProperty = QuantumPotentialDescriber.getParameterNameProperty(spec.parameter);
     const updateValueText = () => {
       this.valueText.string = showValuesProperty.value
-        ? `${parameterNameProperty.value} = ${StringUtils.fillIn(spec.valuePattern, { value: spec.property.value.toFixed(spec.decimalPlaces) })}`
+        ? `${parameterNameProperty.value} = ${StringUtils.fillIn(spec.valuePattern, { value: toFixed(spec.property.value, spec.decimalPlaces) })}`
         : "";
       this.updateLabelPosition();
     };

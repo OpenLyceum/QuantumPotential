@@ -1,4 +1,6 @@
+import { toFixed } from "scenerystack/dot";
 import { defined } from "../utils/defined.js";
+
 /** Decimal places needed to distinguish an energy from its adjacent levels, in eV. */
 export function getEnergyLevelDecimalPlaces(energies: readonly number[], index: number): number {
   const energy = energies[index];
@@ -19,7 +21,7 @@ export function getEnergyLevelDecimalPlaces(energies: readonly number[], index: 
 
   // Match Quantum Bound States: inspect the first nonzero decimal digit of the
   // nearest spacing, then keep at least two decimal places.
-  const decimalDigits = defined(difference.toFixed(20).split(".")[1]);
+  const decimalDigits = defined(toFixed(difference, 20).split(".")[1]);
   const firstNonzero = decimalDigits.search(/[1-9]/);
   return Math.max(2, Math.min(25, firstNonzero < 0 ? 20 : firstNonzero + 1));
 }

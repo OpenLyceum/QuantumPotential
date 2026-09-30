@@ -4,6 +4,7 @@
  */
 
 import { DerivedProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { toFixed } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Node, RichText, Text, VBox } from "scenerystack/scenery";
 import { InfoButton, PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
@@ -337,14 +338,14 @@ export abstract class BaseScreenView extends ScreenView {
           potential: potential,
           level: levelIndex + 1,
           total: energyLevels.length,
-          energy: energy.toFixed(3),
+          energy: toFixed(energy, 3),
         });
       },
     );
 
     const parametersProperty = new DerivedProperty(
       [model.particleMassProperty, model.wellWidthProperty, summaryStrings.parametersPatternStringProperty],
-      (mass, width, pattern) => StringUtils.fillIn(pattern, { mass: mass.toFixed(2), width: width.toFixed(2) }),
+      (mass, width, pattern) => StringUtils.fillIn(pattern, { mass: toFixed(mass, 2), width: toFixed(width, 2) }),
     );
 
     return new ScreenSummaryContent({

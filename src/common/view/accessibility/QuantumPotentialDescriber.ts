@@ -10,6 +10,7 @@
  */
 
 import { PatternStringProperty, type TReadOnlyProperty } from "scenerystack/axon";
+import { toFixed } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import stringManager from "../../../i18n/StringManager.js";
 import type { PotentialType } from "../../model/PotentialFunction.js";
@@ -40,7 +41,7 @@ const SUPERPOSITION_KEYS: Record<
 };
 
 /** Fixed-precision number formatting shared by every spoken value. */
-const format = (value: number, decimals: number): string => value.toFixed(decimals);
+const format = (value: number, decimals: number): string => toFixed(value, decimals);
 
 export const QuantumPotentialDescriber = {
   getPotentialTypeNameProperty(potentialType: PotentialType): TReadOnlyProperty<string> {

@@ -4,6 +4,7 @@
  */
 
 import { BooleanProperty, DerivedProperty, NumberProperty } from "scenerystack/axon";
+import { toFixed } from "scenerystack/dot";
 import { Shape } from "scenerystack/kite";
 import { StringUtils } from "scenerystack/phetcommon";
 import { Circle, DragListener, KeyboardDragListener, Line, Node, Path, Text } from "scenerystack/scenery";
@@ -90,12 +91,12 @@ export class DerivativeTool extends Node {
         { attribute: "aria-valuemax", value: 5 },
         {
           attribute: "aria-valuenow",
-          value: this.markerXProperty.value.toFixed(2),
+          value: toFixed(this.markerXProperty.value, 2),
         },
         {
           attribute: "aria-valuetext",
           value: StringUtils.fillIn(tools.markerPositionPatternStringProperty, {
-            position: this.markerXProperty.value.toFixed(2),
+            position: toFixed(this.markerXProperty.value, 2),
           }),
         },
       ],
@@ -108,10 +109,10 @@ export class DerivativeTool extends Node {
 
     // Update aria-valuetext when position changes
     this.markerXProperty.link((position) => {
-      this.marker.setPDOMAttribute("aria-valuenow", position.toFixed(2));
+      this.marker.setPDOMAttribute("aria-valuenow", toFixed(position, 2));
       this.marker.setPDOMAttribute(
         "aria-valuetext",
-        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: position.toFixed(2) }),
+        StringUtils.fillIn(tools.markerPositionPatternStringProperty, { position: toFixed(position, 2) }),
       );
     });
 
@@ -200,8 +201,8 @@ export class DerivativeTool extends Node {
 
         if (derivativeData !== null) {
           const message = StringUtils.fillIn(tools.derivativeReadoutPatternStringProperty, {
-            position: position.toFixed(2),
-            value: derivativeData.firstDerivative.toFixed(3),
+            position: toFixed(position, 2),
+            value: toFixed(derivativeData.firstDerivative, 3),
           });
           utteranceQueue.addToBack(new Utterance({ alert: message }));
         }
@@ -248,7 +249,7 @@ export class DerivativeTool extends Node {
       // Update label with proper units (nm^-3/2)
       this.label.string = stringManager.firstDerivativeLabelStringProperty.value.replace(
         "{{value}}",
-        derivativeData.firstDerivative.toFixed(3),
+        toFixed(derivativeData.firstDerivative, 3),
       );
       this.label.centerX = viewX;
       this.label.top = yTop + 5; // Position just inside the chart area

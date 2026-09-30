@@ -63,6 +63,7 @@
  * These equations have no closed-form solution and must be solved numerically using root-finding.
  */
 
+import { toFixed } from "scenerystack/dot";
 import { defined } from "../../utils/defined.js";
 import Logger from "../../utils/Logger.js";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
@@ -494,7 +495,7 @@ export function solveDoubleSquareWellAnalytical(
       );
     } else if (splittingPercent > 50) {
       Logger.warn(
-        `WARNING: Doublet splitting is unusually large (${splittingPercent.toFixed(2)}% of V₀).\n` +
+        `WARNING: Doublet splitting is unusually large (${toFixed(splittingPercent, 2)}% of V₀).\n` +
           `  This may indicate a missing state between the ground and first excited states.\n` +
           `  Typical doublet splittings are much smaller due to tunneling suppression.`,
       );

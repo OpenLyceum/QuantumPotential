@@ -5,7 +5,7 @@
 
 import { DerivedProperty } from "scenerystack/axon";
 import { AxisLine, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
-import { Range, Vector2 } from "scenerystack/dot";
+import { Range, toFixed, Vector2 } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
@@ -302,24 +302,24 @@ export class EnergyChartNode extends BaseChartNode {
     const well = [
       StringUtils.fillIn(strings.wellPatternStringProperty, {
         potential: QuantumPotentialDescriber.getPotentialTypeName(potentialType),
-        width: width.toFixed(2),
+        width: toFixed(width, 2),
       }),
     ];
     // Depth only means something for potentials that have one
     if (potentialType !== PotentialType.INFINITE_WELL && potentialType !== PotentialType.HARMONIC_OSCILLATOR) {
-      well.push(StringUtils.fillIn(strings.depthPatternStringProperty, { depth: depth.toFixed(2) }));
+      well.push(StringUtils.fillIn(strings.depthPatternStringProperty, { depth: toFixed(depth, 2) }));
     }
 
     const levels = [
       QuantumPotentialDescriber.describeBoundStateCount(numLevels),
-      StringUtils.fillIn(strings.groundStatePatternStringProperty, { energy: groundEnergy.toFixed(3) }),
+      StringUtils.fillIn(strings.groundStatePatternStringProperty, { energy: toFixed(groundEnergy, 3) }),
     ];
     if (numLevels > 1) {
       const firstExcited = defined(energies[1]);
       levels.push(
         StringUtils.fillIn(strings.firstExcitedPatternStringProperty, {
-          energy: firstExcited.toFixed(3),
-          spacing: (firstExcited - groundEnergy).toFixed(3),
+          energy: toFixed(firstExcited, 3),
+          spacing: toFixed(firstExcited - groundEnergy, 3),
         }),
       );
     }
@@ -332,7 +332,7 @@ export class EnergyChartNode extends BaseChartNode {
       const selected = [
         StringUtils.fillIn(strings.viewingLevelPatternStringProperty, {
           level: selectedIndex + 1,
-          energy: selectedEnergy.toFixed(3),
+          energy: toFixed(selectedEnergy, 3),
         }),
       ];
       if (isSingleWellModel(this.model)) {
@@ -340,8 +340,8 @@ export class EnergyChartNode extends BaseChartNode {
         if (turningPoints) {
           selected.push(
             StringUtils.fillIn(strings.turningPointsPatternStringProperty, {
-              left: turningPoints.left.toFixed(2),
-              right: turningPoints.right.toFixed(2),
+              left: toFixed(turningPoints.left, 2),
+              right: toFixed(turningPoints.right, 2),
             }),
           );
         }
@@ -513,7 +513,7 @@ export class EnergyChartNode extends BaseChartNode {
     const yTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.VERTICAL, 5, {
       edge: "min",
       createLabel: (value: number) =>
-        new Text(value.toFixed(0), {
+        new Text(toFixed(value, 0), {
           font: new PhetFont(12),
           fill: QuantumPotentialColors.labelFillProperty,
         }),
@@ -527,7 +527,7 @@ export class EnergyChartNode extends BaseChartNode {
       const xTickLabelsNode = new TickLabelSet(this.chartTransform, Orientation.HORIZONTAL, 2, {
         edge: "max",
         createLabel: (value: number) =>
-          new Text(value.toFixed(0), {
+          new Text(toFixed(value, 0), {
             font: new PhetFont(12),
             fill: QuantumPotentialColors.labelFillProperty,
           }),
@@ -812,7 +812,7 @@ export class EnergyChartNode extends BaseChartNode {
       if (panel.visible && index !== null && energy !== undefined && y !== undefined) {
         const level = `E<sub>${index + 1}</sub>`;
         label.string = this.viewState.showEnergyValuesProperty.value
-          ? `${level} = ${energy.toFixed(getEnergyLevelDecimalPlaces(energies, index))} ${stringManager.electronVoltsStringProperty.value}`
+          ? `${level} = ${toFixed(energy, getEnergyLevelDecimalPlaces(energies, index))} ${stringManager.electronVoltsStringProperty.value}`
           : level;
         panel.left = left;
         panel.bottom = y - 3;
@@ -920,7 +920,7 @@ export class EnergyChartNode extends BaseChartNode {
         innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
         accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
         descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
-          energy: energy.toFixed(3),
+          energy: toFixed(energy, 3),
           nodes: QuantumPotentialDescriber.describeNodes(index),
         }),
         focusable: true,

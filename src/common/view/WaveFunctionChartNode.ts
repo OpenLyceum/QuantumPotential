@@ -5,7 +5,7 @@
 
 import { DerivedProperty, NumberProperty, Property } from "scenerystack/axon";
 import { AxisLine, ChartRectangle, ChartTransform, TickLabelSet, TickMarkSet } from "scenerystack/bamboo";
-import { Range } from "scenerystack/dot";
+import { Range, toFixed } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
 import { Shape } from "scenerystack/kite";
 import { Orientation } from "scenerystack/phet-core";
@@ -434,8 +434,8 @@ export class WaveFunctionChartNode extends Node {
     if (stats) {
       paragraphs.push(
         StringUtils.fillIn(strings.positionStatisticsPatternStringProperty, {
-          average: stats.avg.toFixed(2),
-          rms: stats.rms.toFixed(2),
+          average: toFixed(stats.avg, 2),
+          rms: toFixed(stats.rms, 2),
         }),
       );
     }
@@ -759,9 +759,9 @@ export class WaveFunctionChartNode extends Node {
 
     // For values close to zero, show as 0.00
     if (Math.abs(value) < 1e-10) {
-      return (0).toFixed(decimals);
+      return toFixed(0, decimals);
     }
-    return value.toFixed(decimals);
+    return toFixed(value, decimals);
   }
 
   /**
