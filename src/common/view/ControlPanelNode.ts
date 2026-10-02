@@ -588,14 +588,20 @@ export class ControlPanelNode {
         new HBox({
           spacing: 3,
           children: [
-            new Text("0", { font: new PhetFont(11), fill: QuantumPotentialColors.textFillProperty }),
+            new Text(stringManager.phaseRangeMinStringProperty, {
+              font: new PhetFont(11),
+              fill: QuantumPotentialColors.textFillProperty,
+            }),
             new SpectrumNode({
               minValue: 0,
               maxValue: 2 * Math.PI,
               valueToColor: (phase) => new Color(phaseToReversedTwilight(phase)),
               size: new Dimension2(44, 10),
             }),
-            new Text("2π", { font: new PhetFont(11), fill: QuantumPotentialColors.textFillProperty }),
+            new Text(stringManager.phaseRangeMaxStringProperty, {
+              font: new PhetFont(11),
+              fill: QuantumPotentialColors.textFillProperty,
+            }),
           ],
         }),
       ],

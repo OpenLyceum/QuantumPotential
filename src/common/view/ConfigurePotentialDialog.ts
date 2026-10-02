@@ -17,7 +17,10 @@ import { QuantumPotentialNumberControl } from "./QuantumPotentialNumberControl.j
 export function createConfigurePotentialButton(model: ScreenModel): RectangularPushButton {
   const button = new RectangularPushButton({
     ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
-    content: new Text("⚙", { font: new PhetFont(22), fill: QuantumPotentialColors.textFillProperty }),
+    content: new Text(stringManager.configurePotentialIconStringProperty, {
+      font: new PhetFont(22),
+      fill: QuantumPotentialColors.textFillProperty,
+    }),
     accessibleName: stringManager.configurePotentialStringProperty,
     xMargin: 5,
     yMargin: 1,

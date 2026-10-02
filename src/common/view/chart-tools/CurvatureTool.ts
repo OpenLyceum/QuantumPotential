@@ -153,12 +153,12 @@ export class CurvatureTool extends Node {
           spacing: 1,
           align: "center",
           children: [
-            new Text("d²ψ", { font: labelFont, fill: labelFill }),
+            new Text(stringManager.secondDerivativeNumeratorStringProperty, { font: labelFont, fill: labelFill }),
             new Line(0, 0, 27, 0, { stroke: labelFill, lineWidth: 1 }),
-            new Text("dx²", { font: labelFont, fill: labelFill }),
+            new Text(stringManager.secondDerivativeDenominatorStringProperty, { font: labelFont, fill: labelFill }),
           ],
         }),
-        new Text("=", { font: labelFont, fill: labelFill }),
+        new Text(stringManager.equalsSignStringProperty, { font: labelFont, fill: labelFill }),
         this.labelValue,
       ],
     });

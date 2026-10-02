@@ -602,6 +602,34 @@ export class StringManager {
     return this.stringProperties.classicallyForbiddenLabelStringProperty;
   }
 
+  get momentumDensityAxisStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.momentumDensityAxisStringProperty;
+  }
+
+  get secondDerivativeNumeratorStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.secondDerivativeNumeratorStringProperty;
+  }
+
+  get secondDerivativeDenominatorStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.secondDerivativeDenominatorStringProperty;
+  }
+
+  get equalsSignStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.equalsSignStringProperty;
+  }
+
+  get phaseRangeMinStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.phaseRangeMinStringProperty;
+  }
+
+  get phaseRangeMaxStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.phaseRangeMaxStringProperty;
+  }
+
+  get configurePotentialIconStringProperty(): ReadOnlyProperty<string> {
+    return this.stringProperties.configurePotentialIconStringProperty;
+  }
+
   get secondDerivativeLabelStringProperty(): ReadOnlyProperty<string> {
     return this.stringProperties.secondDerivativeLabelStringProperty;
   }

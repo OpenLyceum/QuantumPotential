@@ -383,5 +383,12 @@
     "handles": {
       "roleDescription": "poignée du potentiel"
     }
-  }
+  },
+  "momentumDensityAxis": "|φ(k)|² (nm)",
+  "secondDerivativeNumerator": "d²ψ",
+  "secondDerivativeDenominator": "dx²",
+  "equalsSign": "=",
+  "phaseRangeMin": "0",
+  "phaseRangeMax": "2π",
+  "configurePotentialIcon": "⚙"
 }

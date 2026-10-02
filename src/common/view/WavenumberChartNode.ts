@@ -274,7 +274,7 @@ export class WavenumberChartNode extends Node {
     this.xTickLabelSet = xTickLabelsNode;
 
     // Y-axis label, hugging the plot since this axis has no tick labels
-    const yAxisLabel = new Text("|φ(k)|² (nm)", {
+    const yAxisLabel = new Text(stringManager.momentumDensityAxisStringProperty, {
       font: new PhetFont(14),
       fill: QuantumPotentialColors.labelFillProperty,
       rotation: -Math.PI / 2,
