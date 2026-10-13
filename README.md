@@ -78,7 +78,7 @@ Grid Hamiltonian) and `?numberOfPoints=3001` (odd grid size for the numerical so
 | TypeScript | ^7 | `erasableSyntaxOnly` — no `enum`, no `namespace` |
 | Biome | ^2.5 | Lint + format |
 | Vitest | ^5 | Unit tests (`happy-dom`) |
-| vite-plugin-pwa | ^1 | Installable / offline |
+| vite-plugin-pwa | ^2 | Installable / offline |
 
 ## License
 
