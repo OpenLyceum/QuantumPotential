@@ -25,12 +25,12 @@
  * see eckart-potential.ts.
  */
 
-import { defined } from "../../utils/defined.js";
-import { NoBoundStatesError } from "../NoBoundStatesError.js";
+import { defined } from "../../utils/defined.ts";
+import { NoBoundStatesError } from "../NoBoundStatesError.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { jacobiPolynomial } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { jacobiPolynomial } from "./math-utilities.ts";
 
 /** Parameters of one Rosen-Morse problem, in the dimensionless form used by every formula here. */
 type RosenMorseSpectrum = {

@@ -22,8 +22,8 @@
  * @author Martin Veillette
  */
 
-import { defined } from "../../utils/defined.js";
-import NumerovConstants from "./NumerovConstants.js";
+import { defined } from "../../utils/defined.ts";
+import NumerovConstants from "./NumerovConstants.ts";
 import type { XGrid } from "./XGrid.js";
 
 const HBAR = NumerovConstants.HBAR;

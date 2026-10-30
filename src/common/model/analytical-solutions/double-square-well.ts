@@ -64,10 +64,10 @@
  */
 
 import { toFixed } from "scenerystack/dot";
-import { defined } from "../../utils/defined.js";
-import Logger from "../../utils/Logger.js";
+import { defined } from "../../utils/defined.ts";
+import Logger from "../../utils/Logger.ts";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
+import QuantumConstants from "../QuantumConstants.ts";
 
 /**
  * Count the number of nodes (zero crossings) in a wavefunction.

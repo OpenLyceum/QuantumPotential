@@ -12,8 +12,8 @@
  * Reference: Marston & Balint-Kurti, J. Chem. Phys. 91, 3571 (1989)
  */
 
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
-import { defined } from "../utils/defined.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
+import { defined } from "../utils/defined.ts";
 import {
   type Complex,
   cubicSplineInterpolation,
@@ -25,10 +25,10 @@ import {
   matrixToArray,
   normalizeOnGrid,
   normalizeWavefunction,
-} from "./LinearAlgebraUtils.js";
+} from "./LinearAlgebraUtils.ts";
 import type { BoundStateResult, EnergyOnlyResult, GridConfig, PotentialFunction } from "./PotentialFunction.js";
-import QuantumConstants from "./QuantumConstants.js";
-import { standardizeWavefunction } from "./WavefunctionStandardization.js";
+import QuantumConstants from "./QuantumConstants.ts";
+import { standardizeWavefunction } from "./WavefunctionStandardization.ts";
 
 /**
  * Solve the 1D Schrödinger equation using FGH method.

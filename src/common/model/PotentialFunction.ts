@@ -2,7 +2,7 @@
  * Type definitions and interfaces for potential energy functions.
  */
 
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
 
 /**
  * Type of potential well for analytical solution selection

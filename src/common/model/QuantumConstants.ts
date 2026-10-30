@@ -3,7 +3,7 @@
  * All values are in SI units unless otherwise specified.
  */
 
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
 
 const ELEMENTARY_CHARGE = 1.602176634e-19; // Coulombs
 

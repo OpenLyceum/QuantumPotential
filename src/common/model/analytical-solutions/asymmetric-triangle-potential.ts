@@ -40,17 +40,17 @@
  * Boundary condition: ψ(0) = 0 leads to Ai(-αx_n) = 0, giving αx_n = -z_n.
  */
 
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
 import {
   calculateAiryAlpha,
   calculateTriangularWellEnergy,
   generateGrid,
   getAiryZero,
   normalizeWavefunction,
-} from "./airy-utilities.js";
-import { airyAi } from "./math-utilities.js";
+} from "./airy-utilities.ts";
+import { airyAi } from "./math-utilities.ts";
 
 /**
  * Class-based implementation of asymmetric triangle potential analytical solution.

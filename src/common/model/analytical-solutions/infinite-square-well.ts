@@ -24,8 +24,8 @@
  */
 
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
 
 /**
  * Create the potential function for an infinite square well.

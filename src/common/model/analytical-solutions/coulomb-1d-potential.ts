@@ -17,9 +17,9 @@
  */
 
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { associatedLaguerre } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { associatedLaguerre } from "./math-utilities.ts";
 
 /**
  * Class-based implementation of 1D Coulomb potential analytical solution.

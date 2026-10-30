@@ -7,36 +7,36 @@
  * potential's file directly if you need one on its own.
  */
 
-import QuantumPotentialNamespace from "../../../QuantumPotentialNamespace.js";
-import { solveAsymmetricTrianglePotential } from "./asymmetric-triangle-potential.js";
-import { solveCoulomb1DPotential } from "./coulomb-1d-potential.js";
-import { solveDoubleSquareWellAnalytical } from "./double-square-well.js";
-import { solveEckartPotential } from "./eckart-potential.js";
-import { solveFiniteSquareWell } from "./finite-square-well.js";
-import { solveHarmonicOscillator } from "./harmonic-oscillator.js";
-import { solveInfiniteWell } from "./infinite-square-well.js";
-import { solveMorsePotential } from "./morse-potential.js";
-import { solveMultiSquareWell } from "./multi-square-well.js";
-import { solvePoschlTellerPotential } from "./poschl-teller-potential.js";
-import { solveRosenMorsePotential } from "./rosen-morse-potential.js";
-import { solveTriangularPotential } from "./triangular-potential.js";
+import QuantumPotentialNamespace from "../../../QuantumPotentialNamespace.ts";
+import { solveAsymmetricTrianglePotential } from "./asymmetric-triangle-potential.ts";
+import { solveCoulomb1DPotential } from "./coulomb-1d-potential.ts";
+import { solveDoubleSquareWellAnalytical } from "./double-square-well.ts";
+import { solveEckartPotential } from "./eckart-potential.ts";
+import { solveFiniteSquareWell } from "./finite-square-well.ts";
+import { solveHarmonicOscillator } from "./harmonic-oscillator.ts";
+import { solveInfiniteWell } from "./infinite-square-well.ts";
+import { solveMorsePotential } from "./morse-potential.ts";
+import { solveMultiSquareWell } from "./multi-square-well.ts";
+import { solvePoschlTellerPotential } from "./poschl-teller-potential.ts";
+import { solveRosenMorsePotential } from "./rosen-morse-potential.ts";
+import { solveTriangularPotential } from "./triangular-potential.ts";
 
-export { AnalyticalSolution } from "./AnalyticalSolution.js";
+export { AnalyticalSolution } from "./AnalyticalSolution.ts";
 export {
   AsymmetricTrianglePotentialSolution,
   solveAsymmetricTrianglePotential,
-} from "./asymmetric-triangle-potential.js";
-export { Coulomb1DPotentialSolution, solveCoulomb1DPotential } from "./coulomb-1d-potential.js";
-export { solveDoubleSquareWellAnalytical } from "./double-square-well.js";
-export { EckartPotentialSolution, solveEckartPotential } from "./eckart-potential.js";
-export { FiniteSquareWellSolution, solveFiniteSquareWell } from "./finite-square-well.js";
-export { HarmonicOscillatorSolution, solveHarmonicOscillator } from "./harmonic-oscillator.js";
-export { InfiniteSquareWellSolution, solveInfiniteWell } from "./infinite-square-well.js";
-export { MorsePotentialSolution, solveMorsePotential } from "./morse-potential.js";
-export { solveMultiSquareWell } from "./multi-square-well.js";
-export { PoschlTellerPotentialSolution, solvePoschlTellerPotential } from "./poschl-teller-potential.js";
-export { RosenMorsePotentialSolution, solveRosenMorsePotential } from "./rosen-morse-potential.js";
-export { solveTriangularPotential, TriangularPotentialSolution } from "./triangular-potential.js";
+} from "./asymmetric-triangle-potential.ts";
+export { Coulomb1DPotentialSolution, solveCoulomb1DPotential } from "./coulomb-1d-potential.ts";
+export { solveDoubleSquareWellAnalytical } from "./double-square-well.ts";
+export { EckartPotentialSolution, solveEckartPotential } from "./eckart-potential.ts";
+export { FiniteSquareWellSolution, solveFiniteSquareWell } from "./finite-square-well.ts";
+export { HarmonicOscillatorSolution, solveHarmonicOscillator } from "./harmonic-oscillator.ts";
+export { InfiniteSquareWellSolution, solveInfiniteWell } from "./infinite-square-well.ts";
+export { MorsePotentialSolution, solveMorsePotential } from "./morse-potential.ts";
+export { solveMultiSquareWell } from "./multi-square-well.ts";
+export { PoschlTellerPotentialSolution, solvePoschlTellerPotential } from "./poschl-teller-potential.ts";
+export { RosenMorsePotentialSolution, solveRosenMorsePotential } from "./rosen-morse-potential.ts";
+export { solveTriangularPotential, TriangularPotentialSolution } from "./triangular-potential.ts";
 
 // Register all solutions with the QuantumPotential namespace
 QuantumPotentialNamespace.register("AnalyticalSolutions", {

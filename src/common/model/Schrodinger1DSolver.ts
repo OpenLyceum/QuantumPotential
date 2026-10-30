@@ -9,25 +9,25 @@
  */
 
 import { toFixed } from "scenerystack/dot";
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
-import { defined } from "../utils/defined.js";
-import Logger from "../utils/Logger.js";
-import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.js";
-import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
+import { defined } from "../utils/defined.ts";
+import Logger from "../utils/Logger.ts";
+import { type AnalyticalSolution, solveDoubleSquareWellAnalytical } from "./analytical-solutions/index.ts";
+import { solveMultiSquareWell } from "./analytical-solutions/multi-square-well.ts";
 import type { solveFGH } from "./FGHSolver.js";
-import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.js";
-import { NumericalMethod } from "./NumericalMethod.js";
-import { NumerovSolver } from "./numerov/NumerovSolver.js";
-import { XGrid } from "./numerov/XGrid.js";
-import { PotentialFactory } from "./PotentialFactory.js";
+import { createMultiPoschlTellerPotential } from "./multiPoschlTellerPotential.ts";
+import { NumericalMethod } from "./NumericalMethod.ts";
+import { NumerovSolver } from "./numerov/NumerovSolver.ts";
+import { XGrid } from "./numerov/XGrid.ts";
+import { PotentialFactory } from "./PotentialFactory.ts";
 import {
   type BoundStateResult,
   type GridConfig,
   type PotentialFunction,
   PotentialType,
   type WellParameters,
-} from "./PotentialFunction.js";
-import QuantumConstants from "./QuantumConstants.js";
+} from "./PotentialFunction.ts";
+import QuantumConstants from "./QuantumConstants.ts";
 
 /**
  * The FGH cross-check, once loadFGH() has fetched it. FGH and its dense linear algebra are only used behind
@@ -87,7 +87,7 @@ export class Schrodinger1DSolver {
    * resolves, an FGH solver falls back to Numerov.
    */
   public static async loadFGH(): Promise<void> {
-    solveFGHModule ??= (await import("./FGHSolver.js")).solveFGH;
+    solveFGHModule ??= (await import("./FGHSolver.ts")).solveFGH;
   }
 
   /**

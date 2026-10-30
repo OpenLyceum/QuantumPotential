@@ -4,7 +4,7 @@
  * from SI at its boundary.
  */
 
-import QuantumConstants from "../QuantumConstants.js";
+import QuantumConstants from "../QuantumConstants.ts";
 
 const NumerovConstants = {
   /** ħ in √(eV·mₑ)·nm, so that ħ²/(2m) is in eV·nm² when m is in electron masses. */

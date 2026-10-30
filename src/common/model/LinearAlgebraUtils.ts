@@ -31,8 +31,8 @@
  * @module LinearAlgebraUtils
  */
 
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
-import { defined } from "../utils/defined.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
+import { defined } from "../utils/defined.ts";
 
 /**
  * Matrix class providing core linear algebra operations for quantum mechanics.

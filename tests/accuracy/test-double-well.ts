@@ -33,8 +33,8 @@
  *   or: npm run test:double-well
  */
 
-import { solveDoubleSquareWellAnalytical } from "../../src/common/model/analytical-solutions/double-square-well.js";
-import QuantumConstants from "../../src/common/model/QuantumConstants.js";
+import { solveDoubleSquareWellAnalytical } from "../../src/common/model/analytical-solutions/double-square-well.ts";
+import QuantumConstants from "../../src/common/model/QuantumConstants.ts";
 
 // Physical constants
 const { HBAR, ELECTRON_MASS, EV_TO_JOULES, NM_TO_M } = QuantumConstants;

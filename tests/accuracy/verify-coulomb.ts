@@ -1,6 +1,6 @@
 /** Checks the regular 1D Coulomb eigenstates used by the simulation. */
 import { strict as assert } from "node:assert";
-import { solveCoulomb1DPotential } from "../../src/common/model/analytical-solutions/coulomb-1d-potential.js";
+import { solveCoulomb1DPotential } from "../../src/common/model/analytical-solutions/coulomb-1d-potential.ts";
 
 const hbar = 1.054571817e-34;
 const mass = 9.1093837015e-31;

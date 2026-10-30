@@ -35,12 +35,12 @@
  * The derivation follows from requiring wavefunction and derivative continuity at x = ±L/2.
  */
 
-import { defined } from "../../utils/defined.js";
-import Logger from "../../utils/Logger.js";
+import { defined } from "../../utils/defined.ts";
+import Logger from "../../utils/Logger.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { findRootHybrid } from "./root-finding-utils.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { findRootHybrid } from "./root-finding-utils.ts";
 
 /**
  * Create the potential function for a finite square well.

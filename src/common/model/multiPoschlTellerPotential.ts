@@ -1,6 +1,6 @@
 /** A finite array of smooth Pöschl–Teller wells, optionally tilted by an electric field. */
 
-import QuantumConstants from "./QuantumConstants.js";
+import QuantumConstants from "./QuantumConstants.ts";
 
 /**
  * V(x) = −D Σ sech²((x − xᵢ)/a) + eℰx, with a = wellWidth / 2 and

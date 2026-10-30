@@ -1,4 +1,4 @@
-import { defined } from "../utils/defined.js";
+import { defined } from "../utils/defined.ts";
 /**
  * Utilities for standardizing wavefunction parity/sign across different solvers.
  *

@@ -13,7 +13,7 @@
  * @abstract
  */
 
-import { calculateClassicalProbabilityDensity } from "../ClassicalProbability.js";
+import { calculateClassicalProbabilityDensity } from "../ClassicalProbability.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 
 export abstract class AnalyticalSolution {

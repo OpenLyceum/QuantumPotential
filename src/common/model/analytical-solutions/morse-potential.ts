@@ -34,11 +34,11 @@
  *   where z = 2λ exp(-(x-x_e)/a), λ = a√(2mD_e)/ℏ
  */
 
-import { NoBoundStatesError } from "../NoBoundStatesError.js";
+import { NoBoundStatesError } from "../NoBoundStatesError.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { logAssociatedLaguerre, logGamma } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { logAssociatedLaguerre, logGamma } from "./math-utilities.ts";
 
 /**
  * Class-based implementation of Morse potential analytical solution.

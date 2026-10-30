@@ -10,8 +10,8 @@ import {
   PoschlTellerPotentialSolution,
   RosenMorsePotentialSolution,
   TriangularPotentialSolution,
-} from "./analytical-solutions/index.js";
-import { PotentialType, type WellParameters } from "./PotentialFunction.js";
+} from "./analytical-solutions/index.ts";
+import { PotentialType, type WellParameters } from "./PotentialFunction.ts";
 
 export const PotentialFactory = {
   /**

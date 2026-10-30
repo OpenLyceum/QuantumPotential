@@ -23,11 +23,11 @@
  * not the spectrum of this potential; it reported bound states below the minimum of V.)
  */
 
-import { defined } from "../../utils/defined.js";
-import { NoBoundStatesError } from "../NoBoundStatesError.js";
+import { defined } from "../../utils/defined.ts";
+import { NoBoundStatesError } from "../NoBoundStatesError.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { RosenMorsePotentialSolution } from "./rosen-morse-potential.js";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { RosenMorsePotentialSolution } from "./rosen-morse-potential.ts";
 
 /** The Rosen-Morse problem equivalent to an Eckart potential, and the energy shift between them. */
 function toRosenMorse(

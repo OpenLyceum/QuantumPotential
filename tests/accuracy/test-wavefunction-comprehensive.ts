@@ -42,19 +42,19 @@
  *   or: npm run test:wavefunction
  */
 
-import { solveFiniteSquareWell } from "../../src/common/model/analytical-solutions/finite-square-well.js";
-import { solveHarmonicOscillator } from "../../src/common/model/analytical-solutions/harmonic-oscillator.js";
-import { solveMorsePotential } from "../../src/common/model/analytical-solutions/morse-potential.js";
-import { solvePoschlTellerPotential } from "../../src/common/model/analytical-solutions/poschl-teller-potential.js";
-import { solveFGH } from "../../src/common/model/FGHSolver.js";
+import { solveFiniteSquareWell } from "../../src/common/model/analytical-solutions/finite-square-well.ts";
+import { solveHarmonicOscillator } from "../../src/common/model/analytical-solutions/harmonic-oscillator.ts";
+import { solveMorsePotential } from "../../src/common/model/analytical-solutions/morse-potential.ts";
+import { solvePoschlTellerPotential } from "../../src/common/model/analytical-solutions/poschl-teller-potential.ts";
+import { solveFGH } from "../../src/common/model/FGHSolver.ts";
 import type {
   BoundStateResult,
   EnergyOnlyResult,
   GridConfig,
   PotentialFunction,
 } from "../../src/common/model/PotentialFunction.js";
-import QuantumConstants from "../../src/common/model/QuantumConstants.js";
-import { Schrodinger1DSolver } from "../../src/common/model/Schrodinger1DSolver.js";
+import QuantumConstants from "../../src/common/model/QuantumConstants.ts";
+import { Schrodinger1DSolver } from "../../src/common/model/Schrodinger1DSolver.ts";
 
 // Physical constants
 const { HBAR, ELECTRON_MASS, EV_TO_JOULES } = QuantumConstants;

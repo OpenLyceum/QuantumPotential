@@ -31,11 +31,11 @@
  *   where H_n are the Hermite polynomials
  */
 
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { hermiteFunctions } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { hermiteFunctions } from "./math-utilities.ts";
 
 /**
  * Create the potential function for a harmonic oscillator.

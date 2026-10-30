@@ -3,10 +3,10 @@
  * Used by asymmetric-triangle-potential and triangular-potential solvers.
  */
 
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 import type { GridConfig } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { airyAi } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { airyAi } from "./math-utilities.ts";
 
 /**
  * Pre-computed zeros of the Airy function Ai(z).

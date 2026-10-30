@@ -33,12 +33,12 @@
  *   where α = λ - n - 1/2 and P_n^(α,α) are Jacobi polynomials
  */
 
-import { defined } from "../../utils/defined.js";
-import { NoBoundStatesError } from "../NoBoundStatesError.js";
+import { defined } from "../../utils/defined.ts";
+import { NoBoundStatesError } from "../NoBoundStatesError.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
-import { factorial, jacobiPolynomial } from "./math-utilities.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
+import { factorial, jacobiPolynomial } from "./math-utilities.ts";
 
 /**
  * The Pöschl-Teller index s, defined by s(s + 1) = λ² with λ = a√(2mV₀)/ℏ. Energies are

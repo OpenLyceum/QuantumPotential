@@ -1,4 +1,4 @@
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 /**
  * WaveFunctionNormalizer normalizes wave functions using the trapezoidal rule for numerical integration.
  * It ensures that the probability density integrates to unity: that is ∫|ψ|² dx = 1

@@ -1,4 +1,4 @@
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 /**
  * Mathematical utility functions for analytical solutions.
  * These are used by various potential solvers for special functions and polynomials.

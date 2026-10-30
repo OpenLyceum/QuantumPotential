@@ -2,7 +2,7 @@
  * Numerical methods for solving the Schrödinger equation
  */
 
-import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.js";
+import QuantumPotentialNamespace from "../../QuantumPotentialNamespace.ts";
 
 /**
  * Numerical methods for the time-independent Schrödinger equation. Numerov shooting is the sim's

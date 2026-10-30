@@ -1,4 +1,4 @@
-import { defined } from "../utils/defined.js";
+import { defined } from "../utils/defined.ts";
 
 /**
  * Classical probability density of a particle of energy E moving in V(x): P(x) ∝ 1/v(x) = 1/√(2(E − V)/m)

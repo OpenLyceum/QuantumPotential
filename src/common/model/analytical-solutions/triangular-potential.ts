@@ -48,18 +48,18 @@
  * that determines allowed energies. Must be solved numerically.
  */
 
-import { defined } from "../../utils/defined.js";
+import { defined } from "../../utils/defined.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
-import QuantumConstants from "../QuantumConstants.js";
-import { AnalyticalSolution } from "./AnalyticalSolution.js";
+import QuantumConstants from "../QuantumConstants.ts";
+import { AnalyticalSolution } from "./AnalyticalSolution.ts";
 import {
   applySignConvention,
   calculateAiryAlpha,
   generateGrid,
   normalizeWavefunction,
   refineBisection,
-} from "./airy-utilities.js";
-import { airyAi, airyAiPrime, airyBi, airyBiPrime } from "./math-utilities.js";
+} from "./airy-utilities.ts";
+import { airyAi, airyAiPrime, airyBi, airyBiPrime } from "./math-utilities.ts";
 
 /**
  * Class-based implementation of triangular potential analytical solution.

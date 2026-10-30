@@ -50,12 +50,12 @@
 
 import type { StrictOmit } from "scenerystack/phet-core";
 import { optionize } from "scenerystack/phet-core";
-import { defined } from "../../utils/defined.js";
-import { EnergyRefiner, type EnergyRefinerOptions } from "./EnergyRefiner.js";
-import NumerovConstants from "./NumerovConstants.js";
-import { NumerovIntegrator } from "./NumerovIntegrator.js";
+import { defined } from "../../utils/defined.ts";
+import { EnergyRefiner, type EnergyRefinerOptions } from "./EnergyRefiner.ts";
+import NumerovConstants from "./NumerovConstants.ts";
+import { NumerovIntegrator } from "./NumerovIntegrator.ts";
 import type { PotentialEnergyFunction, TimeIndependentSolution } from "./TimeIndependentSolution.js";
-import { WaveFunctionNormalizer } from "./WaveFunctionNormalizer.js";
+import { WaveFunctionNormalizer } from "./WaveFunctionNormalizer.ts";
 import type { XGrid } from "./XGrid.js";
 
 // Configuration options for the solver.
