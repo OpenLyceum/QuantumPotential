@@ -136,14 +136,7 @@ deferred fleet-wide). Full convention:
   `tsconfig.accuracy.json`; `tsconfig.test.json` excludes `tests/accuracy`; `biome.json` sets
   `noNonNullAssertion` to error and turns off `noConsole` for the accuracy scripts, which print their reports.
 
-### `package.json` overrides
-
-Same fleet pins as the template (`lodash`, `three`, `brace-expansion`) — rationale in
-[SceneryStackTemplate/AGENTS.md](https://github.com/OpenLyceum/SceneryStackTemplate/blob/main/AGENTS.md).
-
 ## Testing
-
-Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expose-gc"]`):
 
 | Path | Purpose |
 |---|---|
@@ -167,19 +160,7 @@ Fleet-standard Vitest layout (`happy-dom`, `tests/setup.ts`, `execArgv: ["--expo
 
 ## Commands
 
-```bash
-npm run lint && npm run check && npm run build && npm test
-```
-
-| Command | Description |
-|---|---|
-| `npm start` / `npm run dev` | Vite dev server |
-| `npm run build` / `npm run build:single` | Production build / single-file build |
-| `npm run check` | TypeScript: app, scripts, tests, accuracy harness |
-| `npm run lint` / `npm run fix` | Biome check / auto-fix |
-| `npm test` | Vitest unit tests |
-| `npm run test:accuracy` | Manual solver accuracy suite (see `tests/accuracy/README.md`) |
-| `npm run icons` | Regenerate PWA icons |
+`npm run check` also typechecks the accuracy harness. `npm run test:accuracy` is the manual solver suite (`tests/accuracy/README.md`). The other scripts are the fleet set in `.github/AGENTS.md`.
 
 ## Development notes
 
