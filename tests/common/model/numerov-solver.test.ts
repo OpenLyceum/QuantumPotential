@@ -137,17 +137,24 @@ describe("Numerov solver", () => {
   // FGH is split out of the main bundle and must be loaded before it can solve
   beforeAll(() => Schrodinger1DSolver.loadFGH());
 
+  // FGH diagonalizes a dense matrix on its own fixed grid (FGH_GRID_POINTS, whatever `GRID` says), so each
+  // case takes ~10 s locally and has exceeded the 30 s default on slow CI runners.
+  const FGH_CROSS_CHECK_TIMEOUT_MS = 90_000;
   it.each([
     [3, 1.0, 5, 0.2, 0],
     [4, 0.5, 10, 0.1, 0.3],
-  ])("agrees with the FGH cross-check (N=%i, w=%f, V₀=%f, d=%f, ℰ=%f)", (n, w, depth, d, field) => {
-    const potential = multiWell(n, w, depth, d, field);
-    const numerov = solve(potential);
-    const fgh = new Schrodinger1DSolver(NumericalMethod.FGH).solveNumerical(potential, ELECTRON_MASS, 6, GRID);
-    for (let i = 0; i < 4; i++) {
-      expect(Math.abs(numerov.energies[i]! - fgh.energies[i]!) / Math.abs(fgh.energies[i]!)).toBeLessThan(2e-2);
-    }
-  });
+  ])(
+    "agrees with the FGH cross-check (N=%i, w=%f, V₀=%f, d=%f, ℰ=%f)",
+    (n, w, depth, d, field) => {
+      const potential = multiWell(n, w, depth, d, field);
+      const numerov = solve(potential);
+      const fgh = new Schrodinger1DSolver(NumericalMethod.FGH).solveNumerical(potential, ELECTRON_MASS, 6, GRID);
+      for (let i = 0; i < 4; i++) {
+        expect(Math.abs(numerov.energies[i]! - fgh.energies[i]!) / Math.abs(fgh.energies[i]!)).toBeLessThan(2e-2);
+      }
+    },
+    FGH_CROSS_CHECK_TIMEOUT_MS,
+  );
 
   it("solves the densest Many Wells band quickly", () => {
     const start = performance.now();
