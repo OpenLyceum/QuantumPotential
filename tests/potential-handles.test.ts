@@ -60,12 +60,15 @@ describe("potential handles", () => {
     const model = create();
     if (model instanceof ManyWellsModel) {
       model.electricFieldProperty.value = 0.2; // exercise the tilt
+      model.flushBoundStateInvalidation();
     }
     const handles = createHandles(model);
     const failures: string[] = [];
 
     for (const type of types) {
       model.potentialTypeProperty.value = type;
+      // Invalidation is debounced on stepTimer; without a sim loop, flush before reading V(x).
+      model.flushBoundStateInvalidation();
       const visible = handles.filter((handle) => handle.spec.isVisibleFor(type));
       expect(visible.length, `${type} has handles`).toBeGreaterThan(0);
 

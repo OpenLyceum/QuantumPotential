@@ -11,6 +11,11 @@ function potentialEv(model: ScreenModel, xNm: number): number {
   return model.getPotentialEnergy([xNm * QuantumConstants.NM_TO_M])[0]! * QuantumConstants.JOULES_TO_EV;
 }
 
+/** Bound-state invalidation is debounced on stepTimer; tests have no sim loop. */
+function afterPotentialChange(model: ScreenModel): void {
+  model.flushBoundStateInvalidation();
+}
+
 describe.each([
   ["Intro", () => new IntroModel()],
   ["One Well", () => new OneWellModel()],
@@ -20,6 +25,7 @@ describe.each([
     expect(model.wellWidthProperty.value / 8).toBeGreaterThan(0.65);
 
     model.potentialTypeProperty.value = PotentialType.POSCHL_TELLER;
+    afterPotentialChange(model);
     expect(potentialEv(model, 0)).toBeCloseTo(-12);
     expect(potentialEv(model, 4)).toBeGreaterThan(-0.3);
     expect(model.getEnergyLevels().length).toBeGreaterThan(0);
@@ -29,17 +35,21 @@ describe.each([
   it("gives Eckart a visible dip and retains edits when returning to it", () => {
     const model = create();
     model.potentialTypeProperty.value = PotentialType.ECKART;
+    afterPotentialChange(model);
     expect(potentialEv(model, -4)).toBeGreaterThan(3);
     expect(potentialEv(model, 0)).toBeLessThan(-1);
     expect(model.getEnergyLevels().length).toBeGreaterThan(0);
 
     model.wellWidthProperty.value = 1.2;
     model.potentialTypeProperty.value = PotentialType.POSCHL_TELLER;
+    afterPotentialChange(model);
     model.potentialTypeProperty.value = PotentialType.ECKART;
+    afterPotentialChange(model);
     expect(model.wellWidthProperty.value).toBe(1.2);
 
     model.reset();
     model.potentialTypeProperty.value = PotentialType.ECKART;
+    afterPotentialChange(model);
     expect(model.wellWidthProperty.value).toBe(1);
     model.dispose();
   });
@@ -59,8 +69,10 @@ it("fills most of the starting Two Wells chart without clipping the structure", 
 it("allows a wider separation for the double Pöschl–Teller potential", () => {
   const model = new TwoWellsModel();
   model.potentialTypeProperty.value = PotentialType.DOUBLE_POSCHL_TELLER;
+  afterPotentialChange(model);
   expect(model.wellSeparationProperty.range.max).toBeGreaterThanOrEqual(4);
   model.wellSeparationProperty.value = 3.5;
+  afterPotentialChange(model);
   const wellCenter = (model.wellWidthProperty.value + model.wellSeparationProperty.value) / 2;
   expect(potentialEv(model, wellCenter)).toBeLessThan(potentialEv(model, 0));
   expect(model.getEnergyLevels().length).toBeGreaterThan(0);
@@ -72,6 +84,7 @@ it("keeps the separated double square wells inside the solver grid", () => {
   model.potentialTypeProperty.value = PotentialType.DOUBLE_SQUARE_WELL;
   model.wellSeparationProperty.value = 4;
   model.wellWidthProperty.value = 3;
+  afterPotentialChange(model);
   const states = model.getBoundStates();
   expect(states).not.toBeNull();
   expect(states!.xGrid[0]).toBeLessThan(-5 * QuantumConstants.NM_TO_M);

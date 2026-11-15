@@ -224,7 +224,10 @@ export abstract class BaseModel implements TModel {
    * Setup cache invalidation listeners for common properties.
    * Subclasses can override this to add additional invalidation listeners.
    */
-  /** Pending debounce handle for {@link invalidateBoundStates}; cleared on dispose. */
+  /**
+   * Pending debounce handle for {@link invalidateBoundStates}. Driven by {@link stepTimer}, so it only
+   * fires while the sim is stepping — unit tests must call {@link flushBoundStateInvalidation}.
+   */
   private invalidateBoundStatesTimeoutId: TimerListener | null = null;
 
   protected setupCacheInvalidation(): void {
@@ -237,20 +240,42 @@ export abstract class BaseModel implements TModel {
     this.particleMassProperty.lazyLink(invalidateCache);
   }
 
+  /**
+   * Clears cached bound states and bumps {@link potentialRevisionProperty}. Kept separate so the
+   * debounced path and {@link flushBoundStateInvalidation} share one implementation.
+   */
+  private applyBoundStateInvalidation(): void {
+    this.boundStateResult = undefined;
+    this.wavePacketProjection = null;
+    this.wavenumberTransforms.clear();
+    this.superpositionCache = null;
+    this.potentialRevisionProperty.value++;
+  }
+
   protected invalidateBoundStates(): void {
     // Debounce: fuzz / rapid slider motion would otherwise re-solve every
     // animation frame and wedge the main thread (Playwright fuzz timeouts).
+    // The timer rides on stepTimer (sim dt), not wall-clock setTimeout.
     if (this.invalidateBoundStatesTimeoutId !== null) {
       stepTimer.clearTimeout(this.invalidateBoundStatesTimeoutId);
     }
     this.invalidateBoundStatesTimeoutId = stepTimer.setTimeout(() => {
       this.invalidateBoundStatesTimeoutId = null;
-      this.boundStateResult = undefined;
-      this.wavePacketProjection = null;
-      this.wavenumberTransforms.clear();
-      this.superpositionCache = null;
-      this.potentialRevisionProperty.value++;
+      this.applyBoundStateInvalidation();
     }, 50);
+  }
+
+  /**
+   * Apply any pending debounced invalidation immediately. Call this after changing parameters in
+   * unit tests (or any sync set-then-query path) before reading bound states or potential energy —
+   * otherwise queries keep serving the previous solve until the sim has stepped ≥ 50 ms.
+   */
+  public flushBoundStateInvalidation(): void {
+    if (this.invalidateBoundStatesTimeoutId !== null) {
+      stepTimer.clearTimeout(this.invalidateBoundStatesTimeoutId);
+      this.invalidateBoundStatesTimeoutId = null;
+      this.applyBoundStateInvalidation();
+    }
   }
 
   /**
@@ -258,6 +283,7 @@ export abstract class BaseModel implements TModel {
    * garbage collected. The model currently links to no global Property; keep this in sync if one is added.
    */
   public dispose(): void {
+    // Drop a pending debounce without applying it — the model is going away.
     if (this.invalidateBoundStatesTimeoutId !== null) {
       stepTimer.clearTimeout(this.invalidateBoundStatesTimeoutId);
       this.invalidateBoundStatesTimeoutId = null;

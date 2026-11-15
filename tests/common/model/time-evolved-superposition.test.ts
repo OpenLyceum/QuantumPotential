@@ -52,6 +52,7 @@ it("returns the cached frame for the same time and recomputes when time, configu
   expect(rephased!.realPart).not.toEqual(later!.realPart);
 
   model.wellWidthProperty.value /= 2;
+  model.flushBoundStateInvalidation();
   superpose(model, 0, 1, Math.PI / 2);
   const narrower = model.getTimeEvolvedSuperposition(2e-15);
   expect(narrower).not.toBe(rephased);

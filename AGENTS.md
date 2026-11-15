@@ -94,6 +94,9 @@ Educator physics: [`doc/model.md`](doc/model.md). Architecture: [`doc/implementa
 - **Indexed reads use `defined()`.** `noUncheckedIndexedAccess` makes `array[i]` be `T | undefined`.
   `src/common/utils/defined.ts` throws when the value is missing. Non-null assertions are lint errors
   in `src/`; `tests/**` keeps the template override that allows them.
+- **Bound-state invalidation is debounced on `stepTimer` (50 ms)** so fuzzBoard / rapid drags cannot
+  re-solve every frame. In unit tests call `model.flushBoundStateInvalidation()` after changing
+  parameters before `getBoundStates` / `getPotentialEnergy` — there is no sim step to fire the timer.
 
 ### Parameter controls
 

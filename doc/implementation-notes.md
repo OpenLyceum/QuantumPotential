@@ -69,8 +69,11 @@ the screen's own values. The ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_N
 `boundStateResult` is `undefined` when stale, `null` when a solve found nothing, and a `BoundStateResult`
 otherwise. Each subclass calls `setupCacheInvalidation()` at the end of its constructor. It lazily links
 every parameter Property to `invalidateBoundStates()`, which clears the cache and increments
-`potentialRevisionProperty`. Every public query (`getBoundStates`, `getEnergyLevels`,
-`getWavefunctionInNmUnits`, …) solves on demand, so a burst of parameter changes costs one solve.
+`potentialRevisionProperty` after a 50 ms `stepTimer` debounce (so fuzz / rapid slider motion cannot
+re-solve every animation frame). Unit tests have no sim loop, so they must call
+`flushBoundStateInvalidation()` after changing parameters before querying. Every public query
+(`getBoundStates`, `getEnergyLevels`, `getWavefunctionInNmUnits`, …) solves on demand once the cache is
+cleared, so a settled burst of parameter changes costs one solve.
 
 Charts and handles listen to `potentialRevisionProperty` through `CoalescedUpdate`, which runs one refresh
 in a microtask after all the synchronous notifications of a change.

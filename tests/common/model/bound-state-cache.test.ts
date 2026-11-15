@@ -30,6 +30,7 @@ describe("bound-state cache", () => {
 
     const revision = model.potentialRevisionProperty.value;
     model.wellWidthProperty.value += 0.1;
+    model.flushBoundStateInvalidation();
     expect(model.potentialRevisionProperty.value).toBe(revision + 1);
     expect(model.getBoundStates()).toBeNull();
     expect(model.solves).toBe(2);
