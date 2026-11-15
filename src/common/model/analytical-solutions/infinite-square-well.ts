@@ -34,7 +34,7 @@ import { AnalyticalSolution } from "./AnalyticalSolution.ts";
  * @param wellWidth - Width of the well (L) in meters
  * @returns Potential function V(x) in Joules
  */
-export function createInfiniteWellPotential(wellWidth: number): PotentialFunction {
+function createInfiniteWellPotential(wellWidth: number): PotentialFunction {
   const halfWidth = wellWidth / 2;
   return (x: number) => {
     if (x >= -halfWidth && x <= halfWidth) {
@@ -58,7 +58,7 @@ export function createInfiniteWellPotential(wellWidth: number): PotentialFunctio
  * @param xGrid - Array of x positions in meters
  * @returns Array of normalized classical probability density values (in 1/meters)
  */
-export function calculateInfiniteWellClassicalProbability(
+function calculateInfiniteWellClassicalProbability(
   wellWidth: number,
   _energy: number,
   _mass: number,
@@ -90,10 +90,7 @@ export function calculateInfiniteWellClassicalProbability(
  * @param _energy - Energy of the particle in Joules (unused for infinite well)
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateInfiniteWellTurningPoints(
-  wellWidth: number,
-  _energy: number,
-): { left: number; right: number } {
+function calculateInfiniteWellTurningPoints(wellWidth: number, _energy: number): { left: number; right: number } {
   const halfWidth = wellWidth / 2;
   return {
     left: -halfWidth,
@@ -112,7 +109,7 @@ export function calculateInfiniteWellTurningPoints(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateInfiniteWellWavefunctionFirstDerivative(
+function calculateInfiniteWellWavefunctionFirstDerivative(
   wellWidth: number,
   stateIndex: number,
   xGrid: number[],
@@ -154,7 +151,7 @@ export function calculateInfiniteWellWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateInfiniteWellWavefunctionSecondDerivative(
+function calculateInfiniteWellWavefunctionSecondDerivative(
   wellWidth: number,
   stateIndex: number,
   xGrid: number[],
@@ -198,7 +195,7 @@ export function calculateInfiniteWellWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateInfiniteWellWavefunctionMinMax(
+function calculateInfiniteWellWavefunctionMinMax(
   wellWidth: number,
   stateIndex: number,
   xMin: number,

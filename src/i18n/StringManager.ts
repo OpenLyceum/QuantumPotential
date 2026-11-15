@@ -23,7 +23,7 @@ void (stringsEn satisfies typeof stringsEs);
 /**
  * Manages all localized strings for the simulation
  */
-export class StringManager {
+class StringManager {
   // The cached singleton instance
   private static instance: StringManager;
 

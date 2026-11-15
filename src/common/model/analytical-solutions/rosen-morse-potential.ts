@@ -274,7 +274,7 @@ export function createRosenMorsePotential(
  * On a side where E lies above the asymptote the particle is not reflected; that side's point is
  * reported at the edge of the search range (±40a).
  */
-export function calculateRosenMorsePotentialTurningPoints(
+function calculateRosenMorsePotentialTurningPoints(
   potentialDepth: number,
   barrierHeight: number,
   wellWidth: number,
@@ -327,7 +327,7 @@ function derivativeStep(wellWidth: number): number {
 /**
  * dψ_n/dx (1/m^(3/2)) at each x (m), by central differences of the exact ψ_n.
  */
-export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
+function calculateRosenMorsePotentialWavefunctionFirstDerivative(
   potentialDepth: number,
   barrierHeight: number,
   wellWidth: number,
@@ -349,7 +349,7 @@ export function calculateRosenMorsePotentialWavefunctionFirstDerivative(
 /**
  * d²ψ_n/dx² (1/m^(5/2)) at each x (m), by central differences of the exact ψ_n.
  */
-export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
+function calculateRosenMorsePotentialWavefunctionSecondDerivative(
   potentialDepth: number,
   barrierHeight: number,
   wellWidth: number,
@@ -373,7 +373,7 @@ export function calculateRosenMorsePotentialWavefunctionSecondDerivative(
 /**
  * Minimum and maximum of ψ_n on [xMin, xMax], and the positions of its interior extrema.
  */
-export function calculateRosenMorsePotentialWavefunctionMinMax(
+function calculateRosenMorsePotentialWavefunctionMinMax(
   potentialDepth: number,
   barrierHeight: number,
   wellWidth: number,

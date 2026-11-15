@@ -22,7 +22,7 @@ import "./brand.js";
 import { onReadyToLaunch, PreferencesModel, Sim } from "scenerystack/sim";
 import { Tandem } from "scenerystack/tandem";
 import { NumericalMethod } from "./common/model/NumericalMethod.js";
-import Schrodinger1DSolver from "./common/model/Schrodinger1DSolver.js";
+import { Schrodinger1DSolver } from "./common/model/Schrodinger1DSolver.js";
 import Logger from "./common/utils/Logger.js";
 import stringManager from "./i18n/StringManager.js";
 import { IntroScreen } from "./intro/IntroScreen.js";

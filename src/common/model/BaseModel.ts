@@ -14,7 +14,7 @@ import { createProjectedWavePacket, isSpatialPresetType } from "./LocalizedWaveP
 import type { NumericalMethod } from "./NumericalMethod.js";
 import { type BoundStateResult, PotentialType } from "./PotentialFunction.js";
 import QuantumConstants from "./QuantumConstants.js";
-import Schrodinger1DSolver from "./Schrodinger1DSolver.js";
+import { Schrodinger1DSolver } from "./Schrodinger1DSolver.js";
 import { type SuperpositionConfig, SuperpositionType } from "./SuperpositionType.js";
 import { computeWavenumberTransform, type WavenumberTransform } from "./WavenumberTransform.js";
 

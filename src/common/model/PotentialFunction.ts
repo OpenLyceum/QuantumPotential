@@ -42,7 +42,7 @@ export type SingleWellParameters =
   | { type: typeof PotentialType.COULOMB_1D; coulombStrength: number }
   | { type: typeof PotentialType.TRIANGULAR; wellDepth: number; wellWidth: number; energyOffset: number };
 
-export type MultiWellParameters =
+type MultiWellParameters =
   | {
       type: typeof PotentialType.DOUBLE_SQUARE_WELL;
       wellWidth: number;
@@ -99,7 +99,7 @@ export type GridConfig = {
 /**
  * Valid solver method identifiers
  */
-export type SolverMethod = "analytical" | "numerov" | "fgh";
+type SolverMethod = "analytical" | "numerov" | "fgh";
 
 /**
  * Result from solving the Schrödinger equation
@@ -126,5 +126,3 @@ export type EnergyOnlyResult = {
 };
 
 QuantumPotentialNamespace.register("PotentialFunction", { PotentialType });
-
-export type { PotentialFunction as default };

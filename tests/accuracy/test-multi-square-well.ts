@@ -30,7 +30,7 @@
 
 import { solveFiniteSquareWell, solveMultiSquareWell } from "../../src/common/model/analytical-solutions/index.ts";
 import QuantumConstants from "../../src/common/model/QuantumConstants.ts";
-import Schrodinger1DSolver from "../../src/common/model/Schrodinger1DSolver.ts";
+import { Schrodinger1DSolver } from "../../src/common/model/Schrodinger1DSolver.ts";
 
 // Physical constants
 const { HBAR, ELECTRON_MASS, EV_TO_JOULES, NM_TO_M } = QuantumConstants;

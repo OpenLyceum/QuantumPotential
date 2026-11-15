@@ -50,7 +50,7 @@ import { findRootHybrid } from "./root-finding-utils.ts";
  * @param wellDepth - Depth of the well (V₀) in Joules (positive value)
  * @returns Potential function V(x) in Joules
  */
-export function createFiniteWellPotential(wellWidth: number, wellDepth: number): PotentialFunction {
+function createFiniteWellPotential(wellWidth: number, wellDepth: number): PotentialFunction {
   const halfWidth = wellWidth / 2;
   return (x: number) => {
     if (Math.abs(x) <= halfWidth) {
@@ -75,7 +75,7 @@ export function createFiniteWellPotential(wellWidth: number, wellDepth: number):
  * @param xGrid - Array of x positions in meters
  * @returns Array of normalized classical probability density values (in 1/meters)
  */
-export function calculateFiniteWellClassicalProbability(
+function calculateFiniteWellClassicalProbability(
   wellWidth: number,
   wellDepth: number,
   energy: number,
@@ -109,7 +109,7 @@ export function calculateFiniteWellClassicalProbability(
  * @param energy - Energy of the particle in Joules (should be -V₀ < E < 0 for bound states)
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateFiniteWellTurningPoints(
+function calculateFiniteWellTurningPoints(
   wellWidth: number,
   _wellDepth: number,
   _energy: number,
@@ -147,7 +147,7 @@ export function calculateFiniteWellTurningPoints(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateFiniteWellWavefunctionFirstDerivative(
+function calculateFiniteWellWavefunctionFirstDerivative(
   wellWidth: number,
   wellDepth: number,
   mass: number,
@@ -237,7 +237,7 @@ export function calculateFiniteWellWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateFiniteWellWavefunctionSecondDerivative(
+function calculateFiniteWellWavefunctionSecondDerivative(
   wellWidth: number,
   wellDepth: number,
   mass: number,
@@ -321,7 +321,7 @@ export function calculateFiniteWellWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateFiniteWellWavefunctionMinMax(
+function calculateFiniteWellWavefunctionMinMax(
   wellWidth: number,
   wellDepth: number,
   mass: number,

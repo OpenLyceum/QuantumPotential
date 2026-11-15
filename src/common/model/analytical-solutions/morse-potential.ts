@@ -247,7 +247,7 @@ export function solveMorsePotential(
  * @param equilibriumPosition - Equilibrium position x_e in meters
  * @returns Potential function V(x) in Joules
  */
-export function createMorsePotential(
+function createMorsePotential(
   dissociationEnergy: number,
   wellWidth: number,
   equilibriumPosition: number,
@@ -272,7 +272,7 @@ export function createMorsePotential(
  * @param energy - Energy of the particle in Joules
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateMorsePotentialTurningPoints(
+function calculateMorsePotentialTurningPoints(
   dissociationEnergy: number,
   wellWidth: number,
   equilibriumPosition: number,
@@ -346,7 +346,7 @@ function computeMorseNormalization(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateMorsePotentialWavefunctionFirstDerivative(
+function calculateMorsePotentialWavefunctionFirstDerivative(
   dissociationEnergy: number,
   wellWidth: number,
   equilibriumPosition: number,
@@ -402,7 +402,7 @@ export function calculateMorsePotentialWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateMorsePotentialWavefunctionSecondDerivative(
+function calculateMorsePotentialWavefunctionSecondDerivative(
   dissociationEnergy: number,
   wellWidth: number,
   equilibriumPosition: number,
@@ -465,7 +465,7 @@ export function calculateMorsePotentialWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateMorsePotentialWavefunctionMinMax(
+function calculateMorsePotentialWavefunctionMinMax(
   dissociationEnergy: number,
   wellWidth: number,
   equilibriumPosition: number,

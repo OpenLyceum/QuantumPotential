@@ -24,7 +24,10 @@ export const FLAT_PANEL_PUSH_BUTTON_OPTIONS = {
 /** @public */
 export const FLAT_RESET_ALL_BUTTON_OPTIONS = { ...FLAT_BUTTON_APPEARANCE_OPTIONS } as const;
 
-export const FLAT_INFO_BUTTON_OPTIONS = FLAT_BUTTON_APPEARANCE_OPTIONS;
+/** @public */
+export const FLAT_INFO_BUTTON_OPTIONS = {
+  buttonAppearanceStrategy: ButtonNode.FlatAppearanceStrategy,
+} as const;
 
 /** @public */
 export const FLAT_PLAY_PAUSE_STEP_BUTTON_OPTIONS = {

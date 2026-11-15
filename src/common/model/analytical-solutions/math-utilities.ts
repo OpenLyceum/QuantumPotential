@@ -1,4 +1,3 @@
-import { defined } from "../../utils/defined.ts";
 /**
  * Mathematical utility functions for analytical solutions.
  * These are used by various potential solvers for special functions and polynomials.
@@ -16,32 +15,6 @@ export function factorial(n: number): number {
     result *= i;
   }
   return result;
-}
-
-/**
- * Calculate the Hermite polynomial H_n(x) using recurrence relation.
- * H_0(x) = 1
- * H_1(x) = 2x
- * H_(n+1)(x) = 2x*H_n(x) - 2n*H_(n-1)(x)
- */
-export function hermitePolynomial(n: number, x: number): number {
-  if (n === 0) {
-    return 1;
-  }
-  if (n === 1) {
-    return 2 * x;
-  }
-
-  let HPrev = 1;
-  let HCurr = 2 * x;
-
-  for (let i = 1; i < n; i++) {
-    const HNext = 2 * x * HCurr - 2 * i * HPrev;
-    HPrev = HCurr;
-    HCurr = HNext;
-  }
-
-  return HCurr;
 }
 
 /**
@@ -140,43 +113,6 @@ export function jacobiPolynomial(n: number, alpha: number, beta: number, x: numb
   }
 
   return PCurr;
-}
-
-/**
- * Gamma function using Lanczos approximation for high accuracy.
- * This provides ~15 digits of precision for positive real arguments.
- */
-export function gamma(n: number): number {
-  // Handle special cases
-  if (n <= 0 && n === Math.floor(n)) {
-    return Infinity; // Poles at non-positive integers
-  }
-
-  // For small positive integers, use factorial
-  if (n === Math.floor(n) && n > 0 && n <= 20) {
-    return factorial(n - 1);
-  }
-
-  // Lanczos approximation coefficients (g=7, n=9)
-  const g = 7;
-  const coefficients = [
-    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
-    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
-  ];
-
-  // Use reflection formula for n < 0.5
-  if (n < 0.5) {
-    return Math.PI / (Math.sin(Math.PI * n) * gamma(1 - n));
-  }
-
-  const x = n - 1;
-  let a = defined(coefficients[0]);
-  for (let i = 1; i < coefficients.length; i++) {
-    a += defined(coefficients[i]) / (x + i);
-  }
-
-  const t = x + g + 0.5;
-  return Math.sqrt(2 * Math.PI) * t ** (x + 0.5) * Math.exp(-t) * a;
 }
 
 /**

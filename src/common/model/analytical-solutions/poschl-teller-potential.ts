@@ -218,7 +218,7 @@ export function solvePoschlTellerPotential(
  * @param wellWidth - Width parameter a in meters
  * @returns Potential function V(x) in Joules
  */
-export function createPoschlTellerPotential(potentialDepth: number, wellWidth: number): (x: number) => number {
+function createPoschlTellerPotential(potentialDepth: number, wellWidth: number): (x: number) => number {
   const V0 = potentialDepth;
   const a = wellWidth;
 
@@ -237,7 +237,7 @@ export function createPoschlTellerPotential(potentialDepth: number, wellWidth: n
  * @param energy - Energy of the particle in Joules
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculatePoschlTellerTurningPoints(
+function calculatePoschlTellerTurningPoints(
   potentialDepth: number,
   wellWidth: number,
   energy: number,
@@ -317,7 +317,7 @@ function computePoschlTellerNormalization(
   return 1 / Math.sqrt(normSq);
 }
 
-export function calculatePoschlTellerWavefunctionFirstDerivative(
+function calculatePoschlTellerWavefunctionFirstDerivative(
   potentialDepth: number,
   wellWidth: number,
   mass: number,
@@ -386,7 +386,7 @@ export function calculatePoschlTellerWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculatePoschlTellerWavefunctionSecondDerivative(
+function calculatePoschlTellerWavefunctionSecondDerivative(
   potentialDepth: number,
   wellWidth: number,
   mass: number,
@@ -446,7 +446,7 @@ export function calculatePoschlTellerWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculatePoschlTellerWavefunctionMinMax(
+function calculatePoschlTellerWavefunctionMinMax(
   potentialDepth: number,
   wellWidth: number,
   mass: number,

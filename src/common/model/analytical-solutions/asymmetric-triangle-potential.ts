@@ -183,7 +183,7 @@ export function solveAsymmetricTrianglePotential(
  * @param slope - Slope parameter F in Joules/meter (field strength)
  * @returns Potential function V(x) in Joules
  */
-export function createAsymmetricTrianglePotential(slope: number): (x: number) => number {
+function createAsymmetricTrianglePotential(slope: number): (x: number) => number {
   const F = slope;
 
   return (x: number) => {
@@ -204,10 +204,7 @@ export function createAsymmetricTrianglePotential(slope: number): (x: number) =>
  * @param energy - Energy of the particle in Joules
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateAsymmetricTriangleTurningPoints(
-  slope: number,
-  energy: number,
-): { left: number; right: number } {
+function calculateAsymmetricTriangleTurningPoints(slope: number, energy: number): { left: number; right: number } {
   const F = slope;
 
   // Classical turning point where E = F·x => x = E/F
@@ -268,7 +265,7 @@ function computeAsymmetricTriangleNormalization(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateAsymmetricTriangleWavefunctionFirstDerivative(
+function calculateAsymmetricTriangleWavefunctionFirstDerivative(
   slope: number,
   mass: number,
   energy: number,
@@ -321,7 +318,7 @@ export function calculateAsymmetricTriangleWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateAsymmetricTriangleWavefunctionSecondDerivative(
+function calculateAsymmetricTriangleWavefunctionSecondDerivative(
   slope: number,
   mass: number,
   energy: number,
@@ -378,7 +375,7 @@ export function calculateAsymmetricTriangleWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateAsymmetricTriangleWavefunctionMinMax(
+function calculateAsymmetricTriangleWavefunctionMinMax(
   slope: number,
   mass: number,
   stateIndex: number,

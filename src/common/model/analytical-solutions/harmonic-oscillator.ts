@@ -44,7 +44,7 @@ import { hermiteFunctions } from "./math-utilities.ts";
  * @param springConstant - Spring constant k in N/m
  * @returns Potential function V(x) in Joules
  */
-export function createHarmonicOscillatorPotential(springConstant: number): PotentialFunction {
+function createHarmonicOscillatorPotential(springConstant: number): PotentialFunction {
   return (x: number) => {
     return 0.5 * springConstant * x * x;
   };
@@ -58,7 +58,7 @@ export function createHarmonicOscillatorPotential(springConstant: number): Poten
  * @param energy - Energy of the particle in Joules
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateHarmonicOscillatorTurningPoints(
+function calculateHarmonicOscillatorTurningPoints(
   springConstant: number,
   energy: number,
 ): { left: number; right: number } {
@@ -83,7 +83,7 @@ export function calculateHarmonicOscillatorTurningPoints(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
+function calculateHarmonicOscillatorWavefunctionFirstDerivative(
   springConstant: number,
   mass: number,
   stateIndex: number,
@@ -119,7 +119,7 @@ export function calculateHarmonicOscillatorWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
+function calculateHarmonicOscillatorWavefunctionSecondDerivative(
   springConstant: number,
   mass: number,
   stateIndex: number,
@@ -154,7 +154,7 @@ export function calculateHarmonicOscillatorWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateHarmonicOscillatorWavefunctionMinMax(
+function calculateHarmonicOscillatorWavefunctionMinMax(
   springConstant: number,
   mass: number,
   stateIndex: number,

@@ -18,5 +18,3 @@ export const NumericalMethod = {
 export type NumericalMethod = (typeof NumericalMethod)[keyof typeof NumericalMethod];
 
 QuantumPotentialNamespace.register("NumericalMethod", NumericalMethod);
-
-export default NumericalMethod;

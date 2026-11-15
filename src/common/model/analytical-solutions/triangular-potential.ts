@@ -466,7 +466,7 @@ export function solveTriangularPotential(
  * @param offset - Energy offset/minimum of the well (Joules)
  * @returns Potential function V(x) in Joules
  */
-export function createTriangularPotential(height: number, width: number, offset: number): (x: number) => number {
+function createTriangularPotential(height: number, width: number, offset: number): (x: number) => number {
   const F = height / width;
   const V0 = height + offset;
 
@@ -585,7 +585,7 @@ function computeTriangularPotentialNormalization(
  * @param energy - Energy of the particle in Joules
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateTriangularPotentialTurningPoints(
+function calculateTriangularPotentialTurningPoints(
   height: number,
   width: number,
   offset: number,
@@ -614,7 +614,7 @@ export function calculateTriangularPotentialTurningPoints(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateTriangularPotentialWavefunctionFirstDerivative(
+function calculateTriangularPotentialWavefunctionFirstDerivative(
   height: number,
   width: number,
   offset: number,
@@ -732,7 +732,7 @@ export function calculateTriangularPotentialWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateTriangularPotentialWavefunctionSecondDerivative(
+function calculateTriangularPotentialWavefunctionSecondDerivative(
   height: number,
   width: number,
   offset: number,
@@ -852,7 +852,7 @@ export function calculateTriangularPotentialWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateTriangularPotentialWavefunctionMinMax(
+function calculateTriangularPotentialWavefunctionMinMax(
   height: number,
   width: number,
   offset: number,

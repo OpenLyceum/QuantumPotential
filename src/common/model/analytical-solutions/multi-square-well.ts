@@ -22,7 +22,7 @@ import { defined } from "../../utils/defined.ts";
 import Logger from "../../utils/Logger.ts";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.ts";
-import type Schrodinger1DSolver from "../Schrodinger1DSolver.js";
+import type { Schrodinger1DSolver } from "../Schrodinger1DSolver.js";
 
 /**
  * Create a multi-square well potential function.
@@ -140,44 +140,4 @@ export function withElectricField(potential: (x: number) => number, electricFiel
   }
   const slope = QuantumConstants.ELEMENTARY_CHARGE * electricField; // J/m
   return (x: number) => potential(x) + slope * x;
-}
-
-/**
- * Get the geometry information for visualization.
- * Returns the boundaries of wells and barriers for plotting.
- *
- * @param numberOfWells - Number of wells
- * @param wellWidth - Width of each well in meters
- * @param wellSeparation - Width of barriers between wells in meters
- * @returns Object with well and barrier boundaries
- */
-export function getMultiSquareWellGeometry(
-  numberOfWells: number,
-  wellWidth: number,
-  wellSeparation: number,
-): {
-  wells: Array<{ left: number; right: number }>;
-  barriers: Array<{ left: number; right: number }>;
-  totalWidth: number;
-} {
-  const totalWidth = numberOfWells * wellWidth + (numberOfWells - 1) * wellSeparation;
-  const startX = -totalWidth / 2;
-
-  const wells: Array<{ left: number; right: number }> = [];
-  const barriers: Array<{ left: number; right: number }> = [];
-
-  for (let i = 0; i < numberOfWells; i++) {
-    const left = startX + i * (wellWidth + wellSeparation);
-    const right = left + wellWidth;
-    wells.push({ left, right });
-
-    // Add barrier after this well (if not the last well)
-    if (i < numberOfWells - 1) {
-      const barrierLeft = right;
-      const barrierRight = barrierLeft + wellSeparation;
-      barriers.push({ left: barrierLeft, right: barrierRight });
-    }
-  }
-
-  return { wells, barriers, totalWidth };
 }

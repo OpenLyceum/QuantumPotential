@@ -1,4 +1,5 @@
 import { defined } from "../utils/defined.ts";
+
 /**
  * Utilities for standardizing wavefunction parity/sign across different solvers.
  *
@@ -15,7 +16,7 @@ import { defined } from "../utils/defined.ts";
  * @param psi - The wavefunction values
  * @returns "even" if even number of nodes, "odd" if odd number of nodes
  */
-export function detectParity(psi: number[]): "even" | "odd" {
+function detectParity(psi: number[]): "even" | "odd" {
   let nodeCount = 0;
 
   // Count sign changes (zero-crossings)
@@ -45,7 +46,7 @@ export function detectParity(psi: number[]): "even" | "odd" {
  * @param parity - Optional parity hint ("even" or "odd"). If not provided, will be auto-detected.
  * @returns The standardized wavefunction (may be negated)
  */
-export function standardizeWavefunctionSign(psi: number[], xGrid: number[], parity?: "even" | "odd"): number[] {
+function standardizeWavefunctionSign(psi: number[], xGrid: number[], parity?: "even" | "odd"): number[] {
   // Auto-detect parity if not provided
   const detectedParity = parity || detectParity(psi);
 

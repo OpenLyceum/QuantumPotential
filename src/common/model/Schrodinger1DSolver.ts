@@ -335,5 +335,3 @@ export class Schrodinger1DSolver {
 }
 
 QuantumPotentialNamespace.register("Schrodinger1DSolver", Schrodinger1DSolver);
-
-export default Schrodinger1DSolver;

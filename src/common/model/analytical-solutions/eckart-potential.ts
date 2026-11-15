@@ -23,7 +23,6 @@
  * not the spectrum of this potential; it reported bound states below the minimum of V.)
  */
 
-import { defined } from "../../utils/defined.ts";
 import { NoBoundStatesError } from "../NoBoundStatesError.ts";
 import type { BoundStateResult, GridConfig, PotentialFunction } from "../PotentialFunction.js";
 import { AnalyticalSolution } from "./AnalyticalSolution.ts";
@@ -154,36 +153,4 @@ export function createEckartPotential(
     const z = 1 / (1 + Math.exp(x / wellWidth));
     return potentialDepth * z * z - barrierHeight * z;
   };
-}
-
-/**
- * Classical turning points for energy E. (The mass does not enter; any positive value will do.)
- */
-export function calculateEckartPotentialTurningPoints(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  energy: number,
-): { left: number; right: number } {
-  const solution = new EckartPotentialSolution(potentialDepth, barrierHeight, wellWidth, 1);
-  return defined(solution.calculateTurningPoints(energy)[0]);
-}
-
-/**
- * d²ψ_n/dx² (1/m^(5/2)) at each x (m).
- */
-export function calculateEckartPotentialWavefunctionSecondDerivative(
-  potentialDepth: number,
-  barrierHeight: number,
-  wellWidth: number,
-  mass: number,
-  stateIndex: number,
-  xGrid: number[],
-): number[] {
-  return new EckartPotentialSolution(
-    potentialDepth,
-    barrierHeight,
-    wellWidth,
-    mass,
-  ).calculateWavefunctionSecondDerivative(stateIndex, xGrid);
 }

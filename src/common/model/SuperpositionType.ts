@@ -46,5 +46,3 @@ export type SuperpositionConfig = {
 };
 
 QuantumPotentialNamespace.register("SuperpositionType", { SuperpositionType });
-
-export default SuperpositionType;

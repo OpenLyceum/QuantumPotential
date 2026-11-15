@@ -5,7 +5,7 @@
  * This is the only module in src/ allowed to touch `console` — everything else logs through it.
  */
 
-export const LogLevel = {
+const LogLevel = {
   DEBUG: 0,
   INFO: 1,
   WARN: 2,
@@ -13,11 +13,11 @@ export const LogLevel = {
   NONE: 4,
 } as const;
 
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
 let currentLevel: LogLevel = LogLevel.INFO;
 
-export const Logger = {
+const Logger = {
   /**
    * Set the minimum log level. Messages below this level won't be displayed.
    */

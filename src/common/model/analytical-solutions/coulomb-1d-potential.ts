@@ -162,7 +162,7 @@ export function solveCoulomb1DPotential(
  * @param coulombStrength - Coulomb strength parameter α in J·m
  * @returns Potential function V(x) in Joules
  */
-export function createCoulomb1DPotential(coulombStrength: number): (x: number) => number {
+function createCoulomb1DPotential(coulombStrength: number): (x: number) => number {
   const alpha = coulombStrength;
 
   return (x: number) => {
@@ -181,10 +181,7 @@ export function createCoulomb1DPotential(coulombStrength: number): (x: number) =
  * @param energy - Energy of the particle in Joules (negative for bound states)
  * @returns Object with left and right turning point positions (in meters)
  */
-export function calculateCoulomb1DTurningPoints(
-  coulombStrength: number,
-  energy: number,
-): { left: number; right: number } {
+function calculateCoulomb1DTurningPoints(coulombStrength: number, energy: number): { left: number; right: number } {
   const alpha = coulombStrength;
 
   // For bound states (E < 0): E = -α/|x| => |x| = -α/E
@@ -206,7 +203,7 @@ export function calculateCoulomb1DTurningPoints(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of first derivative values
  */
-export function calculateCoulomb1DWavefunctionFirstDerivative(
+function calculateCoulomb1DWavefunctionFirstDerivative(
   coulombStrength: number,
   mass: number,
   stateIndex: number,
@@ -266,7 +263,7 @@ export function calculateCoulomb1DWavefunctionFirstDerivative(
  * @param xGrid - Array of x positions in meters where derivatives should be evaluated
  * @returns Array of second derivative values
  */
-export function calculateCoulomb1DWavefunctionSecondDerivative(
+function calculateCoulomb1DWavefunctionSecondDerivative(
   coulombStrength: number,
   mass: number,
   stateIndex: number,
@@ -329,7 +326,7 @@ export function calculateCoulomb1DWavefunctionSecondDerivative(
  * @param numPoints - Number of points to sample (default: 1000)
  * @returns Object containing min/max values and x-positions of all extrema
  */
-export function calculateCoulomb1DWavefunctionMinMax(
+function calculateCoulomb1DWavefunctionMinMax(
   coulombStrength: number,
   mass: number,
   stateIndex: number,
