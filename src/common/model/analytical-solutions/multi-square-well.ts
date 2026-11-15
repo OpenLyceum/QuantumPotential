@@ -22,7 +22,16 @@ import { defined } from "../../utils/defined.ts";
 import Logger from "../../utils/Logger.ts";
 import type { BoundStateResult, GridConfig } from "../PotentialFunction.js";
 import QuantumConstants from "../QuantumConstants.ts";
-import type { Schrodinger1DSolver } from "../Schrodinger1DSolver.js";
+
+/** Minimal solver surface used by multi-square-well (avoids cycle with Schrodinger1DSolver). */
+type NumericalBoundSolver = {
+  solveNumerical(
+    potential: (x: number) => number,
+    mass: number,
+    numStates: number,
+    gridConfig: GridConfig,
+  ): BoundStateResult;
+};
 
 /**
  * Create a multi-square well potential function.
@@ -98,7 +107,7 @@ export function solveMultiSquareWell(
   mass: number,
   numStates: number,
   gridConfig: GridConfig,
-  solver: Schrodinger1DSolver, // Numerical solver instance
+  solver: NumericalBoundSolver, // Numerical solver instance
   electricField = 0,
 ): BoundStateResult {
   const potential = withElectricField(

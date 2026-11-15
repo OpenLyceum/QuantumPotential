@@ -165,3 +165,4 @@ deferred fleet-wide). Full convention:
 ## Development notes
 
 Architecture and design decisions: `doc/implementation-notes.md`.
+- `check:architecture` / `no-common-to-screen`: intentional — shared `common/view` and `ScreenModels` are polymorphic over the four well-screen models/view-states. Extracting interfaces for every screen surface would be a large redesign with little runtime benefit; keep the union imports until a shared `WellScreenModel` API is introduced.
