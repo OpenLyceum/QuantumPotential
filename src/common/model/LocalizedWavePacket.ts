@@ -56,6 +56,7 @@ function projectTarget(
   };
 }
 
+/** @internal Exported for unit tests; not part of the application API. */
 export function createLocalizedWavePacket(
   states: BoundStateResult,
   positionNm: number,
@@ -68,7 +69,10 @@ export function createLocalizedWavePacket(
   });
 }
 
-/** Momentum is measured in ℏ/nm, so its numeric value is the carrier wave number in rad/nm. */
+/**
+ * Momentum is measured in ℏ/nm, so its numeric value is the carrier wave number in rad/nm.
+ * @internal Exported for unit tests; not part of the application API.
+ */
 export function createMovingWavePacket(
   states: BoundStateResult,
   positionNm: number,
@@ -86,6 +90,7 @@ export function createMovingWavePacket(
   );
 }
 
+/** @internal Exported for unit tests; not part of the application API. */
 export function createTwoLobedWavePacket(
   states: BoundStateResult,
   firstPositionNm: number,

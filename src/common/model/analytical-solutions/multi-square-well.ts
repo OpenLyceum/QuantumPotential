@@ -41,6 +41,7 @@ type NumericalBoundSolver = {
  * @param wellDepth - Depth/height of barriers in Joules (positive value)
  * @param wellSeparation - Width of barriers between wells in meters
  * @returns Potential function V(x) in Joules
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function createMultiSquareWellPotential(
   numberOfWells: number,
@@ -142,6 +143,7 @@ export function solveMultiSquareWell(
  *
  * @param potential - Potential function V(x) in Joules (x in meters)
  * @param electricField - Electric field in V/m
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function withElectricField(potential: (x: number) => number, electricField: number): (x: number) => number {
   if (electricField === 0) {

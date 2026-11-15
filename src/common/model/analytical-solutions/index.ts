@@ -26,10 +26,12 @@ export { AsymmetricTrianglePotentialSolution } from "./asymmetric-triangle-poten
 export { Coulomb1DPotentialSolution } from "./coulomb-1d-potential.ts";
 export { solveDoubleSquareWellAnalytical } from "./double-square-well.ts";
 export { EckartPotentialSolution } from "./eckart-potential.ts";
+/** @internal Exported for unit tests; not part of the application API. */
 export { FiniteSquareWellSolution, solveFiniteSquareWell } from "./finite-square-well.ts";
 export { HarmonicOscillatorSolution } from "./harmonic-oscillator.ts";
 export { InfiniteSquareWellSolution } from "./infinite-square-well.ts";
 export { MorsePotentialSolution } from "./morse-potential.ts";
+/** @internal Exported for unit tests; not part of the application API. */
 export { solveMultiSquareWell } from "./multi-square-well.ts";
 export { PoschlTellerPotentialSolution } from "./poschl-teller-potential.ts";
 export { RosenMorsePotentialSolution } from "./rosen-morse-potential.ts";

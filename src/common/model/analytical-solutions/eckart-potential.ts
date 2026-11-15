@@ -143,6 +143,7 @@ export function solveEckartPotential(
 
 /**
  * Create the potential function V(x) = V_0/(1 + e^(x/a))² − V_1/(1 + e^(x/a)) (Joules; x in meters).
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function createEckartPotential(
   potentialDepth: number,

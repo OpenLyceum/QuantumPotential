@@ -253,6 +253,7 @@ export function solveRosenMorsePotential(
 
 /**
  * Create the potential function V(x) = -V_0/cosh²(x/a) + V_1·tanh(x/a) (Joules; x in meters).
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function createRosenMorsePotential(
   potentialDepth: number,

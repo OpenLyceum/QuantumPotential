@@ -14,6 +14,7 @@ import { SingleWellModel } from "./SingleWellModel.js";
 /**
  * Type guard to check if a model is IntroScreenModel.
  * IntroScreenModel has a simplified display mode (no phase color).
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function isIntroModel(model: ScreenModel): model is IntroScreenModel {
   return model.screenKind === "intro";
@@ -30,6 +31,7 @@ export function isOneWellModel(model: ScreenModel): model is OneWellScreenModel 
 /**
  * Type guard to check if a model is TwoWellsScreenModel.
  * TwoWellsScreenModel has well separation but not multiple wells.
+ * @internal Exported for unit tests; not part of the application API.
  */
 export function isTwoWellsModel(model: ScreenModel): model is TwoWellsScreenModel {
   return model.screenKind === "twoWells";
