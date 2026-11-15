@@ -155,3 +155,7 @@ hand-run solver checks; see `tests/accuracy/README.md`. The test files are liste
 `npm run build` type-checks and builds with Vite; `npm run build:single` produces one self-contained
 `dist/index.html`. CI and deployment call Baton's reusable workflows (`.github/workflows/ci.yml`,
 `deploy.yml`).
+
+Shared controls depend on the model capabilities in `src/common/model/ScreenModels.ts`
+and the display contract in `src/common/view/BaseViewState.ts`. Concrete screen models
+implement those capabilities; shared code must not import concrete screen classes.

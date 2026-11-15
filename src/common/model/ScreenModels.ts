@@ -1,15 +1,24 @@
-/**
- * Union type for all screen models used in QuantumPotential.
- * This type allows components to accept any of the screen-specific models.
- */
+/** Shared capabilities consumed by charts and controls; screen implementations depend on these contracts. */
 
-import type { IntroModel } from "../../intro/model/IntroModel.js";
-import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
+import type { NumberProperty } from "scenerystack/axon";
+import type { BaseModel } from "./BaseModel.js";
+import type { SingleWellModel } from "./SingleWellModel.js";
 
-/**
- * Union type representing any screen model in the application.
- * Use this type for components that need to work with multiple screen models.
- */
-export type ScreenModel = IntroModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+export type IntroScreenModel = SingleWellModel;
+
+export interface OneWellScreenModel extends SingleWellModel {
+  readonly coherentDisplacementProperty: NumberProperty;
+  updateSuperpositionCoefficients(): void;
+}
+
+export interface TwoWellsScreenModel extends BaseModel {
+  readonly wellSeparationProperty: NumberProperty;
+}
+
+export interface ManyWellsScreenModel extends TwoWellsScreenModel {
+  readonly numberOfWellsProperty: NumberProperty;
+  readonly electricFieldProperty: NumberProperty;
+}
+
+export type SuperpositionScreenModel = OneWellScreenModel | TwoWellsScreenModel | ManyWellsScreenModel;
+export type ScreenModel = IntroScreenModel | SuperpositionScreenModel;

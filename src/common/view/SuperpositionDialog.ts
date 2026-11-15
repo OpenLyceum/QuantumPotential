@@ -20,20 +20,18 @@ import { PhetFont } from "scenerystack/scenery-phet";
 import { Dialog } from "scenerystack/sim";
 import { HSlider, RectangularPushButton } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
 import QuantumPotentialColors from "../../QuantumPotentialColors.js";
-import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "../model/LocalizedWavePacket.js";
 import { isOneWellModel } from "../model/ModelTypeGuards.js";
 import type { BoundStateResult } from "../model/PotentialFunction.js";
 import QuantumConstants from "../model/QuantumConstants.js";
+import type { SuperpositionScreenModel } from "../model/ScreenModels.js";
 import type { SuperpositionConfig } from "../model/SuperpositionType.js";
 import { SuperpositionType } from "../model/SuperpositionType.js";
 import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
 import { defined } from "../utils/defined.js";
 
-type SuperpositionModel = OneWellModel | TwoWellsModel | ManyWellsModel;
+type SuperpositionModel = SuperpositionScreenModel;
 
 export class SuperpositionDialog {
   private static readonly PAGE_SIZE = 6;

@@ -10,17 +10,13 @@ import { Node, RichText, Text, VBox } from "scenerystack/scenery";
 import { InfoButton, PhetFont, ResetAllButton } from "scenerystack/scenery-phet";
 import { Dialog, ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
 import stringManager from "../../i18n/StringManager.js";
-import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
-import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
 import QuantumPotentialColors from "../../QuantumPotentialColors.js";
-import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
-import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import type { BaseModel } from "../model/BaseModel.js";
+import type { SuperpositionScreenModel } from "../model/ScreenModels.js";
 import { FLAT_INFO_BUTTON_OPTIONS, FLAT_RESET_ALL_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
 import { QuantumPotentialAlerter } from "./accessibility/QuantumPotentialAlerter.js";
 import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
+import type { BaseViewState } from "./BaseViewState.js";
 import { CONTROL_PANEL_WIDTH, ControlPanelNode, type ControlPanelNodeOptions } from "./ControlPanelNode.js";
 import { EnergyChartNode } from "./EnergyChartNode.js";
 import { SimulationControlBar } from "./SimulationControlBar.js";
@@ -53,7 +49,7 @@ export abstract class BaseScreenView extends ScreenView {
 
   // Built on first use: its content comes from the subclass's strings, which are not needed until then
   private infoDialog: Dialog | null = null;
-  protected readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+  protected readonly model: BaseModel;
 
   // Common components (may be undefined for screens that don't use them)
   protected energyChart?: EnergyChartNode;
@@ -67,11 +63,7 @@ export abstract class BaseScreenView extends ScreenView {
   // PDOM (Parallel DOM) structure components for accessibility
   protected alerter?: QuantumPotentialAlerter;
 
-  protected constructor(
-    model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
-    screenSummaryOptions: ScreenSummaryOptions,
-    options?: ScreenViewOptions,
-  ) {
+  protected constructor(model: BaseModel, screenSummaryOptions: ScreenSummaryOptions, options?: ScreenViewOptions) {
     // Create screen summary content before calling super()
     const screenSummaryContent = BaseScreenView.createAccessibleScreenSummary(model, screenSummaryOptions);
 
@@ -156,8 +148,8 @@ export abstract class BaseScreenView extends ScreenView {
    * @param controlPanelOptions - Optional configuration for the control panels (mass control, potential types)
    */
   protected createStandardLayout(
-    model: OneWellModel | TwoWellsModel | ManyWellsModel,
-    viewState: OneWellViewState | TwoWellsViewState | ManyWellsViewState,
+    model: SuperpositionScreenModel,
+    viewState: BaseViewState,
     controlPanelOptions?: ControlPanelNodeOptions,
   ): void {
     const margin = 10;
@@ -309,10 +301,7 @@ export abstract class BaseScreenView extends ScreenView {
    * Builds the PDOM screen summary that ScreenView reads first: the screen's purpose, the controls, and a live
    * description of the current state that updates with the model and the locale.
    */
-  private static createAccessibleScreenSummary(
-    model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel,
-    options: ScreenSummaryOptions,
-  ): ScreenSummaryContent {
+  private static createAccessibleScreenSummary(model: BaseModel, options: ScreenSummaryOptions): ScreenSummaryContent {
     const summaryStrings = stringManager.getA11yStrings().screenSummary;
 
     // Live description of the current state. The locale string Properties are dependencies so the

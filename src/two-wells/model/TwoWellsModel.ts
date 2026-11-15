@@ -11,12 +11,13 @@ import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import type { WellParameters } from "../../common/model/PotentialFunction.js";
 import { type GridConfig, PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { TwoWellsScreenModel } from "../../common/model/ScreenModels.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import { defined } from "../../common/utils/defined.js";
 import Logger from "../../common/utils/Logger.js";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 
-export class TwoWellsModel extends BaseModel {
+export class TwoWellsModel extends BaseModel implements TwoWellsScreenModel {
   // ==================== CONSTANTS ====================
 
   /**

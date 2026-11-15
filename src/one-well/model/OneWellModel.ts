@@ -11,11 +11,12 @@ import { BaseModel } from "../../common/model/BaseModel.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "../../common/model/LocalizedWavePacket.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { OneWellScreenModel } from "../../common/model/ScreenModels.js";
 import { SingleWellModel } from "../../common/model/SingleWellModel.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import { defined } from "../../common/utils/defined.js";
 
-export class OneWellModel extends SingleWellModel {
+export class OneWellModel extends SingleWellModel implements OneWellScreenModel {
   // ==================== CONSTANTS ====================
 
   /** Default coherent-state displacement from the centre, in nm. */

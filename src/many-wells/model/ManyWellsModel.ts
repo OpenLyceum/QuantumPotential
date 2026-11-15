@@ -12,12 +12,13 @@ import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
 import type { WellParameters } from "../../common/model/PotentialFunction.js";
 import { PotentialType } from "../../common/model/PotentialFunction.js";
 import QuantumConstants from "../../common/model/QuantumConstants.js";
+import type { ManyWellsScreenModel } from "../../common/model/ScreenModels.js";
 import { SuperpositionType } from "../../common/model/SuperpositionType.js";
 import { defined } from "../../common/utils/defined.js";
 import Logger from "../../common/utils/Logger.js";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
 
-export class ManyWellsModel extends BaseModel {
+export class ManyWellsModel extends BaseModel implements ManyWellsScreenModel {
   // ==================== CONSTANTS ====================
 
   /**

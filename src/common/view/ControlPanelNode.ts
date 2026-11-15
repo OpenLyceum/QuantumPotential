@@ -19,20 +19,16 @@ import {
   VerticalAquaRadioButtonGroup,
 } from "scenerystack/sun";
 import stringManager from "../../i18n/StringManager.js";
-import type { ManyWellsModel } from "../../many-wells/model/ManyWellsModel.js";
-import type { ManyWellsViewState } from "../../many-wells/view/ManyWellsViewState.js";
-import type { OneWellModel } from "../../one-well/model/OneWellModel.js";
-import type { OneWellViewState } from "../../one-well/view/OneWellViewState.js";
 import QuantumPotentialColors from "../../QuantumPotentialColors.js";
-import type { TwoWellsModel } from "../../two-wells/model/TwoWellsModel.js";
-import type { TwoWellsViewState } from "../../two-wells/view/TwoWellsViewState.js";
 import { hasElectricField, isManyWellsModel } from "../model/ModelTypeGuards.js";
 import { PotentialType } from "../model/PotentialFunction.js";
+import type { SuperpositionScreenModel } from "../model/ScreenModels.js";
 import { FLAT_PANEL_PUSH_BUTTON_OPTIONS } from "../QuantumPotentialButtonOptions.js";
 import { PANEL_CHECKBOX_OPTIONS } from "../QuantumPotentialControlOptions.js";
 import { QuantumPotentialPanel } from "../QuantumPotentialPanel.js";
 import { defined } from "../utils/defined.js";
 import { QuantumPotentialDescriber } from "./accessibility/QuantumPotentialDescriber.js";
+import type { BaseViewState } from "./BaseViewState.js";
 import { phaseToReversedTwilight } from "./chart-tools/PhaseColormap.js";
 import { EnergyLevelControl } from "./EnergyLevelControl.js";
 import { PARTICLE_MASS_STEP_OPTIONS, QuantumPotentialNumberControl } from "./QuantumPotentialNumberControl.js";
@@ -76,13 +72,13 @@ export class ControlPanelNode {
   public readonly energyPanel: Node;
   public readonly graphPanel: Node;
 
-  private readonly model: OneWellModel | TwoWellsModel | ManyWellsModel;
-  private readonly viewState: OneWellViewState | TwoWellsViewState | ManyWellsViewState;
+  private readonly model: SuperpositionScreenModel;
+  private readonly viewState: BaseViewState;
   private readonly options: ResolvedControlPanelNodeOptions;
 
   public constructor(
-    model: OneWellModel | TwoWellsModel | ManyWellsModel,
-    viewState: OneWellViewState | TwoWellsViewState | ManyWellsViewState,
+    model: SuperpositionScreenModel,
+    viewState: BaseViewState,
     listBoxParent: Node,
     providedOptions?: ControlPanelNodeOptions,
   ) {

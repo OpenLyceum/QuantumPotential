@@ -24,6 +24,7 @@ Educator physics: [`doc/model.md`](doc/model.md). Architecture: [`doc/implementa
 | Layout | `BaseScreenView.createStandardLayout` (One/Two/Many Wells): QBS-style energy chart over the wave-function chart (shared x axis), energy panel + graph panel on the right, time controls below |
 | Control panels | `src/common/view/ControlPanelNode.ts` builds `energyPanel` + `graphPanel`; `src/intro/view/IntroControlPanelNode.ts` (Intro); `QuantumPotentialNumberControl` (◀ value ▶ spinner) |
 | Potential handles | `src/common/view/handles/` — `PotentialHandleNode` (drag + accessible slider), `PotentialHandlesLayer` (per-potential anchors) |
+| Shared model contracts | `src/common/model/ScreenModels.ts` — single-well, superposition and multi-well capabilities consumed by shared controls; concrete screens implement these contracts |
 | Shared UI styling | `src/common/QuantumPotentialPanel.ts`, `QuantumPotentialButtonOptions.ts`, `QuantumPotentialControlOptions.ts` |
 | A11y | `src/common/view/accessibility/` (`QuantumPotentialDescriber`, `QuantumPotentialAlerter`); screen summary in `BaseScreenView`, `src/common/view/QuantumPotentialKeyboardHelpContent.ts` |
 | Preferences | `src/preferences/` — `QuantumPotentialPreferencesModel` (auto-pause), `QuantumPotentialPreferencesNode`, `quantumPotentialQueryParameters` (`numericalMethod`, `numberOfPoints`) |
@@ -165,4 +166,3 @@ deferred fleet-wide). Full convention:
 ## Development notes
 
 Architecture and design decisions: `doc/implementation-notes.md`.
-- `check:architecture` / `no-common-to-screen`: intentional — shared `common/view` and `ScreenModels` are polymorphic over the four well-screen models/view-states. Extracting interfaces for every screen surface would be a large redesign with little runtime benefit; keep the union imports until a shared `WellScreenModel` API is introduced.

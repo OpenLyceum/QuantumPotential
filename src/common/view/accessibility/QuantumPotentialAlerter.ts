@@ -11,9 +11,6 @@ import { AriaLiveAnnouncer, Utterance, UtteranceQueue } from "scenerystack/utter
 const utteranceQueue = new UtteranceQueue(new AriaLiveAnnouncer());
 
 import stringManager from "../../../i18n/StringManager.js";
-import type { ManyWellsModel } from "../../../many-wells/model/ManyWellsModel.js";
-import type { OneWellModel } from "../../../one-well/model/OneWellModel.js";
-import type { TwoWellsModel } from "../../../two-wells/model/TwoWellsModel.js";
 import type { BaseModel } from "../../model/BaseModel.js";
 import type { PotentialType } from "../../model/PotentialFunction.js";
 import type { SuperpositionType } from "../../model/SuperpositionType.js";
@@ -22,10 +19,10 @@ import { QuantumPotentialDescriber } from "./QuantumPotentialDescriber.js";
 const a11y = stringManager.getA11yStrings();
 
 export class QuantumPotentialAlerter {
-  private readonly model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel;
+  private readonly model: BaseModel;
   private debouncedAlertTimer: number | null = null;
 
-  public constructor(model: BaseModel | OneWellModel | TwoWellsModel | ManyWellsModel) {
+  public constructor(model: BaseModel) {
     this.model = model;
     this.setupAlerts();
   }
