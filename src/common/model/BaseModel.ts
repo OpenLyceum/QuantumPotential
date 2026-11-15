@@ -3,7 +3,7 @@
  * It provides common functionality for time evolution, simulation control, and solver configuration.
  */
 
-import { NumberProperty, Property } from "scenerystack/axon";
+import { NumberProperty, Property, stepTimer, type TimerListener } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import type { TModel } from "scenerystack/joist";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
@@ -224,6 +224,9 @@ export abstract class BaseModel implements TModel {
    * Setup cache invalidation listeners for common properties.
    * Subclasses can override this to add additional invalidation listeners.
    */
+  /** Pending debounce handle for {@link invalidateBoundStates}; cleared on dispose. */
+  private invalidateBoundStatesTimeoutId: TimerListener | null = null;
+
   protected setupCacheInvalidation(): void {
     const invalidateCache = () => this.invalidateBoundStates();
 
@@ -235,11 +238,19 @@ export abstract class BaseModel implements TModel {
   }
 
   protected invalidateBoundStates(): void {
-    this.boundStateResult = undefined;
-    this.wavePacketProjection = null;
-    this.wavenumberTransforms.clear();
-    this.superpositionCache = null;
-    this.potentialRevisionProperty.value++;
+    // Debounce: fuzz / rapid slider motion would otherwise re-solve every
+    // animation frame and wedge the main thread (Playwright fuzz timeouts).
+    if (this.invalidateBoundStatesTimeoutId !== null) {
+      stepTimer.clearTimeout(this.invalidateBoundStatesTimeoutId);
+    }
+    this.invalidateBoundStatesTimeoutId = stepTimer.setTimeout(() => {
+      this.invalidateBoundStatesTimeoutId = null;
+      this.boundStateResult = undefined;
+      this.wavePacketProjection = null;
+      this.wavenumberTransforms.clear();
+      this.superpositionCache = null;
+      this.potentialRevisionProperty.value++;
+    }, 50);
   }
 
   /**
@@ -247,7 +258,10 @@ export abstract class BaseModel implements TModel {
    * garbage collected. The model currently links to no global Property; keep this in sync if one is added.
    */
   public dispose(): void {
-    // Nothing to unlink.
+    if (this.invalidateBoundStatesTimeoutId !== null) {
+      stepTimer.clearTimeout(this.invalidateBoundStatesTimeoutId);
+      this.invalidateBoundStatesTimeoutId = null;
+    }
   }
 
   /**
