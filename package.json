@@ -45,7 +45,7 @@
     "clean": "rm -rf dist",
     "prepare": "test \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$PWD\" && git config core.hooksPath .githooks || true",
     "knip": "knip",
-    "test:architecture": "node --test tests/architecture.node-test.ts",
+    "test:architecture": "node --test tests/*.node-test.ts",
     "test:accuracy": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-wavefunction-comprehensive.ts",
     "test:coulomb": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/verify-coulomb.ts",
     "test:double-well": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-double-well.ts",
