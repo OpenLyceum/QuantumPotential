@@ -18,9 +18,9 @@ import { IntroViewState } from "./IntroViewState.js";
 
 export class IntroScreenView extends BaseScreenView {
   private readonly viewState: IntroViewState;
-  private introControlPanel: IntroControlPanelNode;
-  private probabilityChart: WaveFunctionChartNode;
-  private wavenumberChart: WavenumberChartNode;
+  private readonly introControlPanel: IntroControlPanelNode;
+  private readonly probabilityChart: WaveFunctionChartNode;
+  private readonly wavenumberChart: WavenumberChartNode;
 
   public constructor(model: IntroModel, options?: ScreenViewOptions) {
     super(

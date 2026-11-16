@@ -57,9 +57,9 @@ import { airyAi } from "./math-utilities.ts";
  * Extends the AnalyticalSolution abstract base class.
  */
 export class AsymmetricTrianglePotentialSolution extends AnalyticalSolution {
-  private slope: number;
-  private wellWidth: number;
-  private mass: number;
+  private readonly slope: number;
+  private readonly wellWidth: number;
+  private readonly mass: number;
 
   constructor(slope: number, wellWidth: number, mass: number) {
     super();

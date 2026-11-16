@@ -154,7 +154,7 @@ export abstract class BaseModel implements TModel {
     config: SuperpositionConfig;
   } | null = null;
   // Wavenumber transforms of the current bound states, by state index
-  private wavenumberTransforms = new Map<number, WavenumberTransform | null>();
+  private readonly wavenumberTransforms = new Map<number, WavenumberTransform | null>();
   // ψ(x,t) for the last (bound states, superposition config, time) requested. Several views and tools ask for
   // the same frame, so this keeps it to one evaluation per frame.
   private superpositionCache: {

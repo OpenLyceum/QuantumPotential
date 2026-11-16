@@ -378,7 +378,7 @@ export class AreaMeasurementTool extends Node {
     );
   }
 
-  private getDisplayMode: () => string = () => "probabilityDensity";
+  private readonly getDisplayMode: () => string = () => "probabilityDensity";
 
   /**
    * Updates the area measurement tool visualization and calculates the probability.

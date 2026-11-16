@@ -428,9 +428,9 @@ function calculateFiniteWellWavefunctionMinMax(
 export class FiniteSquareWellSolution extends AnalyticalSolution {
   private parities: ("even" | "odd")[] = [];
 
-  private wellWidth: number;
-  private wellDepth: number;
-  private mass: number;
+  private readonly wellWidth: number;
+  private readonly wellDepth: number;
+  private readonly mass: number;
 
   constructor(wellWidth: number, wellDepth: number, mass: number) {
     super();

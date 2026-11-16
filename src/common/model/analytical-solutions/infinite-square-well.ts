@@ -262,8 +262,8 @@ function calculateInfiniteWellWavefunctionMinMax(
  * Extends the AnalyticalSolution abstract base class.
  */
 export class InfiniteSquareWellSolution extends AnalyticalSolution {
-  private wellWidth: number;
-  private mass: number;
+  private readonly wellWidth: number;
+  private readonly mass: number;
 
   constructor(wellWidth: number, mass: number) {
     super();

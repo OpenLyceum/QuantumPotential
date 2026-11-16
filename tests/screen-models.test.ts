@@ -19,7 +19,7 @@ import { ManyWellsModel } from "../src/many-wells/model/ManyWellsModel.js";
 import { OneWellModel } from "../src/one-well/model/OneWellModel.js";
 import { TwoWellsModel } from "../src/two-wells/model/TwoWellsModel.js";
 
-const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType]> = [
+const MODELS: readonly [string, () => BaseModel, PotentialType][] = [
   ["IntroModel", () => new IntroModel(), PotentialType.INFINITE_WELL],
   ["OneWellModel", () => new OneWellModel(), PotentialType.INFINITE_WELL],
   ["TwoWellsModel", () => new TwoWellsModel(), PotentialType.DOUBLE_SQUARE_WELL],

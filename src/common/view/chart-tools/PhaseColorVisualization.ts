@@ -17,7 +17,7 @@ export type PhaseColorVisualizationOptions = {
 export class PhaseColorVisualization extends Node {
   private readonly options: PhaseColorVisualizationOptions;
   private readonly container: Node;
-  private phaseColorStrips: Rectangle[] = [];
+  private readonly phaseColorStrips: Rectangle[] = [];
 
   constructor(options: PhaseColorVisualizationOptions) {
     super();

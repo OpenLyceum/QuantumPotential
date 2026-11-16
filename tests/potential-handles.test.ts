@@ -30,7 +30,7 @@ const SINGLE_WELLS = [
   PotentialType.TRIANGULAR,
 ];
 
-const SCREENS: ReadonlyArray<[string, () => ScreenModel, PotentialType[]]> = [
+const SCREENS: readonly [string, () => ScreenModel, PotentialType[]][] = [
   ["Intro", () => new IntroModel(), SINGLE_WELLS],
   ["One Well", () => new OneWellModel(), SINGLE_WELLS],
   ["Two Wells", () => new TwoWellsModel(), [PotentialType.DOUBLE_SQUARE_WELL, PotentialType.DOUBLE_POSCHL_TELLER]],

@@ -370,7 +370,7 @@ export class WavenumberChartNode extends Node {
    */
   private updateViewRange(kGrid: number[], phiKSquared: number[]): void {
     // Find the range where |φ(k)|² is significant (> 1% of max)
-    const maxValue = phiKSquared.reduce((max, value) => (value > max ? value : max), 0);
+    const maxValue = phiKSquared.reduce((max, value) => Math.max(value, max), 0);
     if (kGrid.length < 2 || !(maxValue > 0) || !Number.isFinite(maxValue)) {
       return; // Nothing to show; keep the previous view range
     }

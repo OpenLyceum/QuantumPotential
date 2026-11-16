@@ -26,8 +26,8 @@ import { associatedLaguerre } from "./math-utilities.ts";
  * Extends the AnalyticalSolution abstract base class.
  */
 export class Coulomb1DPotentialSolution extends AnalyticalSolution {
-  private coulombStrength: number;
-  private mass: number;
+  private readonly coulombStrength: number;
+  private readonly mass: number;
 
   constructor(coulombStrength: number, mass: number) {
     super();

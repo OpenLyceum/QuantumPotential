@@ -66,10 +66,10 @@ import { airyAi, airyAiPrime, airyBi, airyBiPrime } from "./math-utilities.ts";
  * Extends the AnalyticalSolution abstract base class.
  */
 export class TriangularPotentialSolution extends AnalyticalSolution {
-  private height: number;
-  private width: number;
-  private offset: number;
-  private mass: number;
+  private readonly height: number;
+  private readonly width: number;
+  private readonly offset: number;
+  private readonly mass: number;
 
   constructor(height: number, width: number, offset: number, mass: number) {
     super();

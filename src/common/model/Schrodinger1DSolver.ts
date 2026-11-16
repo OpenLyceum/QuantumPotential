@@ -71,7 +71,7 @@ function cellAveragedPotential(potential: PotentialFunction, cellWidth: number):
  * Main class for solving the 1D time-independent Schrödinger equation.
  */
 export class Schrodinger1DSolver {
-  private numericalMethod: NumericalMethod;
+  private readonly numericalMethod: NumericalMethod;
   private analyticalSolution: AnalyticalSolution | null = null;
 
   /**

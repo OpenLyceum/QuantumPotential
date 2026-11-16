@@ -69,9 +69,9 @@ import { defined } from "../utils/defined.ts";
  * ```
  */
 class CustomDotMatrix {
-  private m: number; // rows
-  private n: number; // columns
-  private entries: Float64Array;
+  private readonly m: number; // rows
+  private readonly n: number; // columns
+  private readonly entries: Float64Array;
 
   /**
    * Construct a matrix.

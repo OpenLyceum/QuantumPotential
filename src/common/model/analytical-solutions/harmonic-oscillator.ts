@@ -212,8 +212,8 @@ function calculateHarmonicOscillatorWavefunctionMinMax(
  * Extends the AnalyticalSolution abstract base class.
  */
 export class HarmonicOscillatorSolution extends AnalyticalSolution {
-  private springConstant: number;
-  private mass: number;
+  private readonly springConstant: number;
+  private readonly mass: number;
 
   constructor(springConstant: number, mass: number) {
     super();

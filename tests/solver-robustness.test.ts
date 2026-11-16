@@ -26,7 +26,7 @@ function makeRandom(seed: number): () => number {
 }
 
 /** The model's ranged NumberProperties (the sliders), excluding selection and time. */
-function sliderProperties(model: BaseModel): Array<[string, NumberProperty]> {
+function sliderProperties(model: BaseModel): [string, NumberProperty][] {
   return Object.entries(model).filter(
     (entry): entry is [string, NumberProperty] =>
       entry[0].endsWith("Property") &&
@@ -52,7 +52,7 @@ const SINGLE_WELL_POTENTIALS = [
   PotentialType.COULOMB_1D,
 ];
 
-const MODELS: ReadonlyArray<[string, () => BaseModel, PotentialType[]]> = [
+const MODELS: readonly [string, () => BaseModel, PotentialType[]][] = [
   ["IntroModel", () => new IntroModel(), SINGLE_WELL_POTENTIALS],
   ["OneWellModel", () => new OneWellModel(), SINGLE_WELL_POTENTIALS],
   ["TwoWellsModel", () => new TwoWellsModel(), [PotentialType.DOUBLE_SQUARE_WELL, PotentialType.DOUBLE_POSCHL_TELLER]],

@@ -126,7 +126,7 @@ export class ControlPanelNode {
    */
   private createPotentialGroup(listBoxParent: Node): Node {
     // Potential Well dropdown - all available options
-    const allPotentialItems: Array<ComboBoxItem<PotentialType>> = [
+    const allPotentialItems: ComboBoxItem<PotentialType>[] = [
       {
         value: PotentialType.INFINITE_WELL,
         createNode: () =>

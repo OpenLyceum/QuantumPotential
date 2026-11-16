@@ -45,10 +45,10 @@ import { logAssociatedLaguerre, logGamma } from "./math-utilities.ts";
  * Extends the AnalyticalSolution abstract base class.
  */
 export class MorsePotentialSolution extends AnalyticalSolution {
-  private dissociationEnergy: number;
-  private wellWidth: number;
-  private equilibriumPosition: number;
-  private mass: number;
+  private readonly dissociationEnergy: number;
+  private readonly wellWidth: number;
+  private readonly equilibriumPosition: number;
+  private readonly mass: number;
 
   constructor(dissociationEnergy: number, wellWidth: number, equilibriumPosition: number, mass: number) {
     super();

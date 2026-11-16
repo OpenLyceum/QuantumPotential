@@ -54,9 +54,9 @@ function poschlTellerS(lambda: number): number {
  * Extends the AnalyticalSolution abstract base class.
  */
 export class PoschlTellerPotentialSolution extends AnalyticalSolution {
-  private potentialDepth: number;
-  private wellWidth: number;
-  private mass: number;
+  private readonly potentialDepth: number;
+  private readonly wellWidth: number;
+  private readonly mass: number;
 
   constructor(potentialDepth: number, wellWidth: number, mass: number) {
     super();
