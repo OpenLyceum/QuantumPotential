@@ -68,13 +68,4 @@ export class TwoWellsScreenView extends BaseScreenView {
     super.reset();
     this.viewState.reset();
   }
-
-  /**
-   * Steps the screen view forward in time.
-   * @param dt - The time step in seconds
-   */
-  public override step(dt: number): void {
-    super.step(dt);
-    (this.model as TwoWellsModel).step(dt);
-  }
 }

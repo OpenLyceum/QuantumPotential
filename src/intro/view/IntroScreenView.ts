@@ -158,14 +158,4 @@ export class IntroScreenView extends BaseScreenView {
     this.probabilityChart.update();
     this.wavenumberChart.update();
   }
-
-  /**
-   * Steps the screen view forward in time.
-   * Note: Intro screen doesn't have play/pause controls, but model still steps
-   * @param dt - The time step in seconds
-   */
-  public override step(dt: number): void {
-    super.step(dt);
-    this.model.step(dt);
-  }
 }
