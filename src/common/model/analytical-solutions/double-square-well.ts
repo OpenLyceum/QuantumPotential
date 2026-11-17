@@ -78,12 +78,20 @@ import QuantumConstants from "../QuantumConstants.ts";
  */
 function countNodes(wavefunction: number[]): number {
   let nodeCount = 0;
+  let previousSign = 0;
 
-  for (let i = 0; i < wavefunction.length - 1; i++) {
-    // Check for sign change (node/zero crossing)
-    if (defined(wavefunction[i]) * defined(wavefunction[i + 1]) < 0) {
+  // Compare each sample with the last NONZERO one. An odd-parity state is exactly 0
+  // on the x = 0 grid point, so a neighbour-product test (a * b < 0) never sees that
+  // node and every odd state looked one node short.
+  for (const value of wavefunction) {
+    const sign = Math.sign(value);
+    if (sign === 0) {
+      continue;
+    }
+    if (previousSign !== 0 && sign !== previousSign) {
       nodeCount++;
     }
+    previousSign = sign;
   }
 
   return nodeCount;
@@ -395,8 +403,10 @@ export function solveDoubleSquareWellAnalytical(
     }
   }
 
-  // Validate that we found enough states
-  if (selectedStates.length < numStates) {
+  // Validate that we found enough states. `numStates` is a ceiling: a finite well
+  // holds only ~estimatedStates bound states, so finding fewer than requested is
+  // expected. Warn only when the search falls short of what the well supports.
+  if (selectedStates.length < Math.min(numStates, estimatedStates)) {
     // Count how many states of each parity we found
     const evenCount = evenEnergies.length;
     const oddCount = oddEnergies.length;
