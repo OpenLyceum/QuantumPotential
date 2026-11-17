@@ -1,0 +1,10 @@
+{
+  "$comment": "Per-sim build settings, read and validated by vite.config.ts (template-owned). Unknown keys or bad values fail the build. See AGENTS.md → Build configuration.",
+  "title": "Quantum Physics: Potential Wells",
+  "shortName": "QuantumPotential",
+  "themeColor": "#0a0a1e",
+  "backgroundColor": "#000000",
+  "allowPermissions": [],
+  "connectSrc": [],
+  "precacheExtensions": []
+}
