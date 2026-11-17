@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Explore bound states of a quantum particle in potential wells with real-time solutions of the 1D Schrödinger equation.",
+  "description": "Explore bound states of a quantum particle in potential wells with real-time solutions of the 1D Schr\u00f6dinger equation.",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
@@ -49,7 +49,8 @@
     "test:accuracy": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-wavefunction-comprehensive.ts",
     "test:coulomb": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/verify-coulomb.ts",
     "test:double-well": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-double-well.ts",
-    "test:multi-square-well": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-multi-square-well.ts"
+    "test:multi-square-well": "node --import ./tests/accuracy/browser-globals.js tests/accuracy/test-multi-square-well.ts",
+    "test:soak": "npx playwright test tests/browser/memory-soak.spec.ts"
   },
   "dependencies": {
     "scenerystack": "^3.0.0"

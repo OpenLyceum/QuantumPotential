@@ -129,6 +129,8 @@ deferred fleet-wide). Full convention:
 ## Compliance carve-outs
 
 - `.github/workflows/ci.yml`: `unused-mode: advisory` until both Knip default and production baselines are reviewed and cleared ([Baton/doc/knip.md](https://github.com/OpenLyceum/Baton/blob/main/doc/knip.md)).
+- `memory-leak:BaseModel` — abstract base; dispose coverage is via IntroModel / OneWellModel / TwoWellsModel / ManyWellsModel.
+- `memory-leak:QuantumPotentialAlerter` — screen-lifetime a11y helper; dispose only clears the debounce timer and does not unlink BaseModel listeners.
 - **Hardcoded colors:** `src/common/view/chart-tools/PhaseColormap.ts` computes `rgb()` strings from the wave-function phase — a data colormap, not a theme token.
 - **Nested constants:** there is no root `QuantumPotentialConstants.ts`. Physical constants live in
   `src/common/model/QuantumConstants.ts`; the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`
