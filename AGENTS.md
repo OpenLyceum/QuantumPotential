@@ -131,10 +131,10 @@ deferred fleet-wide). Full convention:
 - `memory-leak:BaseModel` — abstract base; dispose coverage is via IntroModel / OneWellModel / TwoWellsModel / ManyWellsModel.
 - `memory-leak:QuantumPotentialAlerter` — screen-lifetime a11y helper; dispose only clears the debounce timer and does not unlink BaseModel listeners.
 - **Hardcoded colors:** `src/common/view/chart-tools/PhaseColormap.ts` computes `rgb()` strings from the wave-function phase — a data colormap, not a theme token.
-- **Nested constants:** there is no root `QuantumPotentialConstants.ts`. Physical constants live in
-  `src/common/model/QuantumConstants.ts`; the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`
+- **Chart-range constants on models:** the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`
   (used by the models and `BaseChartNode`); chart margins are in `BaseChartNode`; per-model ranges are
-  `static readonly` on `BaseModel` and the screen models.
+  `static readonly` on `BaseModel` and the screen models. SI physical values live in root
+  `QuantumPotentialConstants.ts` (re-exported as `common/model/QuantumConstants.ts`).
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
   by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
   `exactOptionalPropertyTypes`. All pass.
