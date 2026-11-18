@@ -39,6 +39,9 @@ export class SuperpositionDialog {
   private static readonly PREVIEW_HEIGHT = 110;
 
   private readonly dialog: Dialog;
+  private readonly content: Node;
+  private readonly title: Text;
+  private isDisposed = false;
   private readonly originalConfig: SuperpositionConfig;
   private readonly originalDisplacement: number | null;
   private readonly amplitudeProperties: NumberProperty[] = [];
@@ -55,11 +58,13 @@ export class SuperpositionDialog {
     };
     this.originalDisplacement = isOneWellModel(model) ? model.coherentDisplacementProperty.value : null;
 
-    this.dialog = new Dialog(this.createContent(model.getBoundStates()), {
-      title: new Text(stringManager.superpositionDialogTitleStringProperty, {
-        font: new PhetFont({ size: 18, weight: "bold" }),
-        fill: QuantumPotentialColors.textFillProperty,
-      }),
+    this.content = this.createContent(model.getBoundStates());
+    this.title = new Text(stringManager.superpositionDialogTitleStringProperty, {
+      font: new PhetFont({ size: 18, weight: "bold" }),
+      fill: QuantumPotentialColors.textFillProperty,
+    });
+    this.dialog = new Dialog(this.content, {
+      title: this.title,
       accessibleName: stringManager.superpositionDialogTitleStringProperty,
       xSpacing: 18,
       ySpacing: 14,
@@ -68,11 +73,40 @@ export class SuperpositionDialog {
       stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
       closeButtonColor: QuantumPotentialColors.textFillProperty,
       closeButtonListener: () => this.handleCancel(),
+      // A new dialog is built each time it opens, so every exit (OK, Cancel, close button, Escape)
+      // releases this one. Deferred so the button or key listener that hid it finishes first.
+      hideCallback: () => queueMicrotask(() => this.dispose()),
     });
   }
 
   public show(): void {
     this.dialog.show();
+  }
+
+  /** Release the dialog and its content, which link to the global string and color Properties. */
+  public dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this.isDisposed = true;
+    this.dialog.dispose();
+    this.title.dispose();
+    // Node.disposeSubtree() stops at nodes a parent already disposed, which skips the label Text
+    // nested inside each push button. Collect every node first, parents before children.
+    const nodes: Node[] = [];
+    const visit = (node: Node): void => {
+      nodes.push(node);
+      node.children.forEach(visit);
+    };
+    visit(this.content);
+    for (const node of nodes) {
+      if (!node.isDisposed) {
+        node.dispose();
+      }
+    }
+    for (const property of [...this.amplitudeProperties, ...this.phaseProperties]) {
+      property.dispose();
+    }
   }
 
   private handleCancel(): void {

@@ -145,7 +145,7 @@ deferred fleet-wide). Full convention:
 
 | Path | Purpose |
 |---|---|
-| `tests/memory-leak.test.ts` | Every screen model is collected after `dispose()` |
+| `tests/memory-leak.test.ts` | Every screen model is collected after `dispose()`; `SuperpositionDialog` is released on every exit (Cancel / OK cycles against a live model, string listener counts flat) |
 | `tests/screen-models.test.ts` | Screen defaults, `reset()`, deferred selection clamp, Pöschl–Teller wells |
 | `tests/initial-potential-parameters.test.ts` | Per-potential parameter presets on type switches and reset |
 | `tests/solver-robustness.test.ts` | Random settings × potentials × methods give finite, normalized states |
