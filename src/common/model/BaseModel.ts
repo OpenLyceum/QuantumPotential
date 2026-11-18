@@ -3,7 +3,7 @@
  * It provides common functionality for time evolution, simulation control, and solver configuration.
  */
 
-import { NumberProperty, Property, stepTimer, type TimerListener } from "scenerystack/axon";
+import { NumberProperty, Property, stepTimer, type TimerListener, type TReadOnlyProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import type { TModel } from "scenerystack/joist";
 import quantumPotentialQueryParameters from "../../preferences/quantumPotentialQueryParameters.js";
@@ -129,7 +129,8 @@ export abstract class BaseModel implements TModel {
   // Potential type selection
   public readonly potentialTypeProperty: Property<PotentialType>;
   /** Increments after any input that changes the potential or its eigenstates. */
-  public readonly potentialRevisionProperty: NumberProperty;
+  public readonly potentialRevisionProperty: TReadOnlyProperty<number>;
+  private readonly _potentialRevisionProperty: NumberProperty;
 
   // Well parameters (used for different potential types)
   public readonly wellWidthProperty: NumberProperty;
@@ -180,7 +181,8 @@ export abstract class BaseModel implements TModel {
 
     // Initialize potential type
     this.potentialTypeProperty = new Property<PotentialType>(options.potentialType ?? PotentialType.INFINITE_WELL);
-    this.potentialRevisionProperty = new NumberProperty(0);
+    this._potentialRevisionProperty = new NumberProperty(0);
+    this.potentialRevisionProperty = this._potentialRevisionProperty;
 
     // Initialize well parameters with default values
     this.wellWidthProperty = new NumberProperty(options.wellWidth ?? 4.0, {
@@ -249,7 +251,7 @@ export abstract class BaseModel implements TModel {
     this.wavePacketProjection = null;
     this.wavenumberTransforms.clear();
     this.superpositionCache = null;
-    this.potentialRevisionProperty.value++;
+    this._potentialRevisionProperty.value++;
   }
 
   protected invalidateBoundStates(): void {
