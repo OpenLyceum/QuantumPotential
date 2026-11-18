@@ -136,8 +136,7 @@ deferred fleet-wide). Full convention:
   `static readonly` on `BaseModel` and the screen models. SI physical values live in root
   `QuantumPotentialConstants.ts` (re-exported as `common/model/QuantumConstants.ts`).
 - **Accuracy scripts (`tests/accuracy/`):** hand-run, exhaustive solver-vs-exact diagnostics, not run
-  by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess` /
-  `exactOptionalPropertyTypes`. All pass.
+  by CI; type-checked by `tsconfig.accuracy.json`, which relaxes `noUncheckedIndexedAccess`. All pass.
 - **Template drift (Baton `check-template-drift.sh`):** `check` adds a fourth pass over
   `tsconfig.accuracy.json`; `tsconfig.test.json` excludes `tests/accuracy`; `biome.json` sets
   `noNonNullAssertion` to error and turns off `noConsole` for the accuracy scripts, which print their reports.
