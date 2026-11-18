@@ -128,7 +128,6 @@ deferred fleet-wide). Full convention:
 
 ## Compliance carve-outs
 
-- `memory-leak:BaseModel` — abstract base; dispose coverage is via IntroModel / OneWellModel / TwoWellsModel / ManyWellsModel.
 - `memory-leak:QuantumPotentialAlerter` — screen-lifetime a11y helper; dispose only clears the debounce timer and does not unlink BaseModel listeners.
 - **Hardcoded colors:** `src/common/view/chart-tools/PhaseColormap.ts` computes `rgb()` strings from the wave-function phase — a data colormap, not a theme token.
 - **Chart-range constants on models:** the ±4 nm chart range is `BaseModel.CHART_HALF_RANGE_NM`

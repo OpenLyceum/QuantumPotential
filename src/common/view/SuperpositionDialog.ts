@@ -42,6 +42,7 @@ export class SuperpositionDialog {
   private readonly content: Node;
   private readonly title: Text;
   private isDisposed = false;
+  private accepted = false;
   private readonly originalConfig: SuperpositionConfig;
   private readonly originalDisplacement: number | null;
   private readonly amplitudeProperties: NumberProperty[] = [];
@@ -72,10 +73,13 @@ export class SuperpositionDialog {
       fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
       stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
       closeButtonColor: QuantumPotentialColors.textFillProperty,
-      closeButtonListener: () => this.handleCancel(),
-      // A new dialog is built each time it opens, so every exit (OK, Cancel, close button, Escape)
-      // releases this one. Deferred so the button or key listener that hid it finishes first.
-      hideCallback: () => queueMicrotask(() => this.dispose()),
+      hideCallback: () => {
+        if (!this.accepted) {
+          this.restoreOriginalValues();
+        }
+        // Let the button or key listener that hid the dialog finish before disposing it.
+        queueMicrotask(() => this.dispose());
+      },
     });
   }
 
@@ -109,13 +113,12 @@ export class SuperpositionDialog {
     }
   }
 
-  private handleCancel(): void {
+  private restoreOriginalValues(): void {
     if (isOneWellModel(this.model) && this.originalDisplacement !== null) {
       this.model.coherentDisplacementProperty.value = this.originalDisplacement;
     }
     this.model.superpositionTypeProperty.value = this.previousType;
     this.model.superpositionConfigProperty.value = this.originalConfig;
-    this.dialog.hide();
   }
 
   private isAllStatesEqually(config: SuperpositionConfig, numStates: number): boolean {
@@ -561,6 +564,7 @@ export class SuperpositionDialog {
       }
       model.isPlayingProperty.value = false;
       model.timeProperty.value = 0;
+      this.accepted = true;
       this.dialog.hide();
     });
     const updateOK = () => {
@@ -570,7 +574,7 @@ export class SuperpositionDialog {
       property.link(updateOK);
     }
     updateOK();
-    const cancelButton = this.createButton(stringManager.cancelButtonStringProperty, () => this.handleCancel());
+    const cancelButton = this.createButton(stringManager.cancelButtonStringProperty, () => this.dialog.hide());
 
     return new VBox({
       spacing: 12,

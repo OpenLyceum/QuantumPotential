@@ -12,6 +12,7 @@
 
 import { Property } from "scenerystack/axon";
 import { Node } from "scenerystack/scenery";
+import { Dialog } from "scenerystack/sim";
 import { RectangularPushButton } from "scenerystack/sun";
 import { describe, expect, it } from "vitest";
 import { SuperpositionType } from "../src/common/model/SuperpositionType.js";
@@ -113,6 +114,40 @@ const exits = [
 ];
 
 describe("SuperpositionDialog open/exit cycles", () => {
+  it("restores the original model values and disposes the dialog on the Escape hide path", async () => {
+    const model = new OneWellModel();
+    const originalType = model.superpositionTypeProperty.value;
+    const originalConfig = model.superpositionConfigProperty.value;
+    const originalDisplacement = model.coherentDisplacementProperty.value;
+    const dialog = new SuperpositionDialog(model, originalType);
+    dialog.show();
+    const popup = shownPopups.at(-1)!;
+    const dialogNode = popup.children[0];
+    if (!(dialogNode instanceof Dialog)) {
+      throw new Error("Expected a shown Dialog");
+    }
+
+    try {
+      press(findButton(popup, stringManager.coherentStateStringProperty.value));
+      model.coherentDisplacementProperty.value = originalDisplacement + 1;
+      expect(model.superpositionTypeProperty.value).toBe(SuperpositionType.COHERENT);
+      expect(model.superpositionConfigProperty.value).not.toEqual(originalConfig);
+
+      // SceneryStack's Escape listener calls Dialog.hide() directly.
+      dialogNode.hide();
+
+      expect(model.superpositionTypeProperty.value).toBe(originalType);
+      expect(model.superpositionConfigProperty.value).toEqual(originalConfig);
+      expect(model.coherentDisplacementProperty.value).toBe(originalDisplacement);
+      expect(shownPopups).not.toContain(popup);
+      await settle();
+      expect(dialogNode.isDisposed).toBe(true);
+    } finally {
+      dialog.dispose();
+      model.dispose();
+    }
+  });
+
   const watched = () => [
     stringManager.superpositionDialogTitleStringProperty,
     stringManager.okButtonStringProperty,
