@@ -65,7 +65,10 @@ export function createConfigurePotentialButton(model: ScreenModel): RectangularP
         fill: QuantumPotentialColors.controlPanelBackgroundColorProperty,
         stroke: QuantumPotentialColors.controlPanelStrokeColorProperty,
         closeButtonColor: QuantumPotentialColors.textFillProperty,
-        hideCallback: () => dialog.dispose(),
+        // Defer so the close control can finish its fire before dispose (same pattern as SuperpositionDialog).
+        hideCallback: () => {
+          queueMicrotask(() => dialog.dispose());
+        },
       });
       dialog.show();
     },

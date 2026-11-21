@@ -118,6 +118,9 @@ export class EnergyChartNode extends BaseChartNode {
   // Hover state
   private hoveredEnergyLevelIndex: number | null = null;
 
+  /** Guards against nested updateEnergyLevels while hit areas from a prior rebuild are still live. */
+  private energyLevelsUpdating = false;
+
   // Whether the chart below supplies the position axis (QBS-style layout): no x labels here, legend on top
   private readonly sharedXAxis: boolean;
 
@@ -650,16 +653,23 @@ export class EnergyChartNode extends BaseChartNode {
    */
   private updateEnergyAxisRange(): void {
     const energyRange = getEnergyAxisRange(this.model.potentialTypeProperty.value);
+    const rangeChanged = this.yMinProperty.value !== energyRange.min || this.yMaxProperty.value !== energyRange.max;
     this.yMinProperty.value = energyRange.min;
     this.yMaxProperty.value = energyRange.max;
 
     // Update the chart transform with new Y range
     this.chartTransform.setModelYRange(new Range(energyRange.min, energyRange.max));
 
-    // Recreate axes with new range
-    this.removeChild(this.axesNode);
-    this.axesNode = this.createAxes();
-    this.addChild(this.axesNode);
+    // Only rebuild axes when the eV window changes. Recreating on every potentialRevision
+    // left orphan TickLabelSet/TickMarkSet listeners on chartTransform (fuzz CPU + ?ea noise).
+    if (rangeChanged) {
+      const oldAxes = this.axesNode;
+      this.removeChild(oldAxes);
+      this.axesNode = this.createAxes();
+      this.addChild(this.axesNode);
+      // Axes use Text ticks (not RichText), so disposeSubtree is safe and unlinks bamboo listeners.
+      oldAxes.disposeSubtree();
+    }
     this.axesNode.moveToBack();
     this.potentialHandlesLayer.update();
     this.backgroundRect.moveToBack();
@@ -733,6 +743,7 @@ export class EnergyChartNode extends BaseChartNode {
     // Clear energy level lines
     for (const line of this.energyLevelNodes.values()) {
       this.plotContentNode.removeChild(line);
+      line.dispose();
     }
     this.energyLevelNodes.clear();
 
@@ -861,110 +872,128 @@ export class EnergyChartNode extends BaseChartNode {
   }
 
   /**
-   * Removes and disposes the per-level hit areas and unlinks their selection listeners, so stale
-   * hit areas (with out-of-range indices) never outlive the levels they were drawn for.
+   * Removes per-level hit areas from the plot and unlinks their selection listeners.
+   * Dispose is deferred a microtask so focus/PDOM teardown from the input that triggered a
+   * rebuild can finish — sync dispose under fuzz was a TinyEmitter / insert-disposed source.
    */
   private removeEnergyLevelHitAreas(): void {
-    for (const { hitArea, listener } of this.energyLevelHitAreas) {
+    const stale = this.energyLevelHitAreas.splice(0);
+    for (const { hitArea, listener } of stale) {
       this.model.selectedEnergyLevelIndexProperty.unlink(listener);
-      this.plotContentNode.removeChild(hitArea);
-      hitArea.dispose();
+      if (this.plotContentNode.hasChild(hitArea)) {
+        this.plotContentNode.removeChild(hitArea);
+      }
     }
-    this.energyLevelHitAreas.length = 0;
+    queueMicrotask(() => {
+      for (const { hitArea } of stale) {
+        if (!hitArea.isDisposed) {
+          hitArea.dispose();
+        }
+      }
+    });
   }
 
   /**
    * Updates the energy level lines.
    */
   private updateEnergyLevels(boundStates: BoundStateResult): void {
-    // Remove old energy level nodes
-    for (const line of this.energyLevelNodes.values()) {
-      this.plotContentNode.removeChild(line);
+    // Nested rebuilds (rapid potentialRevision) must not create hit areas the outer call later
+    // addChilds after an inner call disposed them.
+    if (this.energyLevelsUpdating) {
+      return;
     }
-    this.energyLevelNodes.clear();
-
-    this.removeEnergyLevelHitAreas();
-
-    // Create new energy level lines
-    const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
-    const x1 = this.chartMargins.left;
-    const x2 = this.chartWidth - this.chartMargins.right;
-    this.levelViewYs = energies.map((energy) => this.dataToViewY(energy));
-    if (this.hoveredEnergyLevelIndex !== null && this.hoveredEnergyLevelIndex >= energies.length) {
-      this.hoveredEnergyLevelIndex = null;
-    }
-
-    energies.forEach((energy, index) => {
-      const y = this.dataToViewY(energy);
-      const isSelected = index === this.model.selectedEnergyLevelIndexProperty.value;
-      const isHovered = index === this.hoveredEnergyLevelIndex;
-
-      const line = new Line(x1, y, x2, y, {
-        stroke: isSelected
-          ? QuantumPotentialColors.energyLevelSelectedProperty
-          : QuantumPotentialColors.energyLevelProperty,
-        lineWidth: isSelected ? 4 : isHovered ? 3 : 2,
-        cursor: "pointer",
-        opacity: isHovered ? 1 : 0.7,
-      });
-
-      // Create a wider invisible hit area to make the line easier to grab
-      const hitAreaHeight = 5; // pixels above and below the line
-      const hitArea = new Rectangle(x1, y - hitAreaHeight, x2 - x1, hitAreaHeight * 2, {
-        fill: "transparent",
-        cursor: "pointer",
-
-        // PDOM - make energy level selection keyboard accessible
-        tagName: "button",
-        ariaRole: "radio",
-        innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
-        accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
-        descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
-          energy: toFixed(energy, 3),
-          nodes: QuantumPotentialDescriber.describeNodes(index),
-        }),
-        focusable: true,
-      });
-
-      // Update aria-checked when selection changes
-      const updateAriaChecked = () => {
-        const selected = index === this.model.selectedEnergyLevelIndexProperty.value;
-        hitArea.setPDOMAttribute("aria-checked", selected.toString());
-      };
-
-      // Set initial state
-      updateAriaChecked();
-
-      // Update when selection changes (unlinked in removeEnergyLevelHitAreas when the levels are redrawn)
-      this.model.selectedEnergyLevelIndexProperty.link(updateAriaChecked);
-      this.energyLevelHitAreas.push({ hitArea, listener: updateAriaChecked });
-
-      // Keyboard/screen-reader activation of this level's button. Pointer input goes to levelPickerRectangle,
-      // which lies on top and picks the nearest level.
-      hitArea.addInputListener({
-        click: () => {
-          if (index >= 0 && index < boundStates.energies.length) {
-            this.model.selectedEnergyLevelIndexProperty.value = index;
-          }
-        },
-      });
-
-      this.energyLevelNodes.set(index, line);
-      this.plotContentNode.addChild(line); // Add to clipped content
-      this.plotContentNode.addChild(hitArea); // Add hit area on top
-    });
-
-    // Keep readouts outside the clipped plot so high levels can use the top margin.
-    for (const node of [this.selectedLevelPanel, this.hoveredLevelPanel]) {
-      if (this.hasChild(node)) {
-        node.moveToFront();
-      } else {
-        this.addChild(node);
+    this.energyLevelsUpdating = true;
+    try {
+      for (const line of this.energyLevelNodes.values()) {
+        this.plotContentNode.removeChild(line);
+        line.dispose();
       }
+      this.energyLevelNodes.clear();
+
+      this.removeEnergyLevelHitAreas();
+
+      const energies = boundStates.energies.map((e) => e * QuantumConstants.JOULES_TO_EV);
+      const x1 = this.chartMargins.left;
+      const x2 = this.chartWidth - this.chartMargins.right;
+      this.levelViewYs = energies.map((energy) => this.dataToViewY(energy));
+      if (this.hoveredEnergyLevelIndex !== null && this.hoveredEnergyLevelIndex >= energies.length) {
+        this.hoveredEnergyLevelIndex = null;
+      }
+
+      energies.forEach((energy, index) => {
+        const y = this.dataToViewY(energy);
+        const isSelected = index === this.model.selectedEnergyLevelIndexProperty.value;
+        const isHovered = index === this.hoveredEnergyLevelIndex;
+
+        const line = new Line(x1, y, x2, y, {
+          stroke: isSelected
+            ? QuantumPotentialColors.energyLevelSelectedProperty
+            : QuantumPotentialColors.energyLevelProperty,
+          lineWidth: isSelected ? 4 : isHovered ? 3 : 2,
+          cursor: "pointer",
+          opacity: isHovered ? 1 : 0.7,
+        });
+
+        // Create a wider invisible hit area to make the line easier to grab
+        const hitAreaHeight = 5; // pixels above and below the line
+        const hitArea = new Rectangle(x1, y - hitAreaHeight, x2 - x1, hitAreaHeight * 2, {
+          fill: "transparent",
+          cursor: "pointer",
+
+          // PDOM - make energy level selection keyboard accessible
+          tagName: "button",
+          ariaRole: "radio",
+          innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
+          accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
+          descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
+            energy: toFixed(energy, 3),
+            nodes: QuantumPotentialDescriber.describeNodes(index),
+          }),
+          focusable: true,
+        });
+
+        // Update aria-checked when selection changes
+        const updateAriaChecked = () => {
+          const selected = index === this.model.selectedEnergyLevelIndexProperty.value;
+          hitArea.setPDOMAttribute("aria-checked", selected.toString());
+        };
+
+        // Set initial state
+        updateAriaChecked();
+
+        // Update when selection changes (unlinked in removeEnergyLevelHitAreas when the levels are redrawn)
+        this.model.selectedEnergyLevelIndexProperty.link(updateAriaChecked);
+        this.energyLevelHitAreas.push({ hitArea, listener: updateAriaChecked });
+
+        // Keyboard/screen-reader activation of this level's button. Pointer input goes to levelPickerRectangle,
+        // which lies on top and picks the nearest level.
+        hitArea.addInputListener({
+          click: () => {
+            if (index >= 0 && index < boundStates.energies.length) {
+              this.model.selectedEnergyLevelIndexProperty.value = index;
+            }
+          },
+        });
+
+        this.energyLevelNodes.set(index, line);
+        this.plotContentNode.addChild(line); // Add to clipped content
+        this.plotContentNode.addChild(hitArea); // Add hit area on top
+      });
+
+      // Keep readouts outside the clipped plot so high levels can use the top margin.
+      for (const node of [this.selectedLevelPanel, this.hoveredLevelPanel]) {
+        if (this.hasChild(node)) {
+          node.moveToFront();
+        } else {
+          this.addChild(node);
+        }
+      }
+      this.updateLevelLabels();
+      this.legendNode.moveToFront();
+      this.potentialHandlesLayer.moveToFront();
+    } finally {
+      this.energyLevelsUpdating = false;
     }
-    this.updateLevelLabels();
-    this.legendNode.moveToFront();
-    this.potentialHandlesLayer.moveToFront();
   }
 
   /**

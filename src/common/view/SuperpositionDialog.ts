@@ -96,11 +96,16 @@ export class SuperpositionDialog {
     this.dialog.dispose();
     this.title.dispose();
     // Node.disposeSubtree() stops at nodes a parent already disposed, which skips the label Text
-    // nested inside each push button. Collect every node first, parents before children.
+    // nested inside each push button, so collect every node first, parents before children.
+    // RichText leaves are pooled (disposing them corrupts the pool), so stop at a RichText. The
+    // OK/Cancel buttons are disposed too: this runs a microtask after their fire completes, and
+    // they hold the label strings and sim listeners that would otherwise retain the dialog.
     const nodes: Node[] = [];
     const visit = (node: Node): void => {
       nodes.push(node);
-      node.children.forEach(visit);
+      if (!(node instanceof RichText)) {
+        node.children.forEach(visit);
+      }
     };
     visit(this.content);
     for (const node of nodes) {
