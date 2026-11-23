@@ -423,8 +423,8 @@ export function solveDoubleSquareWellAnalytical(
     );
   }
 
-  // Check if we're significantly below WKB estimate
-  if (selectedStates.length < estimatedStates * 0.7) {
+  // Check if we're significantly below WKB estimate (again capped by the states requested)
+  if (selectedStates.length < Math.min(numStates, estimatedStates * 0.7)) {
     Logger.warn(
       `Warning: Found ${selectedStates.length} states but WKB approximation suggests ~${estimatedStates} should exist.\n` +
         `  Significant shortfall detected - some eigenvalues may be missing.`,

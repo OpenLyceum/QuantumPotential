@@ -202,6 +202,7 @@ export abstract class BaseModel implements TModel {
 
     // Initialize energy level selection (ground state by default)
     this.selectedEnergyLevelIndexProperty = new NumberProperty(0, {
+      numberType: "Integer",
       range: new Range(BaseModel.ENERGY_LEVEL_INDEX_MIN, BaseModel.ENERGY_LEVEL_INDEX_MAX),
     });
 

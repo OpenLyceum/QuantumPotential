@@ -47,6 +47,8 @@ export class SuperpositionDialog {
   private readonly originalDisplacement: number | null;
   private readonly amplitudeProperties: NumberProperty[] = [];
   private readonly phaseProperties: NumberProperty[] = [];
+  /** Nodes built for the content that may never be attached to it (single-page paging controls). */
+  private readonly detachableNodes: Node[] = [];
   private readonly model: SuperpositionModel;
   private readonly previousType: SuperpositionType;
   public constructor(model: SuperpositionModel, previousType: SuperpositionType) {
@@ -108,6 +110,7 @@ export class SuperpositionDialog {
       }
     };
     visit(this.content);
+    nodes.push(...this.detachableNodes);
     for (const node of nodes) {
       if (!node.isDisposed) {
         node.dispose();
@@ -291,6 +294,8 @@ export class SuperpositionDialog {
       },
       stringManager.nextStringProperty,
     );
+    // Shown only when the states span more than one page; dispose() must still reach them.
+    this.detachableNodes.push(previousButton, pageLabel, nextButton);
     const showPage = () => {
       pages.forEach((page, index) => {
         page.visible = index === pageIndex;

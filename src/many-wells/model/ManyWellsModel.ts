@@ -136,6 +136,7 @@ export class ManyWellsModel extends BaseModel implements ManyWellsScreenModel {
 
     // Initialize number of wells
     this.numberOfWellsProperty = new NumberProperty(ManyWellsModel.DEFAULT_NUMBER_OF_WELLS, {
+      numberType: "Integer",
       range: new Range(ManyWellsModel.NUMBER_OF_WELLS_MIN, ManyWellsModel.NUMBER_OF_WELLS_MAX),
     });
 
