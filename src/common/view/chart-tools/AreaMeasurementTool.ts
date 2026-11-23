@@ -54,7 +54,7 @@ export class AreaMeasurementTool extends Node {
   private readonly rightMarkerHandle: Circle;
   private readonly areaLabel: Text;
   private readonly probabilityReadout: Node;
-  private alertTimeout: number | null = null;
+  private alertTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(model: ScreenModel, getEffectiveDisplayMode: () => string, options: AreaMeasurementToolOptions) {
     super({
@@ -313,7 +313,7 @@ export class AreaMeasurementTool extends Node {
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;
-          }, 500) as unknown as number;
+          }, 500);
         },
       }),
     );
@@ -372,7 +372,7 @@ export class AreaMeasurementTool extends Node {
             }
             utteranceQueue.addToBack(new Utterance({ alert: message }));
             this.alertTimeout = null;
-          }, 500) as unknown as number;
+          }, 500);
         },
       }),
     );
