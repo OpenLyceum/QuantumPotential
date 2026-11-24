@@ -86,7 +86,7 @@ export class WaveFunctionChartNode extends Node {
   private readonly zeroLine: Line;
   private readonly positionStatistics: StatisticsIndicator; // ⟨x⟩ line, ±σₓ arrow and their readouts
   private readonly axesNode: Node;
-  private yAxisLabel!: Text;
+  private readonly yAxisLabel: Text;
   private readonly stateLabelNode: Text; // Label showing which wavefunction is displayed
   private readonly stateLabelPanel: Panel;
 
@@ -151,7 +151,7 @@ export class WaveFunctionChartNode extends Node {
     this.viewState = viewState;
 
     // Set up accessible description after this.model is initialized
-    this.descriptionContent = new DerivedProperty(
+    const descriptionContentProperty = new DerivedProperty(
       [
         model.selectedEnergyLevelIndexProperty,
         model.potentialTypeProperty,
@@ -162,6 +162,7 @@ export class WaveFunctionChartNode extends Node {
         return this.createWavefunctionDescription(selectedIndex, potentialType, superpositionType);
       },
     );
+    this.descriptionContent = descriptionContentProperty;
     this.chartWidth = options?.width ?? 600;
     this.chartHeight = options?.height ?? 140;
     this.fixedDisplayMode = options?.fixedDisplayMode;
@@ -194,7 +195,9 @@ export class WaveFunctionChartNode extends Node {
     this.addChild(this.backgroundRect);
 
     // Create axes
-    this.axesNode = this.createAxes();
+    const { axesNode, yAxisLabel } = this.createAxes();
+    this.axesNode = axesNode;
+    this.yAxisLabel = yAxisLabel;
     this.addChild(this.axesNode);
 
     // Create a clipped content node for all plot elements
@@ -452,7 +455,7 @@ export class WaveFunctionChartNode extends Node {
    * Creates the axes (X and Y) with labels - using bamboo components where possible.
    * Note: GridLineSet from bamboo causes infinite loops, so we use manual grid lines.
    */
-  private createAxes(): Node {
+  private createAxes(): { axesNode: Node; yAxisLabel: Text } {
     const axesNode = new Node();
 
     // Manual X-axis grid lines (GridLineSet causes hang)
@@ -566,13 +569,13 @@ export class WaveFunctionChartNode extends Node {
     this.yTickLabelSet = yTickLabelSet;
 
     // Position this after setting its text, since the rotated text changes its bounds.
-    this.yAxisLabel = new Text("", {
+    const yAxisLabel = new Text("", {
       font: new PhetFont(14),
       fill: QuantumPotentialColors.labelFillProperty,
       centerX: 15,
       rotation: -Math.PI / 2,
     });
-    axesNode.addChild(this.yAxisLabel);
+    axesNode.addChild(yAxisLabel);
 
     // X-axis label
     const xLabelText = new Text(stringManager.positionNmStringProperty, {
@@ -586,7 +589,7 @@ export class WaveFunctionChartNode extends Node {
     });
     axesNode.addChild(xLabelText);
 
-    return axesNode;
+    return { axesNode, yAxisLabel };
   }
 
   /**

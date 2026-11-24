@@ -5,6 +5,7 @@
  */
 
 import { type NumberProperty, Property, type TReadOnlyProperty } from "scenerystack/axon";
+import { roundSymmetric } from "scenerystack/dot";
 import { Text, VBox } from "scenerystack/scenery";
 import { PhetFont } from "scenerystack/scenery-phet";
 import { NumberSpinner } from "scenerystack/sun";
@@ -68,7 +69,7 @@ export class QuantumPotentialNumberControl extends VBox {
  * with the mass: 0.1 below 2 mₑ, 0.5 below 5 mₑ, 1 below 10 mₑ, then 5.
  */
 const particleMassStep = (mass: number): number => (mass < 2 ? 0.1 : mass < 5 ? 0.5 : mass < 10 ? 1 : 5);
-const roundToTenth = (value: number): number => Math.round(value * 10) / 10;
+const roundToTenth = (value: number): number => roundSymmetric(value * 10) / 10;
 
 export const PARTICLE_MASS_STEP_OPTIONS = {
   deltaValue: 0.1,

@@ -52,7 +52,7 @@ export class CurvatureTool extends Node {
 
   constructor(model: ScreenModel, getEffectiveDisplayMode: () => string, options: CurvatureToolOptions) {
     // Initialize properties first so they can be used in super()
-    const showPropertyInternal = new BooleanProperty(false);
+    const showPropertyInternalProperty = new BooleanProperty(false);
 
     super({
       // pdom - container for the curvature tool
@@ -61,7 +61,7 @@ export class CurvatureTool extends Node {
       labelContent: tools.curvatureHeadingStringProperty,
       descriptionTagName: "p",
       descriptionContent: new DerivedProperty(
-        [showPropertyInternal, tools.curvatureDescriptionStringProperty, tools.curvatureDisabledStringProperty],
+        [showPropertyInternalProperty, tools.curvatureDescriptionStringProperty, tools.curvatureDisabledStringProperty],
         (enabled, description, disabled) => (enabled ? description : disabled),
       ),
     });
@@ -70,7 +70,7 @@ export class CurvatureTool extends Node {
     this.options = options;
 
     // Store properties
-    this.showProperty = showPropertyInternal;
+    this.showProperty = showPropertyInternalProperty;
     this.markerXProperty = new NumberProperty(0);
 
     // Create container

@@ -87,6 +87,7 @@ const POTENTIAL_CURVE_SAMPLES = 1200;
 const LEVEL_PICK_DISTANCE = 12;
 
 export class EnergyChartNode extends BaseChartNode {
+  private axesNode: Node;
   private readonly potentialUpdate = new CoalescedUpdate(() => {
     this.updateEnergyAxisRange();
     this.update();
@@ -151,7 +152,7 @@ export class EnergyChartNode extends BaseChartNode {
     this.labelTagName = "h3";
     this.labelContent = a11y.energyChart.headingStringProperty;
     this.descriptionTagName = "p";
-    this.descriptionContent = new DerivedProperty(
+    const descriptionContentProperty = new DerivedProperty(
       [
         model.potentialTypeProperty,
         model.wellWidthProperty,
@@ -163,6 +164,7 @@ export class EnergyChartNode extends BaseChartNode {
         return this.createEnergyChartDescription(potentialType, width, depth, selectedIndex);
       },
     );
+    this.descriptionContent = descriptionContentProperty;
 
     // Reconfigure zero line with energy chart specific styling
     this.zeroLine.stroke = QuantumPotentialColors.potentialBarrierProperty;

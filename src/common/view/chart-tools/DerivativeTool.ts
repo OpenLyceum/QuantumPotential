@@ -46,7 +46,7 @@ export class DerivativeTool extends Node {
 
   constructor(model: ScreenModel, getEffectiveDisplayMode: () => string, options: DerivativeToolOptions) {
     // Initialize properties first so they can be used in super()
-    const showPropertyInternal = new BooleanProperty(false);
+    const showPropertyInternalProperty = new BooleanProperty(false);
 
     super({
       // pdom - container for the derivative tool
@@ -55,7 +55,11 @@ export class DerivativeTool extends Node {
       labelContent: tools.derivativeHeadingStringProperty,
       descriptionTagName: "p",
       descriptionContent: new DerivedProperty(
-        [showPropertyInternal, tools.derivativeDescriptionStringProperty, tools.derivativeDisabledStringProperty],
+        [
+          showPropertyInternalProperty,
+          tools.derivativeDescriptionStringProperty,
+          tools.derivativeDisabledStringProperty,
+        ],
         (enabled, description, disabled) => (enabled ? description : disabled),
       ),
     });
@@ -64,7 +68,7 @@ export class DerivativeTool extends Node {
     this.options = options;
 
     // Store properties
-    this.showProperty = showPropertyInternal;
+    this.showProperty = showPropertyInternalProperty;
     this.markerXProperty = new NumberProperty(1);
 
     // Create container

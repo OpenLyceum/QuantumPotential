@@ -157,6 +157,7 @@ export class QuantumPotentialAlerter {
       clearTimeout(this.debouncedAlertTimer);
     }
 
+    // biome-ignore lint/plugin/no-native-timer: async host/hardware delay (not sim step)
     this.debouncedAlertTimer = window.setTimeout(() => {
       utteranceQueue.addToBack(new Utterance({ alert: message }));
       this.debouncedAlertTimer = null;

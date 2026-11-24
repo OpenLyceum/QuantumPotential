@@ -84,7 +84,7 @@ export class WavenumberChartNode extends Node {
     this.viewState = options?.viewState;
 
     // Set up accessible description after this.model is initialized
-    this.descriptionContent = new DerivedProperty(
+    const descriptionContentProperty = new DerivedProperty(
       [
         model.selectedEnergyLevelIndexProperty,
         model.potentialTypeProperty,
@@ -95,6 +95,7 @@ export class WavenumberChartNode extends Node {
         return this.createWavenumberDescription(selectedIndex, potentialType, width);
       },
     );
+    this.descriptionContent = descriptionContentProperty;
     this.chartWidth = options?.width ?? 600;
     this.chartHeight = options?.height ?? 140;
 

@@ -1,3 +1,4 @@
+import { roundSymmetric } from "scenerystack/dot";
 /**
  * XGrid is an equally spaced, symmetric 1D spatial grid (in nm) for the Numerov solver.
  *
@@ -43,7 +44,7 @@ export class XGrid {
    * Gets the index of the x-coordinate that is closest to the specified x value (nm).
    */
   public getClosestIndex(x: number): number {
-    const index = Math.round((x - this.xMin) / this.dx);
+    const index = roundSymmetric((x - this.xMin) / this.dx);
     return Math.min(this.numberOfPoints - 1, Math.max(0, index));
   }
 }

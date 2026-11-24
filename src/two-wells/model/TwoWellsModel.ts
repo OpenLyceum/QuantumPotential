@@ -4,7 +4,7 @@
  */
 
 import { NumberProperty } from "scenerystack/axon";
-import { Range } from "scenerystack/dot";
+import { Range, roundSymmetric } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
 import { createMultiPoschlTellerPotential } from "../../common/model/multiPoschlTellerPotential.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
@@ -142,7 +142,7 @@ export class TwoWellsModel extends BaseModel implements TwoWellsScreenModel {
         BaseModel.CHART_HALF_RANGE_NM,
         this.wellSeparationProperty.value / 2 + this.wellWidthProperty.value + 1.5,
       );
-      const scaledPoints = Math.round(
+      const scaledPoints = roundSymmetric(
         (TwoWellsModel.DOUBLE_WELL_GRID_POINTS * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
       );
       gridConfig = {
@@ -156,7 +156,7 @@ export class TwoWellsModel extends BaseModel implements TwoWellsScreenModel {
         BaseModel.CHART_HALF_RANGE_NM,
         (this.wellWidthProperty.value + this.wellSeparationProperty.value) / 2 + (5 * this.wellWidthProperty.value) / 2,
       );
-      const scaledPoints = Math.round(
+      const scaledPoints = roundSymmetric(
         (quantumPotentialQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
       );
       gridConfig = {

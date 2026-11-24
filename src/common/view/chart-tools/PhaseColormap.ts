@@ -1,3 +1,4 @@
+import { roundSymmetric } from "scenerystack/dot";
 import { defined } from "../../utils/defined.js";
 
 /**
@@ -51,5 +52,5 @@ export function phaseToReversedTwilight(radians: number): string {
 }
 
 function interpolateColorComponent(a: number, b: number, fraction: number): number {
-  return Math.round((a + (b - a) * fraction) * 255);
+  return roundSymmetric((a + (b - a) * fraction) * 255);
 }
