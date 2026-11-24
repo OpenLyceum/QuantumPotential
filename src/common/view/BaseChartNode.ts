@@ -53,7 +53,6 @@ export abstract class BaseChartNode extends Node {
   protected readonly backgroundRect: ChartRectangle;
   protected readonly plotContentNode: Node; // Clipped container for plot content
   protected readonly zeroLine: Line;
-  protected axesNode!: Node;
 
   protected constructor(model: ScreenModel, viewState: ScreenViewState, options: ChartOptions = {}) {
     super();

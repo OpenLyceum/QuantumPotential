@@ -87,6 +87,7 @@ const POTENTIAL_CURVE_SAMPLES = 1200;
 const LEVEL_PICK_DISTANCE = 12;
 
 export class EnergyChartNode extends BaseChartNode {
+  private axesNode: Node;
   private readonly potentialUpdate = new CoalescedUpdate(() => {
     this.updateEnergyAxisRange();
     this.update();
