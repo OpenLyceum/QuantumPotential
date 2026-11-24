@@ -151,7 +151,7 @@ export class WaveFunctionChartNode extends Node {
     this.viewState = viewState;
 
     // Set up accessible description after this.model is initialized
-    this.descriptionContentProperty = new DerivedProperty(
+    const descriptionContentProperty = new DerivedProperty(
       [
         model.selectedEnergyLevelIndexProperty,
         model.potentialTypeProperty,
@@ -162,6 +162,7 @@ export class WaveFunctionChartNode extends Node {
         return this.createWavefunctionDescription(selectedIndex, potentialType, superpositionType);
       },
     );
+    this.descriptionContent = descriptionContentProperty;
     this.chartWidth = options?.width ?? 600;
     this.chartHeight = options?.height ?? 140;
     this.fixedDisplayMode = options?.fixedDisplayMode;

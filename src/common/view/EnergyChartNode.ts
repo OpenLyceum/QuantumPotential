@@ -152,7 +152,7 @@ export class EnergyChartNode extends BaseChartNode {
     this.labelTagName = "h3";
     this.labelContent = a11y.energyChart.headingStringProperty;
     this.descriptionTagName = "p";
-    this.descriptionContentProperty = new DerivedProperty(
+    const descriptionContentProperty = new DerivedProperty(
       [
         model.potentialTypeProperty,
         model.wellWidthProperty,
@@ -164,6 +164,7 @@ export class EnergyChartNode extends BaseChartNode {
         return this.createEnergyChartDescription(potentialType, width, depth, selectedIndex);
       },
     );
+    this.descriptionContent = descriptionContentProperty;
 
     // Reconfigure zero line with energy chart specific styling
     this.zeroLine.stroke = QuantumPotentialColors.potentialBarrierProperty;
@@ -946,7 +947,7 @@ export class EnergyChartNode extends BaseChartNode {
           ariaRole: "radio",
           innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
           accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
-          descriptionContentProperty: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
+          descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
             energy: toFixed(energy, 3),
             nodes: QuantumPotentialDescriber.describeNodes(index),
           }),
