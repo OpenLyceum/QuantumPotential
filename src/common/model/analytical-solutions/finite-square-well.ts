@@ -771,19 +771,13 @@ function findEvenParityState(xi0: number, stateIndex: number): number | null {
     return sec2Xi + eta / (xi * xi) + xi / eta;
   };
 
-  // Use dot library's hybrid Newton's/bisection root finder
-  // This automatically combines the robustness of bisection with the speed of Newton's method
-  try {
-    const root = findRootHybrid(xiMin, xiMax, 1e-10, f, fDerivative);
-    // Verify the root is valid
-    if (Math.abs(f(root)) < 1e-8) {
-      return root;
-    }
-  } catch (_e) {
-    // findRoot failed, continue to fallback methods
+  // An unconverged hybrid result falls through to the secant method.
+  const root = findRootHybrid(xiMin, xiMax, 1e-10, f, fDerivative);
+  if (Math.abs(f(root)) < 1e-8) {
+    return root;
   }
 
-  // Method 3: Try secant method with midpoint initial guess
+  // Try the secant method with a midpoint initial guess.
   const midpoint = (xiMin + xiMax) / 2;
   const secantResult = solveSecant(f, xiMin, midpoint, 1e-10, 50);
   if (secantResult !== null && secantResult >= xiMin && secantResult <= xiMax) {
@@ -824,19 +818,13 @@ function findOddParityState(xi0: number, stateIndex: number): number | null {
     return csc2Xi + eta / (xi * xi) + xi / eta;
   };
 
-  // Use dot library's hybrid Newton's/bisection root finder
-  // This automatically combines the robustness of bisection with the speed of Newton's method
-  try {
-    const root = findRootHybrid(xiMin, xiMax, 1e-10, f, fDerivative);
-    // Verify the root is valid
-    if (Math.abs(f(root)) < 1e-8) {
-      return root;
-    }
-  } catch (_e) {
-    // findRoot failed, continue to fallback methods
+  // An unconverged hybrid result falls through to the secant method.
+  const root = findRootHybrid(xiMin, xiMax, 1e-10, f, fDerivative);
+  if (Math.abs(f(root)) < 1e-8) {
+    return root;
   }
 
-  // Method 3: Try secant method with midpoint initial guess
+  // Try the secant method with a midpoint initial guess.
   const midpoint = (xiMin + xiMax) / 2;
   const secantResult = solveSecant(f, xiMin, midpoint, 1e-10, 50);
   if (secantResult !== null && secantResult >= xiMin && secantResult <= xiMax) {

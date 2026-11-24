@@ -18,14 +18,14 @@ export const SINGLE_WELL_PARAMETER_PRESETS = {
 export class PotentialParameterPresets<Key extends string> {
   private readonly potentialTypeProperty: Property<PotentialType>;
   private currentType: PotentialType;
-  private readonly savedValues = new Map<PotentialType, Record<Key, number>>();
-  private readonly properties: Record<Key, NumberProperty>;
+  private readonly savedValues = new Map<PotentialType, ReadonlyMap<Key, number>>();
+  private readonly properties: readonly (readonly [Key, NumberProperty])[];
   private readonly presets: Partial<Record<PotentialType, Partial<Record<Key, number>>>>;
   private resetting = false;
 
   public constructor(
     potentialTypeProperty: Property<PotentialType>,
-    properties: Record<Key, NumberProperty>,
+    properties: readonly (readonly [Key, NumberProperty])[],
     presets: Partial<Record<PotentialType, Partial<Record<Key, number>>>>,
   ) {
     this.potentialTypeProperty = potentialTypeProperty;
@@ -39,22 +39,19 @@ export class PotentialParameterPresets<Key extends string> {
 
       this.savedValues.set(this.currentType, this.readValues());
       this.currentType = type;
-      const values = this.savedValues.get(type) ?? this.presets[type];
-      if (values) {
-        for (const key of Object.keys(this.properties) as Key[]) {
-          const value = values[key];
-          if (value !== undefined) {
-            this.properties[key].value = value;
-          }
+      const saved = this.savedValues.get(type);
+      const preset = this.presets[type];
+      for (const [key, property] of this.properties) {
+        const value = saved ? saved.get(key) : preset?.[key];
+        if (value !== undefined) {
+          property.value = value;
         }
       }
     });
   }
 
-  private readValues(): Record<Key, number> {
-    return Object.fromEntries(
-      (Object.keys(this.properties) as Key[]).map((key) => [key, this.properties[key].value]),
-    ) as Record<Key, number>;
+  private readValues(): ReadonlyMap<Key, number> {
+    return new Map(this.properties.map(([key, property]) => [key, property.value]));
   }
 
   /** Let each Property reset normally, then forget parameters saved for previously visited potentials. */

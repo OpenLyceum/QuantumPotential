@@ -82,11 +82,11 @@ export abstract class SingleWellModel extends BaseModel {
 
     this.parameterPresets = new PotentialParameterPresets(
       this.potentialTypeProperty,
-      {
-        wellWidth: this.wellWidthProperty,
-        wellDepth: this.wellDepthProperty,
-        barrierHeight: this.barrierHeightProperty,
-      },
+      [
+        ["wellWidth", this.wellWidthProperty],
+        ["wellDepth", this.wellDepthProperty],
+        ["barrierHeight", this.barrierHeightProperty],
+      ],
       SINGLE_WELL_PARAMETER_PRESETS,
     );
   }
