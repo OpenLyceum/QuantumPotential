@@ -152,7 +152,7 @@ export class EnergyChartNode extends BaseChartNode {
     this.labelTagName = "h3";
     this.labelContent = a11y.energyChart.headingStringProperty;
     this.descriptionTagName = "p";
-    this.descriptionContent = new DerivedProperty(
+    this.descriptionContentProperty = new DerivedProperty(
       [
         model.potentialTypeProperty,
         model.wellWidthProperty,
@@ -946,7 +946,7 @@ export class EnergyChartNode extends BaseChartNode {
           ariaRole: "radio",
           innerContent: StringUtils.fillIn(a11y.energyChart.levelButtonPatternStringProperty, { level: index + 1 }),
           accessibleName: StringUtils.fillIn(a11y.energyChart.levelNamePatternStringProperty, { level: index + 1 }),
-          descriptionContent: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
+          descriptionContentProperty: StringUtils.fillIn(a11y.energyChart.levelDescriptionPatternStringProperty, {
             energy: toFixed(energy, 3),
             nodes: QuantumPotentialDescriber.describeNodes(index),
           }),

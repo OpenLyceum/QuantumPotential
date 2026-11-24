@@ -4,7 +4,7 @@
  */
 
 import { DerivedProperty, NumberProperty } from "scenerystack/axon";
-import { Dimension2, Range, toFixed } from "scenerystack/dot";
+import { Dimension2, Range, roundSymmetric, toFixed } from "scenerystack/dot";
 import { StringUtils } from "scenerystack/phetcommon";
 import { AlignBox, HBox, Node, Text, VBox } from "scenerystack/scenery";
 import { PhetFont, RestartButton, TimeControlNode } from "scenerystack/scenery-phet";
@@ -134,7 +134,7 @@ export class SimulationControlBar extends Node {
       ...PANEL_SLIDER_OPTIONS,
       trackSize: new Dimension2(140, 4),
       thumbSize: new Dimension2(13, 24),
-      constrainValue: (value: number) => Math.round(value),
+      constrainValue: (value: number) => roundSymmetric(value),
       keyboardStep: 1,
       shiftKeyboardStep: 1,
       pageKeyboardStep: 1,

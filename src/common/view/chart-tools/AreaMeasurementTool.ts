@@ -303,6 +303,7 @@ export class AreaMeasurementTool extends Node {
             clearTimeout(this.alertTimeout);
           }
 
+          // biome-ignore lint/plugin/no-native-timer: async host/hardware delay (not sim step)
           this.alertTimeout = setTimeout(() => {
             let message = StringUtils.fillIn(tools.leftMarkerMovedPatternStringProperty, {
               position: toFixed(position, 2),
@@ -362,6 +363,7 @@ export class AreaMeasurementTool extends Node {
             clearTimeout(this.alertTimeout);
           }
 
+          // biome-ignore lint/plugin/no-native-timer: async host/hardware delay (not sim step)
           this.alertTimeout = setTimeout(() => {
             let message = StringUtils.fillIn(tools.rightMarkerMovedPatternStringProperty, {
               position: toFixed(position, 2),

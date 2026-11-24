@@ -5,7 +5,7 @@
  */
 
 import { NumberProperty } from "scenerystack/axon";
-import { Range } from "scenerystack/dot";
+import { Range, roundSymmetric } from "scenerystack/dot";
 import { BaseModel } from "../../common/model/BaseModel.js";
 import { createMultiPoschlTellerPotential } from "../../common/model/multiPoschlTellerPotential.js";
 import { NoBoundStatesError } from "../../common/model/NoBoundStatesError.js";
@@ -213,7 +213,7 @@ export class ManyWellsModel extends BaseModel implements ManyWellsScreenModel {
           ? Math.max(ManyWellsModel.DOMAIN_MARGIN_NM, (5 * this.wellWidthProperty.value) / 2)
           : ManyWellsModel.DOMAIN_MARGIN_NM),
     );
-    const scaledPoints = Math.round(
+    const scaledPoints = roundSymmetric(
       (quantumPotentialQueryParameters.numberOfPoints * halfSpanNm) / BaseModel.CHART_HALF_RANGE_NM,
     );
     const gridConfig = {

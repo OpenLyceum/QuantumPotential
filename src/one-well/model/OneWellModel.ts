@@ -5,7 +5,7 @@
  */
 
 import { NumberProperty } from "scenerystack/axon";
-import { clamp, Range } from "scenerystack/dot";
+import { clamp, Range, roundSymmetric } from "scenerystack/dot";
 import { calculateCoherentStateCoefficients } from "../../common/model/analytical-solutions/harmonic-oscillator.js";
 import { BaseModel } from "../../common/model/BaseModel.js";
 import { createProjectedWavePacket, isSpatialPresetType } from "../../common/model/LocalizedWavePacket.js";
@@ -151,7 +151,7 @@ export class OneWellModel extends SingleWellModel implements OneWellScreenModel 
           // For each eigenstate, compute its overlap with a position-localized state
           // We use the eigenfunction values at the displacement position as weights
           const halfRange = BaseModel.CHART_HALF_RANGE_NM * QuantumConstants.NM_TO_M;
-          const displacementIndex = Math.round(
+          const displacementIndex = roundSymmetric(
             ((displacement + halfRange) / (2 * halfRange)) * (boundStates.xGrid.length - 1),
           );
           const clampedIndex = clamp(displacementIndex, 0, boundStates.xGrid.length - 1);

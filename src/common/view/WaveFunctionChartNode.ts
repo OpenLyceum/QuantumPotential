@@ -151,7 +151,7 @@ export class WaveFunctionChartNode extends Node {
     this.viewState = viewState;
 
     // Set up accessible description after this.model is initialized
-    this.descriptionContent = new DerivedProperty(
+    this.descriptionContentProperty = new DerivedProperty(
       [
         model.selectedEnergyLevelIndexProperty,
         model.potentialTypeProperty,
